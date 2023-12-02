@@ -11,6 +11,13 @@
 
     <artifactId>demo-image</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.hellblazer.a-demo</groupId>
+            <artifactId>demo-native</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

@@ -10,6 +10,7 @@
     <modules>
         <module>demo</module>
         <module>demo-image</module>
+        <module>demo-native</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
 
@@ -50,6 +51,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>demo</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>demo-native</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
