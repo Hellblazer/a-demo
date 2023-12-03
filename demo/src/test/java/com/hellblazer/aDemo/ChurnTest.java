@@ -131,10 +131,11 @@ public class ChurnTest {
         var success = countdown.get().await(30, TimeUnit.SECONDS);
         testViews.addAll(bootstrappers);
 
-        var failed = testViews.stream()
-                              .filter(e -> e.getContext().activeCount() != testViews.size())
-                              .map(v -> String.format("%s : %s ", members.get(0).getId(), v.getContext().activeCount()))
-                              .toList();
+        final var failed = testViews.stream()
+                                    .filter(e -> e.getContext().activeCount() != testViews.size())
+                                    .map(v -> String.format("%s : %s ", members.get(0).getId(),
+                                                            v.getContext().activeCount()))
+                                    .toList();
         assertTrue(success, " expected: " + testViews.size() + " failed: " + failed.size() + " views: " + failed);
 
         System.out.println(
@@ -157,15 +158,15 @@ public class ChurnTest {
                                                Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory())));
 
             success = countdown.get().await(30, TimeUnit.SECONDS);
-            failed = testViews.stream()
-                              .filter(e -> e.getContext().activeCount() != testViews.size()
-                              || e.getContext().totalCount() != testViews.size())
-                              .sorted(Comparator.comparing(v -> v.getContext().activeCount()))
-                              .map(
-                              v -> String.format("%s : %s : %s ", members.get(0).getId(), v.getContext().totalCount(),
-                                                 v.getContext().activeCount()))
-                              .toList();
-            assertTrue(success, " expected: " + testViews.size() + " failed: " + failed.size() + " views: " + failed);
+            final var failed2 = testViews.stream()
+                                         .filter(e -> e.getContext().activeCount() != testViews.size()
+                                         || e.getContext().totalCount() != testViews.size())
+                                         .sorted(Comparator.comparing(v -> v.getContext().activeCount()))
+                                         .map(v -> String.format("%s : %s : %s ", members.get(0).getId(),
+                                                                 v.getContext().totalCount(),
+                                                                 v.getContext().activeCount()))
+                                         .toList();
+            assertTrue(success, " expected: " + testViews.size() + " failed: " + failed2.size() + " views: " + failed2);
 
             success = Utils.waitForCondition(30_000, 1_000, () -> {
                 return testViews.stream()
@@ -174,15 +175,15 @@ public class ChurnTest {
                                 ctx -> ctx.totalCount() != testViews.size() || ctx.activeCount() != testViews.size())
                                 .count() == 0;
             });
-            failed = testViews.stream()
-                              .filter(e -> e.getContext().activeCount() != testViews.size()
-                              || e.getContext().totalCount() != testViews.size())
-                              .sorted(Comparator.comparing(v -> v.getContext().activeCount()))
-                              .map(
-                              v -> String.format("%s : %s : %s ", members.get(0).getId(), v.getContext().totalCount(),
-                                                 v.getContext().activeCount()))
-                              .toList();
-            assertTrue(success, " expected: " + testViews.size() + " failed: " + failed.size() + " views: " + failed);
+            final var failed3 = testViews.stream()
+                                         .filter(e -> e.getContext().activeCount() != testViews.size()
+                                         || e.getContext().totalCount() != testViews.size())
+                                         .sorted(Comparator.comparing(v -> v.getContext().activeCount()))
+                                         .map(v -> String.format("%s : %s : %s ", members.get(0).getId(),
+                                                                 v.getContext().totalCount(),
+                                                                 v.getContext().activeCount()))
+                                         .toList();
+            assertTrue(success, " expected: " + testViews.size() + " failed: " + failed3.size() + " views: " + failed3);
 
             success = Utils.waitForCondition(30_000, 1_000, () -> {
                 return testViews.stream()
@@ -191,15 +192,15 @@ public class ChurnTest {
                                 ctx -> ctx.totalCount() != testViews.size() || ctx.activeCount() != testViews.size())
                                 .count() == 0;
             });
-            failed = testViews.stream()
-                              .filter(e -> e.getContext().activeCount() != testViews.size()
-                              || e.getContext().totalCount() != testViews.size())
-                              .sorted(Comparator.comparing(v -> v.getContext().activeCount()))
-                              .map(
-                              v -> String.format("%s : %s : %s ", members.get(0).getId(), v.getContext().totalCount(),
-                                                 v.getContext().activeCount()))
-                              .toList();
-            assertTrue(success, " expected: " + testViews.size() + " failed: " + failed.size() + " views: " + failed);
+            final var failed4 = testViews.stream()
+                                         .filter(e -> e.getContext().activeCount() != testViews.size()
+                                         || e.getContext().totalCount() != testViews.size())
+                                         .sorted(Comparator.comparing(v -> v.getContext().activeCount()))
+                                         .map(v -> String.format("%s : %s : %s ", members.get(0).getId(),
+                                                                 v.getContext().totalCount(),
+                                                                 v.getContext().activeCount()))
+                                         .toList();
+            assertTrue(success, " expected: " + testViews.size() + " failed: " + failed4.size() + " views: " + failed4);
 
             System.out.println(
             "View has stabilized in " + (System.currentTimeMillis() - then) + " Ms across all " + testViews.size()
@@ -232,12 +233,13 @@ public class ChurnTest {
             success = Utils.waitForCondition(30_000, 1_000, () -> {
                 return expected.stream().filter(view -> view.getContext().totalCount() > expected.size()).count() < 3;
             });
-            failed = expected.stream()
-                             .filter(e -> e.getContext().activeCount() != testViews.size())
-                             .sorted(Comparator.comparing(v -> v.getContext().activeCount()))
-                             .map(v -> String.format("%s : %s ", v.getNodeId(), v.getContext().activeCount()))
-                             .toList();
-            assertTrue(success, " expected: " + expected.size() + " failed: " + failed.size() + " views: " + failed);
+            final var failed5 = expected.stream()
+                                        .filter(e -> e.getContext().activeCount() != testViews.size())
+                                        .sorted(Comparator.comparing(v -> v.getContext().activeCount()))
+                                        .map(
+                                        v -> String.format("%s : %s ", v.getNodeId(), v.getContext().activeCount()))
+                                        .toList();
+            assertTrue(success, " expected: " + expected.size() + " failed: " + failed5.size() + " views: " + failed5);
 
             System.out.println(
             "View has stabilized in " + (System.currentTimeMillis() - then) + " Ms across all " + c.size()
