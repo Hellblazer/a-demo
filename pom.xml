@@ -91,6 +91,11 @@
                 <artifactId>h2-mvstore</artifactId>
                 <version>${h2.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.mattbertolini</groupId>
+                <artifactId>liquibase-slf4j</artifactId>
+                <version>4.0.0</version>
+            </dependency>
 
             <!-- Test only dependencies below this line -->
             <dependency>

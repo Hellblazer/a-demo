@@ -23,6 +23,8 @@ import com.salesforce.apollo.utils.Hex;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import org.h2.jdbcx.JdbcConnectionPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.security.KeyStore;
@@ -38,6 +40,8 @@ import java.util.function.Supplier;
  * @author hal.hildebrand
  **/
 public class Sky {
+    private static final Logger log = LoggerFactory.getLogger(Sky.class);
+
     private final    KERL                       kerl;
     private final    ThothServer                thoth;
     private final    JdbcConnectionPool         connectionPool;
@@ -92,6 +96,8 @@ public class Sky {
     }
 
     private void start(ControlledIdentifier<SelfAddressingIdentifier> identifier, Parameters parameters) {
+        log.info("Inception completed, identifier: {} for context: {}", identifier.getIdentifier().getDigest(),
+                 parameters.context);
         member = new ControlledIdentifierMember(identifier);
         communications = parameters.routerFactory.apply(member);
         dht = new KerlDHT(parameters.operationsFrequency, context, member, connectionPool, DigestAlgorithm.DEFAULT,
@@ -104,6 +110,7 @@ public class Sky {
                                          parameters.gorgoneionMetrics);
         communications.start();
         dht.start(parameters.replicationFrequency);
+        log.info("Started gorgoneion: {} context: {}", identifier.getIdentifier().getDigest(), parameters.context);
     }
 
     public record Parameters(Digest context, com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneion,
