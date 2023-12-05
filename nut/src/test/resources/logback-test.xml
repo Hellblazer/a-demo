@@ -20,31 +20,6 @@
         </encoder>
     </appender>
 
-    <logger name="com.salesforce.apollo.stereotomy" level="warn" additivity="false">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="com.salesforce.apollo.fireflies" level="info" additivity="false">
-        <appender-ref ref="STDOUT" />
-<!--        <appender-ref ref="FILE" />-->
-    </logger>
-
-    <logger name="com.salesforce.apollo.members" level="info" additivity="false">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="com.salesforce.apollo.comm.RingCommunications" level="info" additivity="false">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="com.salesforce.apollo.protocols" level="info" additivity="false">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="com.salesforce.apollo" level="warn" additivity="false">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
