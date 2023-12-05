@@ -11,6 +11,8 @@
         <module>demo</module>
         <module>demo-image</module>
         <module>demo-native</module>
+        <module>nut</module>
+        <module>grpc</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
 
@@ -21,6 +23,7 @@
         <slf4j.version>2.0.3</slf4j.version>
         <version.java>21</version.java>
         <graal.vm.version>23.1.0</graal.vm.version>
+        <h2.version>2.1.212</h2.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
@@ -68,8 +71,28 @@
                 <artifactId>thoth</artifactId>
                 <version>${apollo.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.salesforce.apollo</groupId>
+                <artifactId>gorgoneion</artifactId>
+                <version>${apollo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.salesforce.apollo</groupId>
+                <artifactId>gorgoneion-client</artifactId>
+                <version>${apollo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2-mvstore</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
 
-
+            <!-- Test only dependencies below this line -->
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
