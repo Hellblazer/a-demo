@@ -18,7 +18,10 @@
 
     <properties>
         <apollo.version>0.0.1-SNAPSHOT</apollo.version>
-        <logback.version>1.4.4</logback.version>
+        <logback.version>1.4.12</logback.version>
+        <jooq.version>3.17.2</jooq.version>
+        <liquibase.version>4.8.0</liquibase.version>
+        <jackson.version>2.15.2</jackson.version>
         <junit.version>5.9.1</junit.version>
         <slf4j.version>2.0.3</slf4j.version>
         <version.java>21</version.java>
@@ -82,6 +85,21 @@
                 <groupId>com.mattbertolini</groupId>
                 <artifactId>liquibase-slf4j</artifactId>
                 <version>4.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq</artifactId>
+                <version>${jooq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-meta</artifactId>
+                <version>${jooq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen</artifactId>
+                <version>${jooq.version}</version>
             </dependency>
 
             <!-- Test only dependencies below this line -->
@@ -192,6 +210,11 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.liquibase</groupId>
+                    <artifactId>liquibase-maven-plugin</artifactId>
+                    <version>${liquibase.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.graalvm.buildtools</groupId>
                     <artifactId>native-maven-plugin</artifactId>
                     <version>${native.maven.plugin.version}</version>
@@ -243,6 +266,82 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>3.1.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.0.0</version>
+                    <executions>
+                        <execution>
+                            <id>add-source</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>add-source</goal>
+                            </goals>
+                            <configuration>
+                                <sources>
+                                    <source>${project.basedir}/src/main/proto</source>
+                                    <source>
+                                        ${project.basedir}/target/generated-sources/protobuf/grpc-java
+                                    </source>
+                                    <source>
+                                        ${project.basedir}/target/generated-sources/protobuf/java
+                                    </source>
+                                    <source>
+                                        ${project.basedir}/target/generated-sources/jooq
+                                    </source>
+                                </sources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>add-test-source</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>add-test-source</goal>
+                            </goals>
+                            <configuration>
+                                <sources>
+                                    <source>${project.basedir}/src/test/proto</source>
+                                    <source>
+                                        ${project.basedir}/target/generated-test-sources/protobuf/grpc-java
+                                    </source>
+                                    <source>
+                                        ${project.basedir}/target/generated-test-sources/protobuf/java
+                                    </source>
+                                    <source>
+                                        ${project.basedir}/target/generated-test-sources/jooq
+                                    </source>
+                                </sources>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <executions>
+                        <execution>
+                            <id>satisfy-liquibase</id>
+                            <phase>generate-sources</phase>
+                            <configuration>
+                                <target>
+                                    <mkdir
+                                            dir="${project.build.directory}/test-classes"/>
+                                    <mkdir
+                                            dir="${project.build.directory}/classes"/>
+                                </target>
+                            </configuration>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.jooq</groupId>
+                    <artifactId>jooq-codegen-maven</artifactId>
+                    <version>${jooq.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

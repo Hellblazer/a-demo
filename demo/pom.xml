@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>com.salesforce.apollo</groupId>
-            <artifactId>fireflies</artifactId>
+            <artifactId>model</artifactId>
         </dependency>
 
         <!-- Test only dependencies below this line -->
