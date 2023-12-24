@@ -8,11 +8,9 @@
     <artifactId>a-demo.app</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>demo</module>
-        <module>demo-image</module>
-        <module>demo-native</module>
+        <module>sky-image</module>
+        <module>sky-native</module>
         <module>nut</module>
-        <module>grpc</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
 
@@ -22,6 +20,8 @@
         <jooq.version>3.17.2</jooq.version>
         <liquibase.version>4.8.0</liquibase.version>
         <jackson.version>2.15.2</jackson.version>
+        <grpc.version>1.58.0</grpc.version>
+        <protobuf.version>3.24.3</protobuf.version>
         <junit.version>5.9.1</junit.version>
         <slf4j.version>2.0.3</slf4j.version>
         <version.java>21</version.java>
@@ -63,12 +63,17 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>demo</artifactId>
+                <artifactId>sky-image</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>demo-native</artifactId>
+                <artifactId>sky-native</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nut</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -342,6 +347,30 @@
                     <groupId>org.jooq</groupId>
                     <artifactId>jooq-codegen-maven</artifactId>
                     <version>${jooq.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.xolstice.maven.plugins</groupId>
+                    <artifactId>protobuf-maven-plugin</artifactId>
+                    <version>0.6.1</version>
+                    <configuration>
+                        <protocArtifact>
+                            com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
+                        </protocArtifact>
+                        <pluginId>grpc-java</pluginId>
+                        <pluginArtifact>
+                            io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}
+                        </pluginArtifact>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>compile</goal>
+                                <goal>compile-custom</goal>
+                                <goal>test-compile</goal>
+                                <goal>test-compile-custom</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

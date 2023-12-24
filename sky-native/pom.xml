@@ -9,12 +9,13 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>grpc</artifactId>
+    <artifactId>sky-native</artifactId>
 
-    <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.hellblazer.a-demo</groupId>
+            <artifactId>nut</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

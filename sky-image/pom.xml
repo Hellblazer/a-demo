@@ -9,12 +9,12 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>demo-image</artifactId>
+    <artifactId>sky-image</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.hellblazer.a-demo</groupId>
-            <artifactId>demo-native</artifactId>
+            <artifactId>sky-native</artifactId>
         </dependency>
     </dependencies>
 

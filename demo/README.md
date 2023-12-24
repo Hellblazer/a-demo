@@ -1,2 +1,0 @@
-# Apollo Large Scale Demo
-
