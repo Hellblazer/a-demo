@@ -49,7 +49,7 @@ public class Sky extends ProcessDomain {
     @Override
     protected Transaction migrations() {
         Map<Path, URL> resources = new HashMap<>();
-//        resources.put(of("/schema/nut.xml"), Sky.class.getResource("/schema/nut.xml"));
+        resources.put(of("/schema/nut.xml"), Sky.class.getResource("/schema/nut.xml"));
         return transactionOf(Txn.newBuilder()
                                 .setMigration(Migration.newBuilder()
                                                        .setUpdate(Mutator.changeLog(resources, "/schema/nut.xml"))
