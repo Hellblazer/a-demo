@@ -178,7 +178,7 @@
                         </database>
                         <generate></generate>
                         <target>
-                            <packageName>com.salesforce.apollo.model.schema</packageName>
+                            <packageName>com.hellblazer.nut.schema</packageName>
                             <directory>target/generated-sources/jooq</directory>
                         </target>
                     </generator>
@@ -187,6 +187,55 @@
         </plugins>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.0.0</version>
+                    <executions>
+                        <execution>
+                            <id>add-source</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>add-source</goal>
+                            </goals>
+                            <configuration>
+                                <sources>
+                                    <source>${project.basedir}/src/main/proto</source>
+                                    <source>
+                                        ${project.basedir}/target/generated-sources/protobuf/grpc-java
+                                    </source>
+                                    <source>
+                                        ${project.basedir}/target/generated-sources/protobuf/java
+                                    </source>
+                                    <source>
+                                        ${project.basedir}/target/generated-sources/jooq
+                                    </source>
+                                </sources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>add-test-source</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>add-test-source</goal>
+                            </goals>
+                            <configuration>
+                                <sources>
+                                    <source>${project.basedir}/src/test/proto</source>
+                                    <source>
+                                        ${project.basedir}/target/generated-test-sources/protobuf/grpc-java
+                                    </source>
+                                    <source>
+                                        ${project.basedir}/target/generated-test-sources/protobuf/java
+                                    </source>
+                                    <source>
+                                        ${project.basedir}/target/generated-test-sources/jooq
+                                    </source>
+                                </sources>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
                 <plugin>
                     <groupId>org.liquibase</groupId>
                     <artifactId>liquibase-maven-plugin</artifactId>
@@ -231,7 +280,7 @@
                             </database>
                             <generate></generate>
                             <target>
-                                <packageName>com.salesforce.apollo.delphinius.schema</packageName>
+                                <packageName>com.hellblazer.nut.schema</packageName>
                                 <directory>target/generated-sources/jooq</directory>
                             </target>
                         </generator>

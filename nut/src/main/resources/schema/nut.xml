@@ -27,7 +27,7 @@
         <createTable tableName="storage"
                      schemaName="nut">
             <column name="object" type="INT8" />
-            <column name="value" type="BINARY(1048576)">
+            <column name="value" type="VARBINARY">
                 <constraints nullable="false"/>
             </column>
         </createTable>
