@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.hellblazer.a-demo</groupId>
-    <artifactId>a-demo.app</artifactId>
+    <groupId>com.hellblazer.sky</groupId>
+    <artifactId>sky.app</artifactId>
     <packaging>pom</packaging>
     <modules>
         <module>sky-image</module>
