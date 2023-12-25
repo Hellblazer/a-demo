@@ -21,6 +21,7 @@ package com.hellblazer.nut;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.choam.proto.Transaction;
 import com.salesforce.apollo.cryptography.Digest;
+import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
 import com.salesforce.apollo.model.ProcessDomain;
 import com.salesforce.apollo.state.Mutator;

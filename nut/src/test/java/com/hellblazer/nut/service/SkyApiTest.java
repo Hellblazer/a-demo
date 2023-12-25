@@ -27,8 +27,10 @@ public class SkyApiTest {
                                                                                               "sky-test.yaml"));
 
     @Test
-    void smokin() {
+    void smokin() throws Exception {
         Client client = EXT.client();
+
+        Thread.sleep(1_000);
 
         Response response = client.target(String.format("http://localhost:%d/login", EXT.getLocalPort()))
                                   .request()

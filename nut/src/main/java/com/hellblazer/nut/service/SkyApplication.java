@@ -63,6 +63,7 @@ public class SkyApplication extends Application<SkyConfiguration> {
     private final ControlledIdentifierMember member;
     private       Sky                        node;
     private       MtlsServer                 mtlsServer;
+    private       Router                     communications;
 
     public SkyApplication() {
         stereotomy = new StereotomyImpl(new MemKeyStore(), new MemKERL(DigestAlgorithm.DEFAULT), new SecureRandom());
@@ -80,9 +81,9 @@ public class SkyApplication extends Application<SkyConfiguration> {
                                                      CertificateValidator.NONE, resolver);
         Function<Member, ClientContextSupplier> clientContextSupplier = null;
         mtlsServer = new MtlsServer(member, ep, clientContextSupplier, serverContextSupplier(certWithKey));
-        Router comms = mtlsServer.router(configuration.connectionCache);
+        communications = mtlsServer.router(configuration.connectionCache);
         var runtime = Parameters.RuntimeParameters.newBuilder()
-                                                  .setCommunications(comms)
+                                                  .setCommunications(communications)
                                                   .setContext(Context.newBuilder()
                                                                      .setBias(3)
                                                                      .setpByz(configuration.probabilityByzantine)
@@ -90,9 +91,13 @@ public class SkyApplication extends Application<SkyConfiguration> {
         node = new Sky(digest(configuration.group), member, configuration.params, configuration.dbURL,
                        configuration.checkpointBaseDir, runtime, configuration.endpoint,
                        com.salesforce.apollo.fireflies.Parameters.newBuilder(), validator);
-        environment.jersey().register(new OracleResource(node.getDelphi(), Duration.ofSeconds(2)));
+        environment.jersey().register(new AdminResource(node.getDelphi(), Duration.ofSeconds(2)));
         environment.jersey().register(new Storage(node));
+        environment.jersey().register(new AssertionResource(node.getDelphi(), Duration.ofSeconds(2)));
         environment.healthChecks().register("sky", new SkyHealthCheck());
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
+        communications.start();
+        node.start();
     }
 
     private ServerContextSupplier serverContextSupplier(CertificateWithPrivateKey certWithKey) {
@@ -112,5 +117,14 @@ public class SkyApplication extends Application<SkyConfiguration> {
                                                              .getIdentifier()).getDigest();
             }
         };
+    }
+
+    private void shutdown() {
+        if (node != null) {
+            node.stop();
+        }
+        if (communications != null) {
+            communications.close(Duration.ofMinutes(1));
+        }
     }
 }

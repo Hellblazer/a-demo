@@ -36,22 +36,22 @@ import java.util.stream.Stream;
 /**
  * @author hal.hildebrand
  */
-@Path("/oracle")
+@Path("/admin")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class OracleResource {
+public class AdminResource {
 
     private final Oracle   oracle;
     private final Duration timeout;
 
-    public OracleResource(Oracle oracle, Duration timeout) {
+    public AdminResource(Oracle oracle, Duration timeout) {
         this.oracle = oracle;
         this.timeout = timeout;
     }
 
-    @PUT
+    @POST
     @Timed
-    @Path("admin/add/assertion")
+    @Path("assertion/add")
     public void add(Assertion assertion) {
         try {
             oracle.add(assertion).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -64,9 +64,9 @@ public class OracleResource {
         }
     }
 
-    @PUT
+    @POST
     @Timed
-    @Path("admin/add/namespace")
+    @Path("namespace/add")
     public void add(Namespace namespace) {
         try {
             oracle.add(namespace).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -79,9 +79,9 @@ public class OracleResource {
         }
     }
 
-    @PUT
+    @POST
     @Timed
-    @Path("admin/add/object")
+    @Path("object/add")
     public void add(Object object) {
         try {
             oracle.add(object).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -94,9 +94,9 @@ public class OracleResource {
         }
     }
 
-    @PUT
+    @POST
     @Timed
-    @Path("admin/add/relation")
+    @Path("relation/add")
     public void add(Relation relation) {
         try {
             oracle.add(relation).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -109,9 +109,9 @@ public class OracleResource {
         }
     }
 
-    @PUT
+    @POST
     @Timed
-    @Path("admin/add/subject")
+    @Path("subject/add")
     public void add(Subject subject) {
         try {
             oracle.add(subject).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -126,18 +126,7 @@ public class OracleResource {
 
     @POST
     @Timed
-    @Path("check")
-    public boolean check(Assertion assertion) {
-        try {
-            return oracle.check(assertion);
-        } catch (SQLException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @DELETE
-    @Timed
-    @Path("admin/delete/assertion")
+    @Path("assertion/delete")
     public void delete(Assertion assertion) {
         try {
             oracle.delete(assertion).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -150,9 +139,9 @@ public class OracleResource {
         }
     }
 
-    @DELETE
+    @POST
     @Timed
-    @Path("admin/delete/namespace")
+    @Path("namespace/delete")
     public void delete(Namespace namespace) {
         try {
             oracle.delete(namespace).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -165,9 +154,9 @@ public class OracleResource {
         }
     }
 
-    @DELETE
+    @POST
     @Timed
-    @Path("admin/delete/object")
+    @Path("object/delete")
     public void delete(Object object) {
         try {
             oracle.delete(object).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -180,9 +169,9 @@ public class OracleResource {
         }
     }
 
-    @DELETE
+    @POST
     @Timed
-    @Path("admin/delete/relation")
+    @Path("relation/delete")
     public void delete(Relation relation) {
         try {
             oracle.delete(relation).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -195,9 +184,9 @@ public class OracleResource {
         }
     }
 
-    @DELETE
+    @POST
     @Timed
-    @Path("admin/delete/subject")
+    @Path("subject/delete")
     public void delete(Subject subject) {
         try {
             oracle.delete(subject).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -212,7 +201,7 @@ public class OracleResource {
 
     @POST
     @Timed
-    @Path("admin/expand/object")
+    @Path("expand/object")
     public List<Subject> expand(Object object) {
         try {
             return oracle.expand(object);
@@ -223,7 +212,7 @@ public class OracleResource {
 
     @POST
     @Timed
-    @Path("admin/expand/objects")
+    @Path("expand/objects")
     public List<Subject> expand(PredicateObject predicateObject) {
         try {
             return oracle.expand(predicateObject.predicate, predicateObject.object);
@@ -234,7 +223,18 @@ public class OracleResource {
 
     @POST
     @Timed
-    @Path("admin/expand/subjects")
+    @Path("expand/subject")
+    public List<Object> expand(Subject subject) {
+        try {
+            return oracle.expand(subject);
+        } catch (SQLException e) {
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @POST
+    @Timed
+    @Path("expand/subjects")
     public List<Object> expand(PredicateSubject predicateSubject) {
         try {
             return oracle.expand(predicateSubject.predicate, predicateSubject.subject);
@@ -245,19 +245,8 @@ public class OracleResource {
 
     @POST
     @Timed
-    @Path("admin/expand/subject")
-    public List<Object> expand(Subject subject) {
-        try {
-            return oracle.expand(subject);
-        } catch (SQLException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PUT
-    @Timed
-    @Path("admin/map/object")
-    public void mapObject(Assocation<Object> association) {
+    @Path("map/object")
+    public void mapObject(Association<Object> association) {
         try {
             oracle.map(association.a, association.b).get();
         } catch (InterruptedException e) {
@@ -267,25 +256,10 @@ public class OracleResource {
         }
     }
 
-    @PUT
+    @POST
     @Timed
-    @Path("admin/map/relation")
-    public void mapRelation(Assocation<Relation> association) {
-        try {
-            oracle.map(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
-        } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
-        } catch (TimeoutException e) {
-            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
-        }
-    }
-
-    @PUT
-    @Timed
-    @Path("admin/map/subject")
-    public void mapSubject(Assocation<Subject> association) {
+    @Path("map/relation")
+    public void mapRelation(Association<Relation> association) {
         try {
             oracle.map(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -299,7 +273,22 @@ public class OracleResource {
 
     @POST
     @Timed
-    @Path("admin/read/objects/subjects")
+    @Path("map/subject")
+    public void mapSubject(Association<Subject> association) {
+        try {
+            oracle.map(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
+        } catch (ExecutionException e) {
+            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+        } catch (TimeoutException e) {
+            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
+        }
+    }
+
+    @POST
+    @Timed
+    @Path("read/objects/subjects")
     public List<Subject> read(PredicateObjects predicateObjects) {
         try {
             return oracle.read(predicateObjects.predicate,
@@ -311,14 +300,14 @@ public class OracleResource {
 
     @POST
     @Timed
-    @Path("admin/read/subjects/objects")
+    @Path("read/subjects/objects")
     public Response read(PredicateSubject predicateSubject) {
         return null;
     }
 
     @POST
     @Timed
-    @Path("admin/read/subjects")
+    @Path("read/subjects")
     public List<Subject> readObjects(List<Object> objects) {
         try {
             return oracle.read(objects.toArray(new Object[objects.size()]));
@@ -329,7 +318,7 @@ public class OracleResource {
 
     @POST
     @Timed
-    @Path("admin/read/objects")
+    @Path("read/objects")
     public List<Object> readSubjects(List<Subject> subjects) {
         try {
             return oracle.read(subjects.toArray(new Subject[subjects.size()]));
@@ -338,40 +327,10 @@ public class OracleResource {
         }
     }
 
-    @DELETE
+    @POST
     @Timed
-    @Path("admin/remove/object")
-    public void removeObjectMapping(Assocation<Object> association) {
-        try {
-            oracle.remove(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
-        } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
-        } catch (TimeoutException e) {
-            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
-        }
-    }
-
-    @DELETE
-    @Timed
-    @Path("admin/remove/relation")
-    public void removeRelationMapping(Assocation<Relation> association) {
-        try {
-            oracle.remove(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
-        } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
-        } catch (TimeoutException e) {
-            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
-        }
-    }
-
-    @DELETE
-    @Timed
-    @Path("admin/remove/subject")
-    public void removeSubjectMapping(Assocation<Subject> association) {
+    @Path("map/object/remove")
+    public void removeObjectMapping(Association<Object> association) {
         try {
             oracle.remove(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -385,7 +344,37 @@ public class OracleResource {
 
     @POST
     @Timed
-    @Path("admin/subjects")
+    @Path("map/relation/remove")
+    public void removeRelationMapping(Association<Relation> association) {
+        try {
+            oracle.remove(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
+        } catch (ExecutionException e) {
+            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+        } catch (TimeoutException e) {
+            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
+        }
+    }
+
+    @POST
+    @Timed
+    @Path("map/subject/remove")
+    public void removeSubjectMapping(Association<Subject> association) {
+        try {
+            oracle.remove(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
+        } catch (ExecutionException e) {
+            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+        } catch (TimeoutException e) {
+            throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
+        }
+    }
+
+    @POST
+    @Timed
+    @Path("subjects")
     public Stream<Subject> subjects(PredicateObject predicateObject) {
         try {
             return oracle.subjects(predicateObject.predicate, predicateObject.object);
@@ -397,7 +386,7 @@ public class OracleResource {
     public record PredicateObject(Relation predicate, Object object) {
     }
 
-    public record Assocation<T>(T a, T b) {
+    public record Association<T>(T a, T b) {
     }
 
     public record PredicateObjects(Relation predicate, List<Object> objects) {
