@@ -282,9 +282,18 @@ public class SkyTest {
              .start(() -> started.get().countDown(), gossipDuration, seeds,
                     Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory()));
         });
-        assertTrue(started.get().await(30, TimeUnit.SECONDS), "could not start views");
+        assertTrue(started.get().await(30, TimeUnit.SECONDS), "could not start views: " + (domains.stream()
+                                                                                                  .filter(
+                                                                                                  c -> !c.active())
+                                                                                                  .map(
+                                                                                                  d -> d.logState())
+                                                                                                  .toList()));
 
-        assertTrue(countdown.await(30, TimeUnit.SECONDS), "Could not join all members in all views");
+        var joined = countdown.await(30, TimeUnit.SECONDS);
+        assertTrue(joined, "Could not join all members in all views: " + (domains.stream()
+                                                                                 .filter(c -> !c.active())
+                                                                                 .map(d -> d.logState())
+                                                                                 .toList()));
 
         assertTrue(Utils.waitForCondition(60_000, 1_000, () -> {
             return domains.stream().filter(d -> d.getFoundation().getContext().activeCount() != domains.size()).count()
