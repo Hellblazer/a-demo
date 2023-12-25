@@ -1,3 +1,5 @@
+
+
 logging:
   level: INFO
   appenders:
@@ -8,3 +10,4 @@ logging:
       timeZone: UTC
       target: stdout
       logFormat: "%-5p [%d{ISO8601,UTC}] %c: %m%n%rEx"
+checkpointBaseDir: "target/myTestCpDir"

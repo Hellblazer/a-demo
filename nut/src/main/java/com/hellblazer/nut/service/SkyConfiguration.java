@@ -24,11 +24,11 @@ import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.utils.Utils;
 import io.dropwizard.core.Configuration;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.UUID;
 
 import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
 
@@ -45,7 +45,7 @@ public class SkyConfiguration extends Configuration {
     @JsonProperty
     public String                        group                = qb64(DigestAlgorithm.DEFAULT.digest("SLACK"));
     @JsonProperty
-    public Path                          checkpointBaseDir    = Path.of(".", UUID.randomUUID().toString());
+    public Path                          checkpointBaseDir    = new File(System.getProperty("user.dir", ".")).toPath();
     @JsonProperty
     public String                        dbURL                = "jdbc:h2:mem:";
     @JsonProperty
