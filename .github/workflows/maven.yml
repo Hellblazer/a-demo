@@ -20,4 +20,4 @@ jobs:
         with:
           maven-version: 3.9.4
       - name: Build with Maven
-        run: mvn -batch-mode clean install -DskipTests --file pom.xml
+        run: mvn -batch-mode clean install --file pom.xml
