@@ -270,14 +270,14 @@ public class SkyTest {
         // start seed
         final var started = new AtomicReference<>(new CountDownLatch(1));
 
-        domains.get(0)
+        domains.getFirst()
                .getFoundation()
                .start(() -> started.get().countDown(), gossipDuration, Collections.emptyList(),
                       Executors.newScheduledThreadPool(2, Thread.ofVirtual().factory()));
         assertTrue(started.get().await(10, TimeUnit.SECONDS), "Cannot start up kernel");
 
         started.set(new CountDownLatch(CARDINALITY - 1));
-        domains.subList(1, domains.size()).forEach(d -> {
+        domains.subList(1, domains.size()).parallelStream().forEach(d -> {
             d.getFoundation()
              .start(() -> started.get().countDown(), gossipDuration, seeds,
                     Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory()));
@@ -297,7 +297,7 @@ public class SkyTest {
         + " members");
         System.out.println("******");
         System.out.println();
-        domains.forEach(n -> n.start());
+        domains.parallelStream().forEach(n -> n.start());
         final var activated = Utils.waitForCondition(60_000, 1_000,
                                                      () -> domains.stream().filter(c -> !c.active()).count() == 0);
         assertTrue(activated, "Domains did not become active : " + (domains.stream()
