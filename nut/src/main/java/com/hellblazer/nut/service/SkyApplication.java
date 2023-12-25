@@ -92,7 +92,7 @@ public class SkyApplication extends Application<SkyConfiguration> {
                        configuration.checkpointBaseDir, runtime, configuration.endpoint,
                        com.salesforce.apollo.fireflies.Parameters.newBuilder(), validator);
         environment.jersey().register(new AdminResource(node.getDelphi(), Duration.ofSeconds(2)));
-        environment.jersey().register(new Storage(node));
+        environment.jersey().register(new StorageResource(node));
         environment.jersey().register(new AssertionResource(node.getDelphi(), Duration.ofSeconds(2)));
         environment.healthChecks().register("sky", new SkyHealthCheck());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));

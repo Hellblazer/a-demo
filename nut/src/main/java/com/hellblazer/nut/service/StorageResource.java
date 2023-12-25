@@ -32,11 +32,11 @@ import java.io.OutputStream;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 
-public class Storage {
+public class StorageResource {
 
     private final Sky sky;
 
-    public Storage(Sky sky) {
+    public StorageResource(Sky sky) {
         this.sky = sky;
     }
 
