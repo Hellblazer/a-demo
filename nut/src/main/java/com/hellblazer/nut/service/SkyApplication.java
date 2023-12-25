@@ -30,15 +30,19 @@ import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
 import com.salesforce.apollo.fireflies.View;
-import com.salesforce.apollo.membership.Context;
+import com.salesforce.apollo.gorgoneion.Gorgoneion;
+import com.salesforce.apollo.gorgoneion.proto.SignedAttestation;
 import com.salesforce.apollo.membership.Member;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
-import com.salesforce.apollo.stereotomy.EventValidation;
 import com.salesforce.apollo.stereotomy.Stereotomy;
 import com.salesforce.apollo.stereotomy.StereotomyImpl;
+import com.salesforce.apollo.stereotomy.StereotomyValidator;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.mem.MemKERL;
 import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
+import com.salesforce.apollo.stereotomy.services.grpc.StereotomyMetrics;
+import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
+import com.salesforce.apollo.thoth.DirectPublisher;
 import io.dropwizard.core.Application;
 import io.dropwizard.core.setup.Environment;
 import io.netty.handler.ssl.ClientAuth;
@@ -50,6 +54,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
@@ -62,8 +67,10 @@ public class SkyApplication extends Application<SkyConfiguration> {
     private final Stereotomy                 stereotomy;
     private final ControlledIdentifierMember member;
     private       Sky                        node;
-    private       MtlsServer                 mtlsServer;
-    private       Router                     communications;
+    private       MtlsServer                 clusterServer;
+    private       Router                     clusterComms;
+    private       Gorgoneion                 gorgoneion;
+    private       CertificateWithPrivateKey  certWithKey;
 
     public SkyApplication() {
         stereotomy = new StereotomyImpl(new MemKeyStore(), new MemKERL(DigestAlgorithm.DEFAULT), new SecureRandom());
@@ -72,32 +79,39 @@ public class SkyApplication extends Application<SkyConfiguration> {
 
     @Override
     public void run(SkyConfiguration configuration, Environment environment) throws Exception {
-
-        CertificateWithPrivateKey certWithKey = member.getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
-                                                                                    SignatureAlgorithm.DEFAULT);
-        var validator = EventValidation.NONE;
+        certWithKey = member.getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
+                                                          SignatureAlgorithm.DEFAULT);
         Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
-        EndpointProvider ep = new StandardEpProvider(configuration.endpoint, ClientAuth.REQUIRE,
-                                                     CertificateValidator.NONE, resolver);
-        Function<Member, ClientContextSupplier> clientContextSupplier = null;
-        mtlsServer = new MtlsServer(member, ep, clientContextSupplier, serverContextSupplier(certWithKey));
-        communications = mtlsServer.router(configuration.connectionCache);
+        var certValidator = new DelegatedCertificateValidator();
+        EndpointProvider ep = new StandardEpProvider(configuration.clusterEndpoint, ClientAuth.REQUIRE, certValidator,
+                                                     resolver);
+        clusterServer = new MtlsServer(member, ep, clientContextSupplier(), serverContextSupplier(certWithKey));
+        clusterComms = clusterServer.router(configuration.connectionCache);
         var runtime = Parameters.RuntimeParameters.newBuilder()
-                                                  .setCommunications(communications)
-                                                  .setContext(Context.newBuilder()
-                                                                     .setBias(3)
-                                                                     .setpByz(configuration.probabilityByzantine)
-                                                                     .build());
+                                                  .setCommunications(clusterComms)
+                                                  .setContext(configuration.context.build());
         node = new Sky(digest(configuration.group), member, configuration.params, configuration.dbURL,
-                       configuration.checkpointBaseDir, runtime, configuration.endpoint,
-                       com.salesforce.apollo.fireflies.Parameters.newBuilder(), validator);
+                       configuration.checkpointBaseDir, runtime, configuration.clusterEndpoint,
+                       com.salesforce.apollo.fireflies.Parameters.newBuilder(), null);
+        certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
+        var k = node.getDht().asKERL();
         environment.jersey().register(new AdminResource(node.getDelphi(), Duration.ofSeconds(2)));
         environment.jersey().register(new StorageResource(node));
         environment.jersey().register(new AssertionResource(node.getDelphi(), Duration.ofSeconds(2)));
         environment.healthChecks().register("sky", new SkyHealthCheck());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
-        communications.start();
+        var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k).setVerifier(sa -> verify(sa));
+        gorgoneion = new Gorgoneion(gorgoneionParameters.build(), member, runtime.getContext(),
+                                    new DirectPublisher(new ProtoKERLAdapter(k)), clusterComms,
+                                    Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory()), null,
+                                    clusterComms);
+        clusterComms.start();
         node.start();
+    }
+
+    private Function<Member, ClientContextSupplier> clientContextSupplier() {
+        return m -> (ClientContextSupplier) (clientAuth, alias, validator, tlsVersion) -> MtlsServer.forClient(
+        clientAuth, alias, certWithKey.getX509Certificate(), certWithKey.getPrivateKey(), validator);
     }
 
     private ServerContextSupplier serverContextSupplier(CertificateWithPrivateKey certWithKey) {
@@ -123,8 +137,12 @@ public class SkyApplication extends Application<SkyConfiguration> {
         if (node != null) {
             node.stop();
         }
-        if (communications != null) {
-            communications.close(Duration.ofMinutes(1));
+        if (clusterComms != null) {
+            clusterComms.close(Duration.ofMinutes(1));
         }
+    }
+
+    private boolean verify(SignedAttestation signedAttestation) {
+        return true;
     }
 }

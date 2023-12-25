@@ -21,6 +21,8 @@ import com.salesforce.apollo.archipelago.ServerConnectionCache;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
+import com.salesforce.apollo.membership.Context;
+import com.salesforce.apollo.membership.Member;
 import com.salesforce.apollo.utils.Utils;
 import io.dropwizard.core.Configuration;
 
@@ -40,32 +42,46 @@ public class SkyConfiguration extends Configuration {
     "Give me food or give me slack or kill me".getBytes());
 
     @JsonProperty
-    public InetSocketAddress             endpoint             = new InetSocketAddress(InetAddress.getLoopbackAddress(),
-                                                                                      Utils.allocatePort());
+    public InetSocketAddress clusterEndpoint = new InetSocketAddress(
+    InetAddress.getLoopbackAddress(), Utils.allocatePort());
     @JsonProperty
-    public String                        group                = qb64(DigestAlgorithm.DEFAULT.digest("SLACK"));
+    public String            group           = qb64(
+    DigestAlgorithm.DEFAULT.digest("SLACK"));
     @JsonProperty
-    public Path                          checkpointBaseDir    = new File(System.getProperty("user.dir", ".")).toPath();
+    public Path                                                checkpointBaseDir    = new File(
+    System.getProperty("user.dir", ".")).toPath();
     @JsonProperty
-    public String                        dbURL                = "jdbc:h2:mem:";
+    public String                                              dbURL                = "jdbc:h2:mem:";
     @JsonProperty
-    public Parameters.Builder            params               = Parameters.newBuilder()
-                                                                          .setGenesisViewId(GENESIS_VIEW_ID)
-                                                                          .setGossipDuration(Duration.ofMillis(50))
-                                                                          .setProducer(
-                                                                          Parameters.ProducerParameters.newBuilder()
-                                                                                                       .setGossipDuration(
-                                                                                                       Duration.ofMillis(
-                                                                                                       50))
-                                                                                                       .setBatchInterval(
-                                                                                                       Duration.ofMillis(
-                                                                                                       100))
-                                                                                                       .setMaxBatchByteSize(
-                                                                                                       1024 * 1024)
-                                                                                                       .setMaxBatchCount(
-                                                                                                       3000)
-                                                                                                       .build())
-                                                                          .setCheckpointBlockDelta(200);
-    public ServerConnectionCache.Builder connectionCache      = ServerConnectionCache.newBuilder().setTarget(30);
-    public double                        probabilityByzantine = 0.1;
+    public Parameters.Builder                                  params               = Parameters.newBuilder()
+                                                                                                .setGenesisViewId(
+                                                                                                GENESIS_VIEW_ID)
+                                                                                                .setGossipDuration(
+                                                                                                Duration.ofMillis(50))
+                                                                                                .setProducer(
+                                                                                                Parameters.ProducerParameters.newBuilder()
+                                                                                                                             .setGossipDuration(
+                                                                                                                             Duration.ofMillis(
+                                                                                                                             50))
+                                                                                                                             .setBatchInterval(
+                                                                                                                             Duration.ofMillis(
+                                                                                                                             100))
+                                                                                                                             .setMaxBatchByteSize(
+                                                                                                                             1024
+                                                                                                                             * 1024)
+                                                                                                                             .setMaxBatchCount(
+                                                                                                                             3000)
+                                                                                                                             .build())
+                                                                                                .setCheckpointBlockDelta(
+                                                                                                200);
+    @JsonProperty
+    public ServerConnectionCache.Builder                       connectionCache      = ServerConnectionCache.newBuilder()
+                                                                                                           .setTarget(
+                                                                                                           30);
+    @JsonProperty
+    public Context.Builder<Member>                             context              = Context.newBuilder()
+                                                                                             .setBias(3)
+                                                                                             .setpByz(0.1);
+    @JsonProperty
+    public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
 }

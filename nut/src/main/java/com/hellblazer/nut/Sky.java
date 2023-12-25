@@ -21,13 +21,12 @@ package com.hellblazer.nut;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.choam.proto.Transaction;
 import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
 import com.salesforce.apollo.model.ProcessDomain;
 import com.salesforce.apollo.state.Mutator;
 import com.salesforce.apollo.state.proto.Migration;
 import com.salesforce.apollo.state.proto.Txn;
-import com.salesforce.apollo.stereotomy.EventValidation;
+import com.salesforce.apollo.stereotomy.services.grpc.StereotomyMetrics;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -43,8 +42,8 @@ import static java.nio.file.Path.of;
 public class Sky extends ProcessDomain {
     public Sky(Digest group, ControlledIdentifierMember member, Parameters.Builder builder, String dbURL,
                Path checkpointBaseDir, Parameters.RuntimeParameters.Builder runtime, InetSocketAddress endpoint,
-               com.salesforce.apollo.fireflies.Parameters.Builder ff, EventValidation eventValidation) {
-        super(group, member, builder, dbURL, checkpointBaseDir, runtime, endpoint, ff, eventValidation);
+               com.salesforce.apollo.fireflies.Parameters.Builder ff, StereotomyMetrics stereotomyMetrics) {
+        super(group, member, builder, dbURL, checkpointBaseDir, runtime, endpoint, ff, stereotomyMetrics);
     }
 
     @Override
