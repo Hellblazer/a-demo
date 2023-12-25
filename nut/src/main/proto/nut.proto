@@ -5,10 +5,33 @@ option java_package = "com.hellblazer.nut.proto";
 option java_outer_classname = "NutProto";
 option objc_class_prefix = "Nut";
 import "google/protobuf/any.proto";
-import "stereotomy.proto";
 
 package com.hellblazer.nut;
 
 service Nut {
+  rpc get(GetRequest) returns(GetResponse) {}
+}
+
+message GetRequest {
+
+}
+
+message GetResponse {
+
+}
+
+message PutRequest {
+
+}
+
+message PutResponse {
+
+}
+
+message DeleteRequest {
+
+}
+
+message DeleteResponse {
 
 }

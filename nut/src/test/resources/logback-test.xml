@@ -10,16 +10,6 @@
         </encoder>
     </appender>
 
-    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>ff.log</file>
-        <append>false</append>
-        <encoder>
-            <Pattern>
-               %d{mm:ss.SSS} - %msg%n
-            </Pattern>
-        </encoder>
-    </appender>
-
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>

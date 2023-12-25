@@ -18,6 +18,7 @@
         <apollo.version>0.0.1-SNAPSHOT</apollo.version>
         <logback.version>1.4.12</logback.version>
         <jooq.version>3.17.2</jooq.version>
+        <dropwizard.version>4.0.0-beta.3</dropwizard.version>
         <liquibase.version>4.8.0</liquibase.version>
         <jackson.version>2.15.2</jackson.version>
         <grpc.version>1.58.0</grpc.version>
@@ -106,6 +107,13 @@
                 <artifactId>jooq-codegen</artifactId>
                 <version>${jooq.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-dependencies</artifactId>
+                <version>${dropwizard.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <!-- Test only dependencies below this line -->
             <dependency>
@@ -119,21 +127,6 @@
                 <artifactId>mockito-core</artifactId>
                 <version>4.8.1</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${logback.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>${logback.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-access</artifactId>
-                <version>${logback.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -263,9 +256,18 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>3.2.1</version>
-                    <configuration>
-                        <attach>false</attach>
-                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                            <configuration>
+                                <attach>true</attach>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
