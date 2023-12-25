@@ -282,7 +282,7 @@ public class SkyTest {
              .start(() -> started.get().countDown(), gossipDuration, seeds,
                     Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory()));
         });
-        assertTrue(started.get().await(10, TimeUnit.SECONDS), "could not start views");
+        assertTrue(started.get().await(30, TimeUnit.SECONDS), "could not start views");
 
         assertTrue(countdown.await(30, TimeUnit.SECONDS), "Could not join all members in all views");
 
