@@ -43,7 +43,6 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -228,12 +227,15 @@ public class SkyTest {
             var context = new ContextImpl<>(DigestAlgorithm.DEFAULT.getLast(), CARDINALITY, 0.2, 3);
             final var member = new ControlledIdentifierMember(id);
             var localRouter = new LocalServer(prefix, member).router(ServerConnectionCache.newBuilder().setTarget(30));
-            var node = new Sky(group, member, params, "jdbc:h2:mem:", checkpointDirBase,
-                               Parameters.RuntimeParameters.newBuilder()
-                                                           .setFoundation(sealed)
-                                                           .setContext(context)
-                                                           .setCommunications(localRouter), new InetSocketAddress(0),
-                               ffParams, null);
+            var pdParams = new ProcessDomain.ProcessDomainParameters("jdbc:h2:mem:", Duration.ofMinutes(1),
+                                                                     checkpointDirBase, Duration.ofMillis(10), 0.00125,
+                                                                     Duration.ofMinutes(1), 3, 10, 0.1);
+            var node = new Sky(group, member, pdParams, params, Parameters.RuntimeParameters.newBuilder()
+                                                                                            .setFoundation(sealed)
+                                                                                            .setContext(context)
+                                                                                            .setCommunications(
+                                                                                            localRouter),
+                               new InetSocketAddress(0), ffParams, null);
             domains.add(node);
             routers.put(node, localRouter);
             localRouter.start();
@@ -246,7 +248,7 @@ public class SkyTest {
         long then = System.currentTimeMillis();
         final var countdown = new CountDownLatch(domains.size());
         final var seeds = Collections.singletonList(
-        new View.Seed(domains.getFirst().getMember().getEvent().getCoordinates(), new InetSocketAddress(0)));
+        new View.Seed(domains.getFirst().getMember().getEvent(), new InetSocketAddress(0)));
         domains.forEach(d -> {
             var listener = new View.ViewLifecycleListener() {
 
@@ -272,15 +274,12 @@ public class SkyTest {
 
         domains.getFirst()
                .getFoundation()
-               .start(() -> started.get().countDown(), gossipDuration, Collections.emptyList(),
-                      Executors.newScheduledThreadPool(2, Thread.ofVirtual().factory()));
+               .start(() -> started.get().countDown(), gossipDuration, Collections.emptyList());
         assertTrue(started.get().await(10, TimeUnit.SECONDS), "Cannot start up kernel");
 
         started.set(new CountDownLatch(CARDINALITY - 1));
         domains.subList(1, domains.size()).parallelStream().forEach(d -> {
-            d.getFoundation()
-             .start(() -> started.get().countDown(), gossipDuration, seeds,
-                    Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory()));
+            d.getFoundation().start(() -> started.get().countDown(), gossipDuration, seeds);
         });
         assertTrue(started.get().await(30, TimeUnit.SECONDS), "could not start views: " + (domains.stream()
                                                                                                   .filter(

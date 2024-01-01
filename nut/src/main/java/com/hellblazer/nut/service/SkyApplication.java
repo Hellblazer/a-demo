@@ -40,7 +40,6 @@ import com.salesforce.apollo.stereotomy.StereotomyValidator;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.mem.MemKERL;
 import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
-import com.salesforce.apollo.stereotomy.services.grpc.StereotomyMetrics;
 import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
 import com.salesforce.apollo.thoth.DirectPublisher;
 import io.dropwizard.core.Application;
@@ -90,8 +89,8 @@ public class SkyApplication extends Application<SkyConfiguration> {
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.build());
-        node = new Sky(digest(configuration.group), member, configuration.params, configuration.dbURL,
-                       configuration.checkpointBaseDir, runtime, configuration.clusterEndpoint,
+        node = new Sky(digest(configuration.group), member, configuration.processDomainParameters,
+                       configuration.choamParameters, runtime, configuration.clusterEndpoint,
                        com.salesforce.apollo.fireflies.Parameters.newBuilder(), null);
         certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
         var k = node.getDht().asKERL();

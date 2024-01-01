@@ -40,10 +40,10 @@ import static java.nio.file.Path.of;
  * @author hal.hildebrand
  **/
 public class Sky extends ProcessDomain {
-    public Sky(Digest group, ControlledIdentifierMember member, Parameters.Builder builder, String dbURL,
-               Path checkpointBaseDir, Parameters.RuntimeParameters.Builder runtime, InetSocketAddress endpoint,
+    public Sky(Digest group, ControlledIdentifierMember member, ProcessDomain.ProcessDomainParameters params,
+               Parameters.Builder builder, Parameters.RuntimeParameters.Builder runtime, InetSocketAddress endpoint,
                com.salesforce.apollo.fireflies.Parameters.Builder ff, StereotomyMetrics stereotomyMetrics) {
-        super(group, member, builder, dbURL, checkpointBaseDir, runtime, endpoint, ff, stereotomyMetrics);
+        super(group, member, params, builder, runtime, endpoint, ff, stereotomyMetrics);
     }
 
     @Override
