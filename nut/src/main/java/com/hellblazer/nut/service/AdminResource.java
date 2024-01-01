@@ -58,7 +58,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -73,7 +73,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -88,7 +88,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -103,7 +103,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -118,7 +118,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -133,7 +133,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -148,7 +148,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -163,7 +163,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -178,7 +178,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -193,7 +193,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -252,7 +252,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -265,7 +265,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -280,7 +280,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -336,7 +336,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -351,7 +351,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }
@@ -366,7 +366,7 @@ public class AdminResource {
         } catch (InterruptedException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         } catch (ExecutionException e) {
-            throw new WebApplicationException(e.getCause(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(e.getCause(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (TimeoutException e) {
             throw new WebApplicationException(e, Response.Status.REQUEST_TIMEOUT);
         }

@@ -26,7 +26,15 @@
 
         <createTable tableName="storage"
                      schemaName="nut">
-            <column name="object" type="INT8" />
+            <column name="object" type="INT8">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
             <column name="value" type="VARBINARY">
                 <constraints nullable="false"/>
             </column>
@@ -37,6 +45,9 @@
                 baseTableName="storage" baseTableSchemaName="nut"
                 constraintName="storage_object_fk"
                 referencedTableName="object" referencedColumnNames="id"
-                referencedTableSchemaName="delphinius" />
+                referencedTableSchemaName="delphinius"/>
+
+        <addUniqueConstraint columnNames="object, version"
+                             tableName="storage" schemaName="nut"/>
     </changeSet>
 </databaseChangeLog>

@@ -30,8 +30,8 @@ import java.util.stream.Stream;
 public class DelegatedOracle implements Oracle {
     private final Oracle delegate;
 
-    public static Namespace namespace(String name) {
-        return Oracle.namespace(name);
+    public DelegatedOracle(Oracle delegate) {
+        this.delegate = delegate;
     }
 
     @Override
@@ -162,9 +162,5 @@ public class DelegatedOracle implements Oracle {
     @Override
     public Stream<Subject> subjects(Relation predicate, Object object) throws SQLException {
         return delegate.subjects(predicate, object);
-    }
-
-    public DelegatedOracle(Oracle delegate) {
-        this.delegate = delegate;
     }
 }
