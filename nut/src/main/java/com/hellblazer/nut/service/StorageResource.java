@@ -19,12 +19,15 @@ package com.hellblazer.nut.service;
 
 import com.codahale.metrics.annotation.Timed;
 import com.hellblazer.nut.Geb;
-import com.hellblazer.nut.Sky;
+import io.dropwizard.auth.Auth;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
+import java.security.Principal;
+import java.sql.SQLException;
 
 /**
  * @author hal.hildebrand
@@ -44,21 +47,25 @@ public class StorageResource {
     @POST
     @Timed
     @Path("delete")
-    public void delete(Geb.KeyVersion key) {
-
+    public void delete(Geb.KeyVersion key, @Auth Principal principal) {
+        try {
+            geb.delete(key);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @POST
     @Timed
     @Path("get")
-    public String get(Geb.KeyVersion key) {
+    public String get(Geb.KeyVersion key, @Auth Principal principal) {
         return null;
     }
 
     @POST
     @Timed
     @Path("put")
-    public void put(Geb.PutValue value) {
+    public void put(Geb.PutValue value, @Auth Principal principal) {
 
     }
 }

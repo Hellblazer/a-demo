@@ -17,6 +17,7 @@
 
 package com.hellblazer.nut;
 
+import com.macasaet.fernet.Token;
 import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.state.Mutator;
 import org.jooq.DSLContext;
@@ -40,18 +41,18 @@ public class Geb {
         this.mutator = mutator;
     }
 
-    public static byte[] get(DSLContext dslCtx) throws SQLException {
+    public static String get(DSLContext dslCtx) throws SQLException {
         return null;
     }
 
-    public void delete(KeyVersion key) {
+    public void delete(KeyVersion key) throws SQLException {
     }
 
-    public String get(KeyVersion key) {
+    public String get(KeyVersion key)throws SQLException {
         return null;
     }
 
-    public int put(PutValue value) {
+    public int put(PutValue value)throws SQLException {
         return 0;
     }
 

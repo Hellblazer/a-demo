@@ -21,10 +21,12 @@ import com.codahale.metrics.annotation.Timed;
 import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.delphinius.Oracle.Object;
 import com.salesforce.apollo.delphinius.Oracle.*;
+import io.dropwizard.auth.Auth;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.security.Principal;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.List;
@@ -52,7 +54,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("assertion/add")
-    public void add(Assertion assertion) {
+    public void add(Assertion assertion, @Auth Principal principal) {
         try {
             oracle.add(assertion).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -67,7 +69,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("namespace/add")
-    public void add(Namespace namespace) {
+    public void add(Namespace namespace, @Auth Principal principal) {
         try {
             oracle.add(namespace).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -82,7 +84,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("object/add")
-    public void add(Object object) {
+    public void add(Object object, @Auth Principal principal) {
         try {
             oracle.add(object).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -97,7 +99,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("relation/add")
-    public void add(Relation relation) {
+    public void add(Relation relation, @Auth Principal principal) {
         try {
             oracle.add(relation).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -112,7 +114,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("subject/add")
-    public void add(Subject subject) {
+    public void add(Subject subject, @Auth Principal principal) {
         try {
             oracle.add(subject).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -127,7 +129,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("assertion/delete")
-    public void delete(Assertion assertion) {
+    public void delete(Assertion assertion, @Auth Principal principal) {
         try {
             oracle.delete(assertion).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -142,7 +144,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("namespace/delete")
-    public void delete(Namespace namespace) {
+    public void delete(Namespace namespace, @Auth Principal principal) {
         try {
             oracle.delete(namespace).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -157,7 +159,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("object/delete")
-    public void delete(Object object) {
+    public void delete(Object object, @Auth Principal principal) {
         try {
             oracle.delete(object).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -172,7 +174,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("relation/delete")
-    public void delete(Relation relation) {
+    public void delete(Relation relation, @Auth Principal principal) {
         try {
             oracle.delete(relation).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -187,7 +189,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("subject/delete")
-    public void delete(Subject subject) {
+    public void delete(Subject subject, @Auth Principal principal) {
         try {
             oracle.delete(subject).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -202,7 +204,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("expand/object")
-    public List<Subject> expand(Object object) {
+    public List<Subject> expand(Object object, @Auth Principal principal) {
         try {
             return oracle.expand(object);
         } catch (SQLException e) {
@@ -213,7 +215,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("expand/objects")
-    public List<Subject> expand(PredicateObject predicateObject) {
+    public List<Subject> expand(PredicateObject predicateObject, @Auth Principal principal) {
         try {
             return oracle.expand(predicateObject.predicate, predicateObject.object);
         } catch (SQLException e) {
@@ -224,7 +226,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("expand/subject")
-    public List<Object> expand(Subject subject) {
+    public List<Object> expand(Subject subject, @Auth Principal principal) {
         try {
             return oracle.expand(subject);
         } catch (SQLException e) {
@@ -235,7 +237,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("expand/subjects")
-    public List<Object> expand(PredicateSubject predicateSubject) {
+    public List<Object> expand(PredicateSubject predicateSubject, @Auth Principal principal) {
         try {
             return oracle.expand(predicateSubject.predicate, predicateSubject.subject);
         } catch (SQLException e) {
@@ -246,7 +248,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("map/object")
-    public void mapObject(Association<Object> association) {
+    public void mapObject(Association<Object> association, @Auth Principal principal) {
         try {
             oracle.map(association.a, association.b).get();
         } catch (InterruptedException e) {
@@ -259,7 +261,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("map/relation")
-    public void mapRelation(Association<Relation> association) {
+    public void mapRelation(Association<Relation> association, @Auth Principal principal) {
         try {
             oracle.map(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -274,7 +276,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("map/subject")
-    public void mapSubject(Association<Subject> association) {
+    public void mapSubject(Association<Subject> association, @Auth Principal principal) {
         try {
             oracle.map(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -289,7 +291,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("read/objects/subjects")
-    public List<Subject> read(PredicateObjects predicateObjects) {
+    public List<Subject> read(PredicateObjects predicateObjects, @Auth Principal principal) {
         try {
             return oracle.read(predicateObjects.predicate,
                                predicateObjects.objects.toArray(new Object[predicateObjects.objects.size()]));
@@ -301,14 +303,14 @@ public class AdminResource {
     @POST
     @Timed
     @Path("read/subjects/objects")
-    public Response read(PredicateSubject predicateSubject) {
+    public Response read(PredicateSubject predicateSubject, @Auth Principal principal) {
         return null;
     }
 
     @POST
     @Timed
     @Path("read/subjects")
-    public List<Subject> readObjects(List<Object> objects) {
+    public List<Subject> readObjects(List<Object> objects, @Auth Principal principal) {
         try {
             return oracle.read(objects.toArray(new Object[objects.size()]));
         } catch (SQLException e) {
@@ -319,7 +321,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("read/objects")
-    public List<Object> readSubjects(List<Subject> subjects) {
+    public List<Object> readSubjects(List<Subject> subjects, @Auth Principal principal) {
         try {
             return oracle.read(subjects.toArray(new Subject[subjects.size()]));
         } catch (SQLException e) {
@@ -330,7 +332,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("map/object/remove")
-    public void removeObjectMapping(Association<Object> association) {
+    public void removeObjectMapping(Association<Object> association, @Auth Principal principal) {
         try {
             oracle.remove(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -345,7 +347,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("map/relation/remove")
-    public void removeRelationMapping(Association<Relation> association) {
+    public void removeRelationMapping(Association<Relation> association, @Auth Principal principal) {
         try {
             oracle.remove(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -360,7 +362,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("map/subject/remove")
-    public void removeSubjectMapping(Association<Subject> association) {
+    public void removeSubjectMapping(Association<Subject> association, @Auth Principal principal) {
         try {
             oracle.remove(association.a, association.b).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -375,7 +377,7 @@ public class AdminResource {
     @POST
     @Timed
     @Path("subjects")
-    public Stream<Subject> subjects(PredicateObject predicateObject) {
+    public Stream<Subject> subjects(PredicateObject predicateObject, @Auth Principal principal) {
         try {
             return oracle.subjects(predicateObject.predicate, predicateObject.object);
         } catch (SQLException e) {

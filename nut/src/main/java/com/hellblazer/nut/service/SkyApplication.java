@@ -42,12 +42,16 @@ import com.salesforce.apollo.stereotomy.mem.MemKERL;
 import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
 import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
 import com.salesforce.apollo.thoth.DirectPublisher;
+import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.core.Application;
 import io.dropwizard.core.setup.Environment;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
 import java.net.SocketAddress;
+import java.security.Principal;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -94,9 +98,23 @@ public class SkyApplication extends Application<SkyConfiguration> {
                        com.salesforce.apollo.fireflies.Parameters.newBuilder(), null);
         certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
         var k = node.getDht().asKERL();
+
+        Function<String, TokenAuthenticator.Subject> validator = s -> null;
+        environment.jersey()
+                   .register(new AuthDynamicFeature(
+                   new TokenAuthenticator.Builder<AuthenticatedSubject>().setValidator(validator)
+                                                                         .setRealm("realm")
+                                                                         .setPrefix("Bearer")
+                                                                         .setAuthenticator(new SubjectAuthenticator())
+                                                                         .buildAuthFilter()));
+
+        environment.jersey().register(new AuthValueFactoryProvider.Binder<>(Principal.class));
+        environment.jersey().register(RolesAllowedDynamicFeature.class);
+
         environment.jersey().register(new AdminResource(node.getDelphi(), Duration.ofSeconds(2)));
         environment.jersey().register(new StorageResource(node.getGeb()));
         environment.jersey().register(new AssertionResource(node.getDelphi(), Duration.ofSeconds(2)));
+
         environment.healthChecks().register("sky", new SkyHealthCheck());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
         var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k).setVerifier(sa -> verify(sa));
