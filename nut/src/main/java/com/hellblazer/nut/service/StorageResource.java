@@ -18,12 +18,13 @@
 package com.hellblazer.nut.service;
 
 import com.codahale.metrics.annotation.Timed;
+import com.hellblazer.nut.Geb;
 import com.hellblazer.nut.Sky;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-
-import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * @author hal.hildebrand
@@ -34,30 +35,30 @@ import java.io.OutputStream;
 
 public class StorageResource {
 
-    private final Sky sky;
+    private final Geb geb;
 
-    public StorageResource(Sky sky) {
-        this.sky = sky;
+    public StorageResource(Geb geb) {
+        this.geb = geb;
     }
 
-    @DELETE
+    @POST
     @Timed
-    @Path("/{key}")
-    public void delete(@PathParam("key") String key) {
+    @Path("delete")
+    public void delete(Geb.KeyVersion key) {
 
     }
 
-    @GET
+    @POST
     @Timed
-    @Path("/{key}")
-    public OutputStream get(@PathParam("key") String key) {
+    @Path("get")
+    public String get(Geb.KeyVersion key) {
         return null;
     }
 
-    @PUT
+    @POST
     @Timed
-    @Path("/{key}")
-    public void put(@PathParam("key") String key, InputStream is) {
+    @Path("put")
+    public void put(Geb.PutValue value) {
 
     }
 }

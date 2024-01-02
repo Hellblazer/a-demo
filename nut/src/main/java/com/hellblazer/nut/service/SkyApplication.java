@@ -95,7 +95,7 @@ public class SkyApplication extends Application<SkyConfiguration> {
         certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
         var k = node.getDht().asKERL();
         environment.jersey().register(new AdminResource(node.getDelphi(), Duration.ofSeconds(2)));
-        environment.jersey().register(new StorageResource(node));
+        environment.jersey().register(new StorageResource(node.getGeb()));
         environment.jersey().register(new AssertionResource(node.getDelphi(), Duration.ofSeconds(2)));
         environment.healthChecks().register("sky", new SkyHealthCheck());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));

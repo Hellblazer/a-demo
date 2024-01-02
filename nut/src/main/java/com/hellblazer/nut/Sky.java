@@ -46,6 +46,10 @@ public class Sky extends ProcessDomain {
         super(group, member, params, builder, runtime, endpoint, ff, stereotomyMetrics);
     }
 
+    public Geb getGeb() {
+        return new Geb(stateConnection, mutator);
+    }
+
     @Override
     protected Transaction migrations() {
         Map<Path, URL> resources = new HashMap<>();
