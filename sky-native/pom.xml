@@ -68,7 +68,7 @@
                 <configuration>
                     <imageName>${imageName}</imageName>
                     <outputDirectory>
-                        ${project.build.directory}/natives/osx_arm64
+                        ${project.build.directory}/natives/${os.arch}
                     </outputDirectory>
                     <sharedLibrary>false</sharedLibrary>
                     <mainClass>com.hellblazer.nut.SkyApplication</mainClass>
@@ -100,6 +100,10 @@
                         <buildArg>--initialize-at-run-time=org.jooq.impl.DefaultRenderContext</buildArg>
                         <buildArg>--initialize-at-run-time=io.netty</buildArg>
                         <buildArg>--initialize-at-run-time=org.h2.store.fs.FilePath</buildArg>
+
+                        <buildArg>-H:DeadlockWatchdogInterval=15</buildArg>
+                        <buildArg>-H:+DeadlockWatchdogExitOnTimeout</buildArg>
+
                     </buildArgs>
                     <verbose>false</verbose>
                     <metadataRepository>
