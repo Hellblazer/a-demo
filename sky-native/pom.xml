@@ -19,6 +19,17 @@
             <groupId>com.hellblazer.sky</groupId>
             <artifactId>nut</artifactId>
         </dependency>
+
+        <!--  SLF4J -> JUL Dynamic Logging configuration ala
+              https://rmannibucau.metawerx.net/post/graalvm-jul-slf4j-logging -->
+        <dependency>
+            <groupId>io.yupiik.logging</groupId>
+            <artifactId>yupiik-logging-jul</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -57,39 +68,38 @@
                 <configuration>
                     <imageName>${imageName}</imageName>
                     <outputDirectory>
-                        ${project.build.outputDirectory}/natives/osx_arm64
+                        ${project.build.directory}/natives/osx_arm64
                     </outputDirectory>
                     <sharedLibrary>false</sharedLibrary>
                     <mainClass>com.hellblazer.nut.SkyApplication</mainClass>
                     <buildArgs>
                         <buildArg>-Djava.awt.headless=true</buildArg>
+                        <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
                         <buildArg>--enable-http</buildArg>
                         <buildArg>--add-modules java.sql.rowset</buildArg>
+                        <buildArg>-H:+AllowDeprecatedBuilderClassesOnImageClasspath</buildArg>
+                        <buildArg>-H:+BuildReport</buildArg>
+                        <buildArgs>--enable-sbom</buildArgs>
+                        <buildArgs>-march=native</buildArgs>
+
+                        <!--  SLF4J -> JUL Dynamic Logging configuration ala
+                              https://rmannibucau.metawerx.net/post/graalvm-jul-slf4j-logging -->
+                        <buildArg>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</buildArg>
+                        <buildArg>--initialize-at-build-time=org.slf4j.LoggerFactory</buildArg>
+                        <buildArg>--initialize-at-build-time=org.slf4j.jul.JDK14LoggerAdapter</buildArg>
+                        <buildArg>--initialize-at-build-time=org.slf4j.impl.StaticLoggerBinder</buildArg>
+
                         <buildArg>--initialize-at-build-time=org.jooq</buildArg>
                         <buildArg>--initialize-at-build-time=javax.sql.rowset.RowSetProvider</buildArg>
-                        <buildArg>--initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils
-                        </buildArg>
                         <buildArg>--initialize-at-build-time=org.bouncycastle</buildArg>
 
+                        <buildArg>--initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils</buildArg>
                         <buildArg>--initialize-at-run-time=org.jooq.impl.Convert$_JSON</buildArg>
                         <buildArg>--initialize-at-run-time=org.jooq.tools.Convert</buildArg>
                         <buildArg>--initialize-at-run-time=org.jooq.impl.Convert$_XML</buildArg>
                         <buildArg>--initialize-at-run-time=org.jooq.impl.DefaultRenderContext</buildArg>
-
-
-                        <buildArg>--initialize-at-build-time=org.slf4j.LoggerFactory,ch.qos.logback</buildArg>
                         <buildArg>--initialize-at-run-time=io.netty</buildArg>
-
                         <buildArg>--initialize-at-run-time=org.h2.store.fs.FilePath</buildArg>
-
-                        <buildArg>
-                            -H:+AllowDeprecatedBuilderClassesOnImageClasspath
-                        </buildArg>
-                        <buildArg>-H:+BuildReport</buildArg>
-                        <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
-                        <!--                                <buildArgs>-H:+StrictImageHeap</buildArgs>-->
-                        <buildArgs>--enable-sbom</buildArgs>
-                        <buildArgs>-march=native</buildArgs>
                     </buildArgs>
                     <verbose>false</verbose>
                     <metadataRepository>

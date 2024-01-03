@@ -359,6 +359,7 @@
 {
   "name":"com.hellblazer.nut.SkyTest",
   "allDeclaredFields":true,
+  "allDeclaredClasses":true,
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
   "queryAllDeclaredConstructors":true,
@@ -444,6 +445,11 @@
   "methods":[{"name":"combine","parameterTypes":[] }, {"name":"regenerateView","parameterTypes":[] }]
 },
 {
+  "name":"com.salesforce.apollo.choam.fsm.Driven$Earner$1",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"checkAssembly","parameterTypes":[] }, {"name":"create","parameterTypes":["java.util.List","boolean"] }]
+},
+{
   "name":"com.salesforce.apollo.choam.fsm.Driven$Earner$4",
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"start","parameterTypes":[] }]
@@ -505,7 +511,7 @@
 {
   "name":"com.salesforce.apollo.choam.fsm.Reconfiguration$Reconfigure$7",
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"completion","parameterTypes":[] }]
+  "methods":[{"name":"complete","parameterTypes":[] }, {"name":"completion","parameterTypes":[] }]
 },
 {
   "name":"com.salesforce.apollo.choam.support.ExponentialBackoffPolicy$Builder",
@@ -936,6 +942,10 @@
 {
   "name":"java.util.concurrent.atomic.Striped64",
   "fields":[{"name":"base"}, {"name":"cellsBusy"}]
+},
+{
+  "name":"java.util.concurrent.atomic.Striped64$Cell",
+  "fields":[{"name":"value"}]
 },
 {
   "name":"java.util.function.Predicate",
@@ -1647,6 +1657,10 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.apache.maven.surefire.junitplatform.JUnitPlatformProvider",
+  "methods":[{"name":"<init>","parameterTypes":["org.apache.maven.surefire.api.provider.ProviderParameters"] }]
+},
+{
   "name":"org.apiguardian.api.API",
   "queryAllPublicMethods":true
 },
@@ -1713,6 +1727,14 @@
 {
   "name":"org.junit.platform.commons.annotation.Testable",
   "queryAllPublicMethods":true
+},
+{
+  "name":"org.junit.platform.launcher.LauncherSession",
+  "methods":[{"name":"getLauncher","parameterTypes":[] }]
+},
+{
+  "name":"org.junit.platform.launcher.core.LauncherFactory",
+  "methods":[{"name":"openSession","parameterTypes":[] }]
 },
 {
   "name":"org.locationtech.jts.geom.Geometry"

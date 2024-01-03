@@ -19,10 +19,8 @@ package com.hellblazer.nut;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.archipelago.MtlsServer;
 import com.salesforce.apollo.archipelago.Router;
@@ -48,9 +46,6 @@ import com.salesforce.apollo.stereotomy.mem.MemKERL;
 import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
 import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
 import com.salesforce.apollo.thoth.DirectPublisher;
-import io.dropwizard.jackson.CaffeineModule;
-import io.dropwizard.jackson.FuzzyEnumModule;
-import io.dropwizard.jackson.GuavaExtrasModule;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 
@@ -126,6 +121,18 @@ public class SkyApplication {
         mapper.registerModule(new JavaTimeModule());
         var config = mapper.reader().readValue(file, SkyConfiguration.class);
         new SkyApplication(config).start();
+        var t = new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(60_000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }, "Keeper");
+        t.setDaemon(false);
+        t.start();
     }
 
     public void shutdown() {
