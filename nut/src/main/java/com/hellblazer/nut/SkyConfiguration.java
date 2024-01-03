@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package com.hellblazer.nut.service;
+package com.hellblazer.nut;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salesforce.apollo.archipelago.ServerConnectionCache;
@@ -25,7 +25,6 @@ import com.salesforce.apollo.membership.Context;
 import com.salesforce.apollo.membership.Member;
 import com.salesforce.apollo.model.ProcessDomain;
 import com.salesforce.apollo.utils.Utils;
-import io.dropwizard.core.Configuration;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -37,7 +36,7 @@ import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
 /**
  * @author hal.hildebrand
  */
-public class SkyConfiguration extends Configuration {
+public class SkyConfiguration {
     private static final Digest GENESIS_VIEW_ID = DigestAlgorithm.DEFAULT.digest(
     "Give me food or give me slack or kill me".getBytes());
 

@@ -10,6 +10,9 @@
     </parent>
 
     <artifactId>sky-native</artifactId>
+    <properties>
+        <imageName>sky</imageName>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -18,4 +21,96 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble-all</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>build-native</id>
+                        <goals>
+                            <goal>compile-no-fork</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <imageName>${imageName}</imageName>
+                    <outputDirectory>
+                        ${project.build.outputDirectory}/natives/osx_arm64
+                    </outputDirectory>
+                    <sharedLibrary>false</sharedLibrary>
+                    <mainClass>com.hellblazer.nut.SkyApplication</mainClass>
+                    <buildArgs>
+                        <buildArg>-Djava.awt.headless=true</buildArg>
+                        <buildArg>--enable-http</buildArg>
+                        <buildArg>--add-modules java.sql.rowset</buildArg>
+                        <buildArg>--initialize-at-build-time=org.jooq</buildArg>
+                        <buildArg>--initialize-at-build-time=javax.sql.rowset.RowSetProvider</buildArg>
+                        <buildArg>--initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils
+                        </buildArg>
+                        <buildArg>--initialize-at-build-time=org.bouncycastle</buildArg>
+
+                        <buildArg>--initialize-at-run-time=org.jooq.impl.Convert$_JSON</buildArg>
+                        <buildArg>--initialize-at-run-time=org.jooq.tools.Convert</buildArg>
+                        <buildArg>--initialize-at-run-time=org.jooq.impl.Convert$_XML</buildArg>
+                        <buildArg>--initialize-at-run-time=org.jooq.impl.DefaultRenderContext</buildArg>
+
+
+                        <buildArg>--initialize-at-build-time=org.slf4j.LoggerFactory,ch.qos.logback</buildArg>
+                        <buildArg>--initialize-at-run-time=io.netty</buildArg>
+
+                        <buildArg>--initialize-at-run-time=org.h2.store.fs.FilePath</buildArg>
+
+                        <buildArg>
+                            -H:+AllowDeprecatedBuilderClassesOnImageClasspath
+                        </buildArg>
+                        <buildArg>-H:+BuildReport</buildArg>
+                        <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+                        <!--                                <buildArgs>-H:+StrictImageHeap</buildArgs>-->
+                        <buildArgs>--enable-sbom</buildArgs>
+                        <buildArgs>-march=native</buildArgs>
+                    </buildArgs>
+                    <verbose>false</verbose>
+                    <metadataRepository>
+                        <enabled>true</enabled>
+                    </metadataRepository>
+                    <classpath>
+                        <param>
+                            ${project.build.directory}/${project.artifactId}-${project.version}-graalvm-jar-with-dependencies.jar
+                        </param>
+                    </classpath>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>graalvm-reachability-metadata</artifactId>
+                        <version>${native.maven.plugin.version}</version>
+                        <classifier>repository</classifier>
+                        <type>zip</type>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
 </project>

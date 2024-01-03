@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Hal Hildebrand. All rights reserved.
+ * Copyright (c) 2024 Hal Hildebrand. All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by
@@ -9,14 +9,20 @@
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
+ *  more details.
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package com.hellblazer.nut.service;
 
-import com.hellblazer.nut.Sky;
+package com.hellblazer.nut;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.archipelago.MtlsServer;
 import com.salesforce.apollo.archipelago.Router;
@@ -42,16 +48,14 @@ import com.salesforce.apollo.stereotomy.mem.MemKERL;
 import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
 import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
 import com.salesforce.apollo.thoth.DirectPublisher;
-import io.dropwizard.auth.AuthDynamicFeature;
-import io.dropwizard.auth.AuthValueFactoryProvider;
-import io.dropwizard.core.Application;
-import io.dropwizard.core.setup.Environment;
+import io.dropwizard.jackson.CaffeineModule;
+import io.dropwizard.jackson.FuzzyEnumModule;
+import io.dropwizard.jackson.GuavaExtrasModule;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
-import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
+import java.io.File;
 import java.net.SocketAddress;
-import java.security.Principal;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -64,31 +68,25 @@ import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
 
 /**
  * @author hal.hildebrand
- */
-public class SkyApplication extends Application<SkyConfiguration> {
+ **/
+public class SkyApplication {
+    private final Sky                       node;
+    private final Router                    clusterComms;
+    private final Gorgoneion                gorgoneion;
+    private final CertificateWithPrivateKey certWithKey;
 
-    private final Stereotomy                 stereotomy;
-    private final ControlledIdentifierMember member;
-    private       Sky                        node;
-    private       MtlsServer                 clusterServer;
-    private       Router                     clusterComms;
-    private       Gorgoneion                 gorgoneion;
-    private       CertificateWithPrivateKey  certWithKey;
-
-    public SkyApplication() {
-        stereotomy = new StereotomyImpl(new MemKeyStore(), new MemKERL(DigestAlgorithm.DEFAULT), new SecureRandom());
-        member = new ControlledIdentifierMember(stereotomy.newIdentifier());
-    }
-
-    @Override
-    public void run(SkyConfiguration configuration, Environment environment) throws Exception {
+    public SkyApplication(SkyConfiguration configuration) {
+        Stereotomy stereotomy = new StereotomyImpl(new MemKeyStore(), new MemKERL(DigestAlgorithm.DEFAULT),
+                                                   new SecureRandom());
+        ControlledIdentifierMember member = new ControlledIdentifierMember(stereotomy.newIdentifier());
         certWithKey = member.getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
                                                           SignatureAlgorithm.DEFAULT);
         Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
         var certValidator = new DelegatedCertificateValidator();
         EndpointProvider ep = new StandardEpProvider(configuration.clusterEndpoint, ClientAuth.REQUIRE, certValidator,
                                                      resolver);
-        clusterServer = new MtlsServer(member, ep, clientContextSupplier(), serverContextSupplier(certWithKey));
+        MtlsServer clusterServer = new MtlsServer(member, ep, clientContextSupplier(),
+                                                  serverContextSupplier(certWithKey));
         clusterComms = clusterServer.router(configuration.connectionCache);
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setCommunications(clusterComms)
@@ -99,29 +97,47 @@ public class SkyApplication extends Application<SkyConfiguration> {
         certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
         var k = node.getDht().asKERL();
 
-        Function<String, TokenAuthenticator.Subject> validator = s -> null;
-        environment.jersey()
-                   .register(new AuthDynamicFeature(
-                   new TokenAuthenticator.Builder<AuthenticatedSubject>().setValidator(validator)
-                                                                         .setRealm("realm")
-                                                                         .setPrefix("Bearer")
-                                                                         .setAuthenticator(new SubjectAuthenticator())
-                                                                         .buildAuthFilter()));
-
-        environment.jersey().register(new AuthValueFactoryProvider.Binder<>(Principal.class));
-        environment.jersey().register(RolesAllowedDynamicFeature.class);
-
-        environment.jersey().register(new AdminResource(node.getDelphi(), Duration.ofSeconds(2)));
-        environment.jersey().register(new StorageResource(node.getGeb()));
-        environment.jersey().register(new AssertionResource(node.getDelphi(), Duration.ofSeconds(2)));
-
-        environment.healthChecks().register("sky", new SkyHealthCheck());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
         var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k).setVerifier(sa -> verify(sa));
         gorgoneion = new Gorgoneion(gorgoneionParameters.build(), member, runtime.getContext(),
                                     new DirectPublisher(new ProtoKERLAdapter(k)), clusterComms,
                                     Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory()), null,
                                     clusterComms);
+    }
+
+    public static void main(String[] argv) throws Exception {
+        if (argv.length != 1) {
+            System.err.println("Usage: SkyApplication <config file name>");
+            System.exit(1);
+        }
+        var file = new File(System.getProperty("user.dir"), argv[0]);
+        if (!file.exists()) {
+            System.err.printf("Configuration file: %s does not exist", argv[0]).println();
+            System.err.println("Usage: SkyApplication <config file name>");
+            System.exit(1);
+        }
+        if (!file.isFile()) {
+            System.err.printf("Configuration file: %s is a directory", argv[0]).println();
+            System.err.println("Usage: SkyApplication <config file name>");
+            System.exit(1);
+        }
+        var mapper = new ObjectMapper(new YAMLFactory());
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new JavaTimeModule());
+        var config = mapper.reader().readValue(file, SkyConfiguration.class);
+        new SkyApplication(config).start();
+    }
+
+    public void shutdown() {
+        if (node != null) {
+            node.stop();
+        }
+        if (clusterComms != null) {
+            clusterComms.close(Duration.ofMinutes(1));
+        }
+    }
+
+    public void start() {
         clusterComms.start();
         node.start();
     }
@@ -148,15 +164,6 @@ public class SkyApplication extends Application<SkyConfiguration> {
                                                              .getIdentifier()).getDigest();
             }
         };
-    }
-
-    private void shutdown() {
-        if (node != null) {
-            node.stop();
-        }
-        if (clusterComms != null) {
-            clusterComms.close(Duration.ofMinutes(1));
-        }
     }
 
     private boolean verify(SignedAttestation signedAttestation) {

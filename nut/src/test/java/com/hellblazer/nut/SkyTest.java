@@ -56,12 +56,23 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author hal.hildebrand
  **/
 public class SkyTest {
+
     private static final int    CARDINALITY     = 5;
     private static final Digest GENESIS_VIEW_ID = DigestAlgorithm.DEFAULT.digest(
     "Give me food or give me slack or kill me".getBytes());
-
     private final List<Sky>        domains = new ArrayList<>();
     private final Map<Sky, Router> routers = new HashMap<>();
+
+    public static void main(String[] argv) throws Exception {
+        var t = new SkyTest();
+        try {
+            t.before();
+            t.smokin();
+        } finally {
+            t.after();
+            System.exit(0);
+        }
+    }
 
     public static void smoke(Oracle oracle) throws Exception {
         // Namespace
