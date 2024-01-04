@@ -8,8 +8,6 @@
     <artifactId>sky.app</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>sky-image</module>
-        <module>sky-native</module>
         <module>nut</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
@@ -383,4 +381,20 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>native</id>
+            <modules>
+                <module>sky-native</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>image</id>
+            <modules>
+                <module>sky-native</module>
+                <module>sky-image</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
