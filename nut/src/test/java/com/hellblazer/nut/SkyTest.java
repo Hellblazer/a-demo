@@ -57,11 +57,11 @@ import static org.junit.jupiter.api.Assertions.*;
  **/
 public class SkyTest {
 
-    private static final int    CARDINALITY     = 5;
-    private static final Digest GENESIS_VIEW_ID = DigestAlgorithm.DEFAULT.digest(
+    private static final int              CARDINALITY     = 5;
+    private static final Digest           GENESIS_VIEW_ID = DigestAlgorithm.DEFAULT.digest(
     "Give me food or give me slack or kill me".getBytes());
-    private final List<Sky>        domains = new ArrayList<>();
-    private final Map<Sky, Router> routers = new HashMap<>();
+    private final        List<Sky>        domains         = new ArrayList<>();
+    private final        Map<Sky, Router> routers         = new HashMap<>();
 
     public static void main(String[] argv) throws Exception {
         var t = new SkyTest();
@@ -238,7 +238,9 @@ public class SkyTest {
             var context = new ContextImpl<>(DigestAlgorithm.DEFAULT.getLast(), CARDINALITY, 0.2, 3);
             final var member = new ControlledIdentifierMember(id);
             var localRouter = new LocalServer(prefix, member).router(ServerConnectionCache.newBuilder().setTarget(30));
-            var pdParams = new ProcessDomain.ProcessDomainParameters("jdbc:h2:mem:", Duration.ofMinutes(1),
+            var pdParams = new ProcessDomain.ProcessDomainParameters("jdbc:h2:mem:sql-%s".formatted(digest),
+                                                                     Duration.ofMinutes(1),
+                                                                     "jdbc:h2:mem:dht-%s".formatted(digest),
                                                                      checkpointDirBase, Duration.ofMillis(10), 0.00125,
                                                                      Duration.ofMinutes(1), 3, 10, 0.1);
             var node = new Sky(group, member, pdParams, params, Parameters.RuntimeParameters.newBuilder()

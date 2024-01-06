@@ -1,6 +1,7 @@
 processDomainParameters:
-  dbURL: "jdbc:h2:mem:"
+  dbURL: "jdbc:h2:mem:sql"
   dhtOperationsTimeout: PT0H0M10S
+  dhtDbUrl: "jdbc:h2:mem:dht"
   checkpointBaseDir: ./target/cp
   dhtOpsFrequency: PT0H0M00001S
   dhtFpr: 0.000125

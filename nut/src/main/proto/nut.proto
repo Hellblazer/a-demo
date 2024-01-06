@@ -5,33 +5,24 @@ option java_package = "com.hellblazer.nut.proto";
 option java_outer_classname = "NutProto";
 option objc_class_prefix = "Nut";
 import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
 
 package com.hellblazer.nut;
 
+service Sphynx {
+  rpc apply(Share) returns(Status) {}
+  rpc seal(google.protobuf.Empty) returns(Status) {}
+  rpc unseal(google.protobuf.Empty) returns(Status) {}
+}
+
+message Share {
+  bytes share = 1;
+}
+
+message Status {
+  bool success = 1;
+}
+
 service Nut {
-  rpc get(GetRequest) returns(GetResponse) {}
 }
 
-message GetRequest {
-
-}
-
-message GetResponse {
-
-}
-
-message PutRequest {
-
-}
-
-message PutResponse {
-
-}
-
-message DeleteRequest {
-
-}
-
-message DeleteResponse {
-
-}

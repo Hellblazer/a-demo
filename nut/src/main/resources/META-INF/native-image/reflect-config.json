@@ -1718,6 +1718,10 @@
   "name":"org.jooq.util.yugabytedb.YugabyteDBDataType"
 },
 {
+  "name":"org.junit.ComparisonFailure",
+  "fields":[{"name":"fActual"}, {"name":"fExpected"}]
+},
+{
   "name":"org.junit.internal.AssumptionViolatedException"
 },
 {

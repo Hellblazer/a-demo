@@ -29,55 +29,67 @@ import com.salesforce.apollo.utils.Utils;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.time.Duration;
-
-import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
 
 /**
  * @author hal.hildebrand
  */
 public class SkyConfiguration {
-    private static final Digest GENESIS_VIEW_ID = DigestAlgorithm.DEFAULT.digest(
+    private static final Digest                                              GENESIS_VIEW_ID         = DigestAlgorithm.DEFAULT.digest(
     "Give me food or give me slack or kill me".getBytes());
-
+    public               Shamir                                              shamir                  = new Shamir(3, 2);
+    public               Path                                                keyStore                = Path.of(".",
+                                                                                                               ".id");
+    public               String                                              keyStoreType            = "JKS";
     @JsonProperty
-    public InetSocketAddress clusterEndpoint = new InetSocketAddress(InetAddress.getLoopbackAddress(),
-                                                                     Utils.allocatePort());
-
+    public               InetSocketAddress                                   clusterEndpoint         = new InetSocketAddress(
+    InetAddress.getLoopbackAddress(), Utils.allocatePort());
     @JsonProperty
-    public String group = qb64(DigestAlgorithm.DEFAULT.digest("SLACK"));
-
+    public               Digest                                              group                   = DigestAlgorithm.DEFAULT.digest(
+    "SLACK");
     @JsonProperty
-    public String dbURL = "jdbc:h2:mem:";
-
+    public               String                                              dbURL                   = "jdbc:h2:mem:";
     @JsonProperty
-    public Parameters.Builder choamParameters = Parameters.newBuilder()
-                                                          .setGenesisViewId(GENESIS_VIEW_ID)
-                                                          .setGossipDuration(Duration.ofMillis(50))
-                                                          .setProducer(Parameters.ProducerParameters.newBuilder()
-                                                                                                    .setGossipDuration(
-                                                                                                    Duration.ofMillis(
-                                                                                                    50))
-                                                                                                    .setBatchInterval(
-                                                                                                    Duration.ofMillis(
-                                                                                                    100))
-                                                                                                    .setMaxBatchByteSize(
-                                                                                                    1024 * 1024)
-                                                                                                    .setMaxBatchCount(
-                                                                                                    3000)
-                                                                                                    .build())
-                                                          .setCheckpointBlockDelta(200);
-
-    public ProcessDomain.ProcessDomainParameters processDomainParameters = new ProcessDomain.ProcessDomainParameters(
-    "jdbc:h2:mem:", Duration.ofMinutes(1), new File(System.getProperty("user.dir", ".")).toPath(),
-    Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3, 10, 0.1);
-
+    public               Parameters.Builder                                  choamParameters         = Parameters.newBuilder()
+                                                                                                                 .setGenesisViewId(
+                                                                                                                 GENESIS_VIEW_ID)
+                                                                                                                 .setGossipDuration(
+                                                                                                                 Duration.ofMillis(
+                                                                                                                 50))
+                                                                                                                 .setProducer(
+                                                                                                                 Parameters.ProducerParameters.newBuilder()
+                                                                                                                                              .setGossipDuration(
+                                                                                                                                              Duration.ofMillis(
+                                                                                                                                              50))
+                                                                                                                                              .setBatchInterval(
+                                                                                                                                              Duration.ofMillis(
+                                                                                                                                              100))
+                                                                                                                                              .setMaxBatchByteSize(
+                                                                                                                                              1024
+                                                                                                                                              * 1024)
+                                                                                                                                              .setMaxBatchCount(
+                                                                                                                                              3000)
+                                                                                                                                              .build())
+                                                                                                                 .setCheckpointBlockDelta(
+                                                                                                                 200);
+    public               ProcessDomain.ProcessDomainParameters               processDomainParameters = new ProcessDomain.ProcessDomainParameters(
+    "jdbc:h2:mem:state", Duration.ofMinutes(1), "jdbc:h2:mem:dht",
+    new File(System.getProperty("user.dir", ".")).toPath(), Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3,
+    10, 0.1);
     @JsonProperty
-    public ServerConnectionCache.Builder connectionCache = ServerConnectionCache.newBuilder().setTarget(30);
-
+    public               ServerConnectionCache.Builder                       connectionCache         = ServerConnectionCache.newBuilder()
+                                                                                                                            .setTarget(
+                                                                                                                            30);
     @JsonProperty
-    public Context.Builder<Member> context = Context.newBuilder().setBias(3).setpByz(0.1);
-
+    public               Context.Builder<Member>                             context                 = Context.newBuilder()
+                                                                                                              .setBias(
+                                                                                                              3)
+                                                                                                              .setpByz(
+                                                                                                              0.1);
     @JsonProperty
-    public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
+    public               com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters    = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
+
+    public record Shamir(int shares, int threshold) {
+    }
 }
