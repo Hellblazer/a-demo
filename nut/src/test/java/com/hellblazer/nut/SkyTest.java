@@ -238,7 +238,7 @@ public class SkyTest {
             var context = new ContextImpl<>(DigestAlgorithm.DEFAULT.getLast(), CARDINALITY, 0.2, 3);
             final var member = new ControlledIdentifierMember(id);
             var localRouter = new LocalServer(prefix, member).router(ServerConnectionCache.newBuilder().setTarget(30));
-            var pdParams = new ProcessDomain.ProcessDomainParameters("jdbc:h2:mem:sql-%s".formatted(digest),
+            var pdParams = new ProcessDomain.ProcessDomainParameters("jdbc:h2:mem:sql-%s;DB_CLOSE_DELAY=-1".formatted(digest),
                                                                      Duration.ofMinutes(1),
                                                                      "jdbc:h2:mem:dht-%s".formatted(digest),
                                                                      checkpointDirBase, Duration.ofMillis(10), 0.00125,
