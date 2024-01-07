@@ -19,11 +19,14 @@ package com.hellblazer.nut;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salesforce.apollo.archipelago.ServerConnectionCache;
 import com.salesforce.apollo.choam.Parameters;
+import com.salesforce.apollo.choam.Parameters.ProducerParameters;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
+import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
+import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.membership.Context;
 import com.salesforce.apollo.membership.Member;
-import com.salesforce.apollo.model.ProcessDomain;
+import com.salesforce.apollo.model.ProcessDomain.ProcessDomainParameters;
 import com.salesforce.apollo.utils.Utils;
 
 import java.io.File;
@@ -36,59 +39,65 @@ import java.time.Duration;
  * @author hal.hildebrand
  */
 public class SkyConfiguration {
-    private static final Digest                                              GENESIS_VIEW_ID         = DigestAlgorithm.DEFAULT.digest(
-    "Give me food or give me slack or kill me".getBytes());
-    public               Shamir                                              shamir                  = new Shamir(3, 2);
-    public               Path                                                keyStore                = Path.of(".",
-                                                                                                               ".id");
-    public               String                                              keyStoreType            = "JKS";
+
+    public Sphinx.UNWRAPPING unwrapping;
+
+    public IdentityConfiguration                               identity;
     @JsonProperty
-    public               InetSocketAddress                                   clusterEndpoint         = new InetSocketAddress(
-    InetAddress.getLoopbackAddress(), Utils.allocatePort());
+    public Shamir                                              shamir;
     @JsonProperty
-    public               Digest                                              group                   = DigestAlgorithm.DEFAULT.digest(
-    "SLACK");
+    public InetSocketAddress                                   clusterEndpoint;
     @JsonProperty
-    public               String                                              dbURL                   = "jdbc:h2:mem:";
+    public Digest                                              group;
     @JsonProperty
-    public               Parameters.Builder                                  choamParameters         = Parameters.newBuilder()
-                                                                                                                 .setGenesisViewId(
-                                                                                                                 GENESIS_VIEW_ID)
-                                                                                                                 .setGossipDuration(
-                                                                                                                 Duration.ofMillis(
-                                                                                                                 50))
-                                                                                                                 .setProducer(
-                                                                                                                 Parameters.ProducerParameters.newBuilder()
-                                                                                                                                              .setGossipDuration(
-                                                                                                                                              Duration.ofMillis(
-                                                                                                                                              50))
-                                                                                                                                              .setBatchInterval(
-                                                                                                                                              Duration.ofMillis(
-                                                                                                                                              100))
-                                                                                                                                              .setMaxBatchByteSize(
-                                                                                                                                              1024
-                                                                                                                                              * 1024)
-                                                                                                                                              .setMaxBatchCount(
-                                                                                                                                              3000)
-                                                                                                                                              .build())
-                                                                                                                 .setCheckpointBlockDelta(
-                                                                                                                 200);
-    public               ProcessDomain.ProcessDomainParameters               processDomainParameters = new ProcessDomain.ProcessDomainParameters(
-    "jdbc:h2:mem:state", Duration.ofMinutes(1), "jdbc:h2:mem:dht",
-    new File(System.getProperty("user.dir", ".")).toPath(), Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3,
-    10, 0.1);
+    public Parameters.Builder                                  choamParameters;
+    public ProcessDomainParameters                             processDomainParameters;
     @JsonProperty
-    public               ServerConnectionCache.Builder                       connectionCache         = ServerConnectionCache.newBuilder()
-                                                                                                                            .setTarget(
-                                                                                                                            30);
+    public ServerConnectionCache.Builder                       connectionCache;
     @JsonProperty
-    public               Context.Builder<Member>                             context                 = Context.newBuilder()
-                                                                                                              .setBias(
-                                                                                                              3)
-                                                                                                              .setpByz(
-                                                                                                              0.1);
+    public Context.Builder<Member>                             context;
     @JsonProperty
-    public               com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters    = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
+    public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters;
+
+    {
+        // Default configuration
+        var userDir = System.getProperty("user.dir", ".");
+        var checkpointBaseDir = new File(userDir).toPath();
+        var genesisViewId = DigestAlgorithm.DEFAULT.digest("Give me food or give me slack or kill me".getBytes());
+
+        identity = new IdentityConfiguration(Path.of(userDir, ".id"), "JKS", "jdbc:h2:mem:id-kerl",
+                                             DigestAlgorithm.DEFAULT, SignatureAlgorithm.DEFAULT,
+                                             EncryptionAlgorithm.DEFAULT);
+        unwrapping = Sphinx.UNWRAPPING.SHAMIR;
+        gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
+        shamir = new Shamir(3, 2);
+        clusterEndpoint = new InetSocketAddress(InetAddress.getLoopbackAddress(), Utils.allocatePort());
+        group = DigestAlgorithm.DEFAULT.digest("SLACK");
+        connectionCache = ServerConnectionCache.newBuilder().setTarget(30);
+        context = Context.newBuilder().setBias(3).setpByz(0.1);
+        processDomainParameters = new ProcessDomainParameters("jdbc:h2:mem:sql-state", Duration.ofMinutes(1),
+                                                              "jdbc:h2:mem:dht-state", checkpointBaseDir,
+                                                              Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3,
+                                                              10, 0.1);
+        choamParameters = Parameters.newBuilder()
+                                    .setViewSigAlgorithm(identity.signatureAlgorithm)
+                                    .setDigestAlgorithm(identity.digestAlgorithm)
+                                    .setGenesisViewId(genesisViewId)
+                                    .setGossipDuration(Duration.ofMillis(50))
+                                    .setProducer(ProducerParameters.newBuilder()
+                                                                   .setGossipDuration(Duration.ofMillis(50))
+                                                                   .setBatchInterval(Duration.ofMillis(100))
+                                                                   .setMaxBatchByteSize(10 * 1024 * 1024)
+                                                                   .setMaxBatchCount(3000)
+                                                                   .build())
+                                    .setCheckpointBlockDelta(200);
+    }
+
+    public record IdentityConfiguration(Path keyStore, String keyStoreType, String kerlURL,
+                                        DigestAlgorithm digestAlgorithm, SignatureAlgorithm signatureAlgorithm,
+                                        EncryptionAlgorithm encryptionAlgorithm) {
+
+    }
 
     public record Shamir(int shares, int threshold) {
     }

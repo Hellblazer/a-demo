@@ -25,7 +25,6 @@ import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.comm.grpc.ClientContextSupplier;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
@@ -35,11 +34,8 @@ import com.salesforce.apollo.gorgoneion.proto.SignedAttestation;
 import com.salesforce.apollo.membership.Member;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
 import com.salesforce.apollo.stereotomy.Stereotomy;
-import com.salesforce.apollo.stereotomy.StereotomyImpl;
-import com.salesforce.apollo.stereotomy.StereotomyKeyStore;
 import com.salesforce.apollo.stereotomy.StereotomyValidator;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
-import com.salesforce.apollo.stereotomy.mem.MemKERL;
 import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
 import com.salesforce.apollo.thoth.DirectPublisher;
 import io.netty.handler.ssl.ClientAuth;
@@ -47,7 +43,6 @@ import io.netty.handler.ssl.SslContext;
 
 import java.net.SocketAddress;
 import java.security.Provider;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -60,17 +55,15 @@ import java.util.function.Predicate;
  * @author hal.hildebrand
  **/
 public class SkyApplication {
-    private final AtomicReference<char[]>   rootSecret = new AtomicReference<>();
-    private final StereotomyKeyStore        keyStore;
-    private final Sky                       node;
-    private final Router                    clusterComms;
-    private final Gorgoneion                gorgoneion;
-    private final CertificateWithPrivateKey certWithKey;
+    private final AtomicReference<char[]>    rootSecret = new AtomicReference<>();
+    private final ControlledIdentifierMember member;
+    private final Sky                        node;
+    private final Router                     clusterComms;
+    private final Gorgoneion                 gorgoneion;
+    private final CertificateWithPrivateKey  certWithKey;
 
-    public SkyApplication(SkyConfiguration configuration, StereotomyKeyStore ks) {
-        this.keyStore = ks;
-        Stereotomy stereotomy = new StereotomyImpl(keyStore, new MemKERL(DigestAlgorithm.DEFAULT), new SecureRandom());
-        ControlledIdentifierMember member = new ControlledIdentifierMember(stereotomy.newIdentifier());
+    public SkyApplication(SkyConfiguration configuration, ControlledIdentifierMember member) {
+        this.member = member;
         certWithKey = member.getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
                                                           SignatureAlgorithm.DEFAULT);
         Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
@@ -92,9 +85,8 @@ public class SkyApplication {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k);
         Predicate<SignedAttestation> verifier = null;
-        gorgoneion = new Gorgoneion(this::verify, gorgoneionParameters.build(), member,
-                                    runtime.getContext(), new DirectPublisher(new ProtoKERLAdapter(k)), clusterComms,
-                                    null, clusterComms);
+        gorgoneion = new Gorgoneion(this::verify, gorgoneionParameters.build(), member, runtime.getContext(),
+                                    new DirectPublisher(new ProtoKERLAdapter(k)), clusterComms, null, clusterComms);
     }
 
     public void shutdown() {
