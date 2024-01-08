@@ -17,13 +17,11 @@
 
 package com.hellblazer.nut;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.nut.proto.EncryptedShare;
+import com.hellblazer.nut.proto.PublicKey_;
 import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.proto.Status;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
@@ -31,18 +29,32 @@ import com.salesforce.apollo.stereotomy.KERL;
 import com.salesforce.apollo.stereotomy.StereotomyImpl;
 import com.salesforce.apollo.stereotomy.StereotomyKeyStore;
 import com.salesforce.apollo.stereotomy.db.UniKERLDirect;
+import com.salesforce.apollo.stereotomy.event.proto.Ident;
+import com.salesforce.apollo.stereotomy.identifier.Identifier;
+import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.jks.FileKeyStore;
+import com.salesforce.apollo.thoth.LoggingOutputStream;
+import com.salesforce.apollo.utils.BbBackedInputStream;
 import com.salesforce.apollo.utils.Entropy;
+import com.salesforce.apollo.utils.Utils;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.inprocess.InProcessChannelBuilder;
+import io.grpc.inprocess.InProcessSocketAddress;
+import liquibase.Liquibase;
+import liquibase.Scope;
+import liquibase.database.core.H2Database;
+import liquibase.exception.LiquibaseException;
+import liquibase.resource.ClassLoaderResourceAccessor;
+import liquibase.ui.ConsoleUIService;
+import liquibase.ui.UIService;
 import org.h2.jdbc.JdbcConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.sql.Connection;
@@ -62,30 +74,41 @@ import java.util.function.Supplier;
  **/
 public class Sphinx {
 
-    public static final  String AES        = "AES";
-    public static final  String ALGORITHM  = "AES/GCM/NoPadding";
-    private static final int    TAG_LENGTH = 128;
-    private static final int    IV_LENGTH  = 12;
-    private static final Logger log        = LoggerFactory.getLogger(Sphinx.class);
+    public static final  String AES         = "AES";
+    public static final  String ALGORITHM   = "AES/GCM/NoPadding";
+    private static final int    TAG_LENGTH  = 128;
+    private static final int    IV_LENGTH   = 12;
+    private static final int    SALT_LENGTH = 16;
+    private static final Logger log         = LoggerFactory.getLogger(Sphinx.class);
 
     private final    AtomicBoolean              started = new AtomicBoolean();
     private final    AtomicReference<char[]>    root    = new AtomicReference<>();
     private final    SkyConfiguration           configuration;
+    private final    Service                    service = new Service();
     private volatile KeyPair                    sessionKeyPair;
     private volatile SkyApplication             application;
     private volatile StereotomyImpl             stereotomy;
     private volatile ControlledIdentifierMember member;
     private volatile KERL.AppendKERL            kerl;
 
+    public Sphinx(InputStream configuration) {
+        this(SkyConfiguration.from(configuration));
+    }
+
     public Sphinx(SkyConfiguration configuration) {
         this(configuration, null);
     }
 
+    public Sphinx(InputStream configuration, String devSecret) {
+        this(SkyConfiguration.from(configuration), devSecret);
+    }
+
     public Sphinx(SkyConfiguration configuration, String devSecret) {
         this.configuration = configuration;
+        initializeSchema();
         Connection connection = null;
         try {
-            connection = new JdbcConnection(configuration.identity.kerlURL(), new Properties(), "", "", false);
+            connection = getConnection();
         } catch (SQLException e) {
             log.error("Unable to create JDBC connection: {}", configuration.identity.kerlURL());
         }
@@ -100,15 +123,20 @@ public class Sphinx {
         }
     }
 
-    public static Encrypted encrypt(SecretKey secretKey, Share share) throws Exception {
+    public static Encrypted encrypt(SecretKey secretKey, Share share, byte[] tag) throws Exception {
         byte[] iv = new byte[IV_LENGTH];
         Entropy.nextSecureBytes(iv);
-        return new Encrypted(iv, initCipher(Cipher.ENCRYPT_MODE, secretKey, iv).doFinal(share.toByteArray()));
+
+        var cipher = initCipher(Cipher.ENCRYPT_MODE, secretKey, iv);
+        cipher.updateAAD(tag);
+        return new Encrypted(iv, tag, cipher.doFinal(share.toByteArray()));
     }
 
     public static byte[] decrypt(SecretKey secretKey, Encrypted encrypted) {
         try {
-            return initCipher(Cipher.DECRYPT_MODE, secretKey, encrypted.iv).doFinal(encrypted.cipherText);
+            var cipher = initCipher(Cipher.DECRYPT_MODE, secretKey, encrypted.iv);
+            cipher.updateAAD(encrypted.tag);
+            return cipher.doFinal(encrypted.cipherText);
         } catch (InvalidAlgorithmParameterException | NoSuchPaddingException | NoSuchAlgorithmException |
         InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
             throw new IllegalArgumentException("Unable to decrypt", e);
@@ -136,10 +164,11 @@ public class Sphinx {
             System.err.printf("Configuration file: %s is a directory", argv[0]).println();
             System.exit(1);
         }
-        var mapper = new ObjectMapper(new YAMLFactory());
-        mapper.registerModule(new Jdk8Module());
-        mapper.registerModule(new JavaTimeModule());
-        var config = mapper.reader().readValue(file, SkyConfiguration.class);
+        SkyConfiguration config = null;
+        try (var fis = new FileInputStream(file)) {
+            config = SkyConfiguration.from(fis);
+        }
+
         Sphinx sphinx;
         if (argv.length == 2) {
             sphinx = new Sphinx(config, argv[1]);
@@ -168,9 +197,44 @@ public class Sphinx {
         }
     }
 
+    private ManagedChannel forSeeds() {
+        var seeds = configuration.seeds;
+        var local = seeds.isEmpty() ? false : seeds.getFirst() instanceof InProcessSocketAddress;
+        var builder = local ? InProcessChannelBuilder.forTarget("service") : ManagedChannelBuilder.forTarget("service");
+        return builder.nameResolverFactory(new SimpleNameResolverFactory(seeds))
+                      .defaultLoadBalancingPolicy("round_robin")
+                      .usePlaintext()
+                      .build();
+    }
+
+    private JdbcConnection getConnection() throws SQLException {
+        return new JdbcConnection(configuration.identity.kerlURL(), new Properties(), "", "", false);
+    }
+
+    private void initializeSchema() {
+        ConsoleUIService service = (ConsoleUIService) Scope.getCurrentScope().get(Scope.Attr.ui, UIService.class);
+        service.setOutputStream(new PrintStream(
+        new LoggingOutputStream(LoggerFactory.getLogger("liquibase"), LoggingOutputStream.LogLevel.INFO)));
+        var database = new H2Database();
+        try (var connection = getConnection()) {
+            database.setConnection(new liquibase.database.jvm.JdbcConnection(connection));
+            try (Liquibase liquibase = new Liquibase("stereotomy/initialize.xml", new ClassLoaderResourceAccessor(),
+                                                     database)) {
+                liquibase.update((String) null);
+            } catch (LiquibaseException e) {
+                throw new IllegalStateException(e);
+            }
+        } catch (SQLException e1) {
+            throw new IllegalStateException(e1);
+        }
+    }
+
     private void startSky() {
         application = new SkyApplication(configuration, member);
         application.start();
+    }
+
+    private void testify() {
     }
 
     private void unwrap(byte[] rs) {
@@ -181,6 +245,7 @@ public class Sphinx {
         unwrap(pwd);
     }
 
+    // Unwrap the root identity keystore and establish either a new identifier or resume the previous identifier
     private void unwrap(char[] pwd) {
         root.set(pwd);
         StereotomyKeyStore keyStore = null;
@@ -205,34 +270,104 @@ public class Sphinx {
                 // ignored
             }
         }
-        log.error("Successfully opened root: {}", storeFile.getAbsolutePath());
+        Identifier id = null;
+        try (var dis = new FileInputStream(configuration.identity.identityFile().toFile());
+             var baos = new ByteArrayOutputStream()) {
+            Utils.copy(dis, baos);
+            id = Identifier.from(Ident.parseFrom(baos.toByteArray()));
+        } catch (FileNotFoundException e) {
+            // new identifier
+        } catch (IOException e) {
+            log.error("Unable to read identifier file: {}", configuration.identity.identityFile().toAbsolutePath(), e);
+            throw new IllegalStateException(
+            "Unable to read identifier file: %s".formatted(configuration.identity.identityFile().toAbsolutePath()), e);
+        }
         stereotomy = new StereotomyImpl(keyStore, kerl, new SecureRandom());
-        member = new ControlledIdentifierMember(stereotomy.newIdentifier());
+        if (id == null) {
+            member = new ControlledIdentifierMember(stereotomy.newIdentifier());
+            try (var fos = new FileOutputStream(configuration.identity.identityFile().toFile());
+                 var bbis = BbBackedInputStream.aggregate(
+                 member.getIdentifier().getIdentifier().toIdent().toByteString())) {
+                Utils.copy(bbis, fos);
+            } catch (IOException e) {
+                log.error("Unable to create identifier file: {}",
+                          configuration.identity.identityFile().toAbsolutePath(), e);
+                throw new IllegalStateException("Unable to create identifier file: %s".formatted(
+                configuration.identity.identityFile().toAbsolutePath()), e);
+            }
+            log.info("New identifier: {} file: {}", member.getId(),
+                     configuration.identity.identityFile().toAbsolutePath());
+        } else {
+            member = new ControlledIdentifierMember(stereotomy.controlOf((SelfAddressingIdentifier) id));
+            log.info("Resuming identifier: {} file: {}", member.getId(),
+                     configuration.identity.identityFile().toAbsolutePath());
+        }
+        testify();
     }
 
     public enum UNWRAPPING {
         SHAMIR, DELEGATED;
     }
 
-    public record Encrypted(byte[] iv, byte[] cipherText) {
+    public record Encrypted(byte[] iv, byte[] tag, byte[] cipherText) {
     }
 
     public class Service {
-        private final Map<Integer, ByteString> shares = new ConcurrentHashMap<>();
+        private final Map<Integer, byte[]> shares = new ConcurrentHashMap<>();
 
         public Status apply(EncryptedShare eShare) {
             var secretKey = configuration.identity.encryptionAlgorithm()
                                                   .decapsulate(sessionKeyPair.getPrivate(),
                                                                eShare.getEncapsulation().toByteArray(), AES);
             var decrypted = decrypt(secretKey,
-                                    new Encrypted(eShare.getIv().toByteArray(), eShare.getShare().toByteArray()));
+                                    new Encrypted(eShare.getIv().toByteArray(), eShare.getTag().toByteArray(),
+                                                  eShare.getShare().toByteArray()));
             try {
                 var share = Share.parseFrom(decrypted);
-                shares.putIfAbsent(share.getKey(), share.getShare());
-                return Status.newBuilder().setSuccess(true).build();
+                shares.put(share.getKey(), share.getShare().toByteArray());
+                return Status.newBuilder().setShares(shares.size()).setSuccess(true).build();
             } catch (InvalidProtocolBufferException e) {
-                throw new IllegalArgumentException("Not a valid share", e);
+                log.info("Not a valid share: {}", e);
+                return Status.newBuilder().setShares(shares.size()).setSuccess(false).build();
             }
+        }
+
+        public Status seal() {
+            root.set(new char[0]);
+            sessionKeyPair = configuration.identity.encryptionAlgorithm().generateKeyPair();
+            application.shutdown();
+            return Status.newBuilder().setSuccess(true).build();
+        }
+
+        public PublicKey_ sessionKey() {
+            return PublicKey_.newBuilder()
+                             .setAlgorithm(
+                             PublicKey_.algo.forNumber(configuration.identity.encryptionAlgorithm().getCode()))
+                             .setPublicKey(ByteString.copyFrom(sessionKeyPair.getPublic().getEncoded()))
+                             .build();
+        }
+
+        public Status unseal() {
+            if (application != null) {
+                return Status.newBuilder().setSuccess(true).setShares(shares.size()).build();
+            }
+            sessionKeyPair = configuration.identity.encryptionAlgorithm().generateKeyPair();
+            return Status.getDefaultInstance();
+        }
+
+        public Status unwrap() {
+            if (shares.size() < configuration.shamir.threshold()) {
+                log.info("Cannot unwrap with: {} shares configured: {} out of {}", shares.size(),
+                         configuration.shamir.threshold(), configuration.shamir.shares());
+                return Status.newBuilder().setSuccess(false).setShares(shares.size()).build();
+            }
+            log.info("Unwrapping with: {} shares configured: {} out of {}", shares.size(),
+                     configuration.shamir.threshold(), configuration.shamir.shares());
+            var scheme = new Scheme(new SecureRandom(), configuration.shamir.shares(),
+                                    configuration.shamir.threshold());
+            shares.clear();
+            Sphinx.this.unwrap(scheme.join(shares));
+            return Status.newBuilder().setShares(shares.size()).setSuccess(true).build();
         }
     }
 }

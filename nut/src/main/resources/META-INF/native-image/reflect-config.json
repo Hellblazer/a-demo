@@ -350,11 +350,32 @@
   "methods":[{"name":"getEmptyRegistry","parameterTypes":[] }]
 },
 {
+  "name":"com.hellblazer.nut.SkyApplicationTest",
+  "allDeclaredFields":true,
+  "allDeclaredClasses":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"smokin","parameterTypes":[] }]
+},
+{
   "name":"com.hellblazer.nut.SkyConfiguration",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.hellblazer.nut.SkyConfiguration$IdentityConfiguration",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.hellblazer.nut.SkyConfiguration$Shamir",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"com.hellblazer.nut.SkyTest",
@@ -364,6 +385,19 @@
   "queryAllPublicMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"after","parameterTypes":[] }, {"name":"before","parameterTypes":[] }, {"name":"smokin","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }]
+},
+{
+  "name":"com.hellblazer.nut.Sphinx$UNWRAPPING",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.hellblazer.nut.SphinxTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"smokin","parameterTypes":[] }]
 },
 {
   "name":"com.ibm.icu.text.Collator"
@@ -531,6 +565,11 @@
   "queryAllDeclaredMethods":true
 },
 {
+  "name":"com.salesforce.apollo.cryptography.EncryptionAlgorithm",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"com.salesforce.apollo.cryptography.SignatureAlgorithm",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
@@ -585,7 +624,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.time.Duration","java.nio.file.Path","java.time.Duration","double","java.time.Duration","int","int","double"] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.time.Duration","java.lang.String","java.nio.file.Path","java.time.Duration","double","java.time.Duration","int","int","double"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.time.Duration","java.nio.file.Path","java.time.Duration","double","java.time.Duration","int","int","double"] }]
 },
 {
   "name":"com.salesforce.apollo.state.SqlStateMachine",
@@ -644,6 +683,14 @@
 },
 {
   "name":"com.sun.crypto.provider.GaloisCounterMode$AESGCM",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.JceKeyStore",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.PBEParameters",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -787,6 +834,10 @@
   "name":"java.io.FilePermission"
 },
 {
+  "name":"java.io.Serializable",
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"java.lang.Class",
   "methods":[{"name":"getRecordComponents","parameterTypes":[] }]
 },
@@ -833,6 +884,12 @@
 },
 {
   "name":"java.net.NetPermission"
+},
+{
+  "name":"java.net.SocketAddress",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"java.net.SocketPermission"

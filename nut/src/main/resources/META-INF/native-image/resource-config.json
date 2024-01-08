@@ -107,6 +107,8 @@
   }, {
     "pattern":"\\Qschema/nut.xml\\E"
   }, {
+    "pattern":"\\Qsky-test.yaml\\E"
+  }, {
     "pattern":"\\Qsql-state/internal.xml\\E"
   }, {
     "pattern":"\\Qstereotomy/initialize.xml\\E"
@@ -130,7 +132,7 @@
     "locales":["", "und"]
   }, {
     "name":"com.sun.rowset.RowSetResourceBundle",
-    "locales":["", "und"]
+    "locales":["und"]
   }, {
     "name":"liquibase/i18n/liquibase-core",
     "locales":["", "und"]

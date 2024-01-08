@@ -29,6 +29,7 @@ import com.salesforce.apollo.state.proto.Txn;
 import com.salesforce.apollo.stereotomy.services.grpc.StereotomyMetrics;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.HashMap;

@@ -17,6 +17,10 @@
 package com.hellblazer.nut;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.salesforce.apollo.archipelago.ServerConnectionCache;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.choam.Parameters.ProducerParameters;
@@ -30,23 +34,27 @@ import com.salesforce.apollo.model.ProcessDomain.ProcessDomainParameters;
 import com.salesforce.apollo.utils.Utils;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author hal.hildebrand
  */
 public class SkyConfiguration {
 
-    public Sphinx.UNWRAPPING unwrapping;
-
+    public Sphinx.UNWRAPPING                                   unwrapping;
     public IdentityConfiguration                               identity;
     @JsonProperty
     public Shamir                                              shamir;
     @JsonProperty
-    public InetSocketAddress                                   clusterEndpoint;
+    public SocketAddress                                       clusterEndpoint;
     @JsonProperty
     public Digest                                              group;
     @JsonProperty
@@ -58,6 +66,8 @@ public class SkyConfiguration {
     public Context.Builder<Member>                             context;
     @JsonProperty
     public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters;
+    public List<SocketAddress>                                 seeds = Collections.emptyList();
+    public boolean                                             local = false;
 
     {
         // Default configuration
@@ -65,9 +75,9 @@ public class SkyConfiguration {
         var checkpointBaseDir = new File(userDir).toPath();
         var genesisViewId = DigestAlgorithm.DEFAULT.digest("Give me food or give me slack or kill me".getBytes());
 
-        identity = new IdentityConfiguration(Path.of(userDir, ".id"), "JKS", "jdbc:h2:mem:id-kerl",
-                                             DigestAlgorithm.DEFAULT, SignatureAlgorithm.DEFAULT,
-                                             EncryptionAlgorithm.DEFAULT);
+        identity = new IdentityConfiguration(Path.of(userDir, ".id"), "JCEKS", "jdbc:h2:mem:id-kerl;DB_CLOSE_DELAY=-1",
+                                             Path.of(userDir, ".digest"), DigestAlgorithm.DEFAULT,
+                                             SignatureAlgorithm.DEFAULT, EncryptionAlgorithm.DEFAULT);
         unwrapping = Sphinx.UNWRAPPING.SHAMIR;
         gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
         shamir = new Shamir(3, 2);
@@ -75,8 +85,8 @@ public class SkyConfiguration {
         group = DigestAlgorithm.DEFAULT.digest("SLACK");
         connectionCache = ServerConnectionCache.newBuilder().setTarget(30);
         context = Context.newBuilder().setBias(3).setpByz(0.1);
-        processDomainParameters = new ProcessDomainParameters("jdbc:h2:mem:sql-state", Duration.ofMinutes(1),
-                                                              "jdbc:h2:mem:dht-state", checkpointBaseDir,
+        processDomainParameters = new ProcessDomainParameters("jdbc:h2:mem:sql-state;DB_CLOSE_DELAY=-1", Duration.ofMinutes(1),
+                                                              "jdbc:h2:mem:dht-state;DB_CLOSE_DELAY=-1", checkpointBaseDir,
                                                               Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3,
                                                               10, 0.1);
         choamParameters = Parameters.newBuilder()
@@ -93,7 +103,20 @@ public class SkyConfiguration {
                                     .setCheckpointBlockDelta(200);
     }
 
-    public record IdentityConfiguration(Path keyStore, String keyStoreType, String kerlURL,
+    static SkyConfiguration from(InputStream is) {
+        SkyConfiguration config;
+        var mapper = new ObjectMapper(new YAMLFactory());
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new JavaTimeModule());
+        try {
+            config = mapper.reader().readValue(is, SkyConfiguration.class);
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot deserialize configuration", e);
+        }
+        return config;
+    }
+
+    public record IdentityConfiguration(Path keyStore, String keyStoreType, String kerlURL, Path identityFile,
                                         DigestAlgorithm digestAlgorithm, SignatureAlgorithm signatureAlgorithm,
                                         EncryptionAlgorithm encryptionAlgorithm) {
 

@@ -10,10 +10,34 @@
     </parent>
     <artifactId>nut</artifactId>
 
+
+    <profiles>
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>
+                                -agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image
+                            </argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>com.salesforce.apollo</groupId>
             <artifactId>gorgoneion</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.salesforce.apollo</groupId>
+            <artifactId>gorgoneion-client</artifactId>
         </dependency>
         <dependency>
             <groupId>com.salesforce.apollo</groupId>
@@ -74,13 +98,12 @@
             <groupId>com.macasaet.fernet</groupId>
             <artifactId>fernet-java8</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.codahale</groupId>
+            <artifactId>shamir</artifactId>
+        </dependency>
 
         <!-- Test only dependencies below this line -->
-        <dependency>
-            <groupId>com.salesforce.apollo</groupId>
-            <artifactId>gorgoneion-client</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -103,9 +126,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image</argLine>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -17,10 +17,7 @@
 
 package com.hellblazer.nut;
 
-import com.salesforce.apollo.archipelago.EndpointProvider;
-import com.salesforce.apollo.archipelago.MtlsServer;
-import com.salesforce.apollo.archipelago.Router;
-import com.salesforce.apollo.archipelago.StandardEpProvider;
+import com.salesforce.apollo.archipelago.*;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.comm.grpc.ClientContextSupplier;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
@@ -38,9 +35,11 @@ import com.salesforce.apollo.stereotomy.StereotomyValidator;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
 import com.salesforce.apollo.thoth.DirectPublisher;
+import io.grpc.inprocess.InProcessSocketAddress;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Provider;
 import java.security.cert.X509Certificate;
@@ -66,18 +65,25 @@ public class SkyApplication {
         this.member = member;
         certWithKey = member.getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
                                                           SignatureAlgorithm.DEFAULT);
-        Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
-        var certValidator = new DelegatedCertificateValidator();
-        EndpointProvider ep = new StandardEpProvider(configuration.clusterEndpoint, ClientAuth.REQUIRE, certValidator,
-                                                     resolver);
-        MtlsServer clusterServer = new MtlsServer(member, ep, clientContextSupplier(),
-                                                  serverContextSupplier(certWithKey));
+        var local = configuration.clusterEndpoint instanceof InProcessSocketAddress;
+        RouterSupplier clusterServer;
+        DelegatedCertificateValidator certValidator = new DelegatedCertificateValidator();
+        ;
+        if (local) {
+            clusterServer = new LocalServer(((InProcessSocketAddress) configuration.clusterEndpoint).getName(), member);
+        } else {
+            Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
+            EndpointProvider ep = new StandardEpProvider(configuration.clusterEndpoint, ClientAuth.REQUIRE,
+                                                         certValidator, resolver);
+            clusterServer = new MtlsServer(member, ep, clientContextSupplier(), serverContextSupplier(certWithKey));
+        }
         clusterComms = clusterServer.router(configuration.connectionCache);
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.build());
+        var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) configuration.clusterEndpoint;
         node = new Sky(configuration.group, member, configuration.processDomainParameters,
-                       configuration.choamParameters, runtime, configuration.clusterEndpoint,
+                       configuration.choamParameters, runtime, bind,
                        com.salesforce.apollo.fireflies.Parameters.newBuilder(), null);
         certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
         var k = node.getDht().asKERL();

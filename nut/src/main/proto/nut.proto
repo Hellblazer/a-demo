@@ -11,6 +11,7 @@ package com.hellblazer.nut;
 
 service Sphynx {
   rpc apply(EncryptedShare) returns(Status) {}
+  rpc unwrap(google.protobuf.Empty) returns(Status){}
   rpc seal(google.protobuf.Empty) returns(Status) {}
   rpc unseal(google.protobuf.Empty) returns(Status) {}
   rpc sessionKey(google.protobuf.Empty) returns(PublicKey_) {}
@@ -19,7 +20,8 @@ service Sphynx {
 message EncryptedShare {
   bytes encapsulation = 1;
   bytes iv = 2;
-  bytes share = 3;
+  bytes tag = 3;
+  bytes share = 4;
 }
 
 message Share {
@@ -29,6 +31,7 @@ message Share {
 
 message Status {
   bool success = 1;
+  int32 shares = 2;
 }
 
 message PublicKey_ {
