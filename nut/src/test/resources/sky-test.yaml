@@ -9,3 +9,12 @@ processDomainParameters:
   dhtBias: 3
   jdbcMaxConnections: 10
   dhtPbyz: 0.01
+
+identity:
+  keyStore: "target/.id"
+  keyStoreType: JCEKS
+  kerlURL: "jdbc:h2:file:./target/kerl-state"
+  identityFile: "target/.digest"
+  digestAlgorithm: BLAKE2B_256
+  signatureAlgorithm: ED_25519
+  encryptionAlgorithm: X_25519

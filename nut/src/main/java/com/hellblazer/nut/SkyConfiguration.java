@@ -49,7 +49,9 @@ import java.util.List;
  */
 public class SkyConfiguration {
 
+    @JsonProperty
     public Sphinx.UNWRAPPING                                   unwrapping;
+    @JsonProperty
     public IdentityConfiguration                               identity;
     @JsonProperty
     public Shamir                                              shamir;

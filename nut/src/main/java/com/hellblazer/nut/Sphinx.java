@@ -120,6 +120,7 @@ public class Sphinx {
             started.set(true);
         } else {
             sessionKeyPair = configuration.identity.encryptionAlgorithm().generateKeyPair();
+            log.info("Operating in sealed mode: {}", configuration.shamir);
         }
     }
 
@@ -164,6 +165,7 @@ public class Sphinx {
             System.err.printf("Configuration file: %s is a directory", argv[0]).println();
             System.exit(1);
         }
+        log.info("Reading configuration from: {}", file.getAbsolutePath());
         SkyConfiguration config = null;
         try (var fis = new FileInputStream(file)) {
             config = SkyConfiguration.from(fis);

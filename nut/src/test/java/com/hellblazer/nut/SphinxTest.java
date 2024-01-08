@@ -17,18 +17,9 @@
 
 package com.hellblazer.nut;
 
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
-import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
-import com.salesforce.apollo.stereotomy.StereotomyImpl;
-import com.salesforce.apollo.stereotomy.mem.MemKERL;
-import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
-import com.salesforce.apollo.utils.Entropy;
-import com.salesforce.apollo.utils.Utils;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
-import java.security.SecureRandom;
-import java.util.UUID;
+import java.io.File;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -38,6 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class SphinxTest {
     @Test
     public void smokin() throws Exception {
+        new File("target/.id").delete();
+        new File("target/.digest").delete();
+        new File("target/kerl-state.mv.db").delete();
+        new File("target/kerl-state.trace.db").delete();
         var devSecret = "Give me food or give me slack or kill me";
         Sphinx sphinx;
         try (var is = getClass().getResourceAsStream("/sky-test.yaml")) {

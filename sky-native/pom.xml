@@ -71,7 +71,7 @@
                         ${project.build.directory}/natives/${os.arch}
                     </outputDirectory>
                     <sharedLibrary>false</sharedLibrary>
-                    <mainClass>com.hellblazer.nut.SkyApplication</mainClass>
+                    <mainClass>com.hellblazer.nut.Sphinx</mainClass>
                     <buildArgs>
                         <buildArg>-Djava.awt.headless=true</buildArg>
                         <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
