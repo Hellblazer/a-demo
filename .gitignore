@@ -61,3 +61,5 @@ pom.xml.bak
 /conduit-ci/jenkins/jobs/
 /bc-src.zip
 /ff.log
+/nut/.digest
+/nut/.id

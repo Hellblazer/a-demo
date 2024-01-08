@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.hellblazer.sky</groupId>
+        <artifactId>sky.app</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>sky-native</artifactId>
+    <properties>
+        <imageName>sky</imageName>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hellblazer.sky</groupId>
+            <artifactId>nut</artifactId>
+        </dependency>
+
+        <!--  SLF4J -> JUL Dynamic Logging configuration ala
+              https://rmannibucau.metawerx.net/post/graalvm-jul-slf4j-logging -->
+        <dependency>
+            <groupId>io.yupiik.logging</groupId>
+            <artifactId>yupiik-logging-jul</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble-all</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>build-native</id>
+                        <goals>
+                            <goal>compile-no-fork</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <imageName>${imageName}</imageName>
+                    <outputDirectory>
+                        ${project.build.directory}/natives/${os.arch}
+                    </outputDirectory>
+                    <sharedLibrary>false</sharedLibrary>
+                    <mainClass>com.hellblazer.nut.Sphinx</mainClass>
+                    <buildArgs>
+                        <buildArg>-Djava.awt.headless=true</buildArg>
+                        <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+                        <buildArg>--enable-http</buildArg>
+                        <buildArg>--add-modules java.sql.rowset</buildArg>
+                        <buildArg>-H:+AllowDeprecatedBuilderClassesOnImageClasspath</buildArg>
+                        <buildArg>-H:+BuildReport</buildArg>
+                        <buildArgs>--enable-sbom</buildArgs>
+                        <buildArgs>-march=native</buildArgs>
+
+                        <!--  SLF4J -> JUL Dynamic Logging configuration ala
+                              https://rmannibucau.metawerx.net/post/graalvm-jul-slf4j-logging -->
+                        <buildArg>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</buildArg>
+                        <buildArg>--initialize-at-build-time=org.slf4j.LoggerFactory</buildArg>
+                        <buildArg>--initialize-at-build-time=org.slf4j.jul.JDK14LoggerAdapter</buildArg>
+                        <buildArg>--initialize-at-build-time=org.slf4j.impl.StaticLoggerBinder</buildArg>
+
+                        <buildArg>--initialize-at-build-time=org.jooq</buildArg>
+                        <buildArg>--initialize-at-build-time=javax.sql.rowset.RowSetProvider</buildArg>
+                        <buildArg>--initialize-at-build-time=org.bouncycastle</buildArg>
+
+                        <buildArg>--initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils</buildArg>
+                        <buildArg>--initialize-at-run-time=org.jooq.impl.Convert$_JSON</buildArg>
+                        <buildArg>--initialize-at-run-time=org.jooq.tools.Convert</buildArg>
+                        <buildArg>--initialize-at-run-time=org.jooq.impl.Convert$_XML</buildArg>
+                        <buildArg>--initialize-at-run-time=org.jooq.impl.DefaultRenderContext</buildArg>
+                        <buildArg>--initialize-at-run-time=io.netty</buildArg>
+                        <buildArg>--initialize-at-run-time=org.h2.store.fs.FilePath</buildArg>
+                    </buildArgs>
+                    <verbose>false</verbose>
+                    <metadataRepository>
+                        <enabled>true</enabled>
+                    </metadataRepository>
+                    <classpath>
+                        <param>
+                            ${project.build.directory}/${project.artifactId}-${project.version}-graalvm-jar-with-dependencies.jar
+                        </param>
+                    </classpath>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>graalvm-reachability-metadata</artifactId>
+                        <version>${native.maven.plugin.version}</version>
+                        <classifier>repository</classifier>
+                        <type>zip</type>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+</project>
