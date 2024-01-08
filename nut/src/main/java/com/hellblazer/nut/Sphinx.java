@@ -24,6 +24,11 @@ import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.PublicKey_;
 import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.proto.Status;
+import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
+import com.salesforce.apollo.cryptography.Digest;
+import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
+import com.salesforce.apollo.cryptography.cert.Certificates;
+import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
 import com.salesforce.apollo.stereotomy.KERL;
 import com.salesforce.apollo.stereotomy.StereotomyImpl;
@@ -40,7 +45,10 @@ import com.salesforce.apollo.utils.Utils;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.inprocess.InProcessChannelBuilder;
+import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.SslContext;
 import liquibase.Liquibase;
 import liquibase.Scope;
 import liquibase.database.core.H2Database;
@@ -55,13 +63,18 @@ import org.slf4j.LoggerFactory;
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -74,8 +87,8 @@ import java.util.function.Supplier;
  **/
 public class Sphinx {
 
-    public static final  String AES         = "AES";
-    public static final  String ALGORITHM   = "AES/GCM/NoPadding";
+    private static final String AES         = "AES";
+    private static final String ALGORITHM   = "AES/GCM/NoPadding";
     private static final int    TAG_LENGTH  = 128;
     private static final int    IV_LENGTH   = 12;
     private static final int    SALT_LENGTH = 16;
@@ -90,6 +103,7 @@ public class Sphinx {
     private volatile StereotomyImpl             stereotomy;
     private volatile ControlledIdentifierMember member;
     private volatile KERL.AppendKERL            kerl;
+    private volatile Runnable                   closeApiServer;
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -193,10 +207,88 @@ public class Sphinx {
         t.start();
     }
 
+    public void shutdown() {
+        if (!started.compareAndSet(true, false)) {
+            return;
+        }
+        root.set(new char[0]);
+        service.shares.clear();
+        sessionKeyPair = null;
+        final var current = closeApiServer;
+        closeApiServer = null;
+        if (current != null) {
+            current.run();
+        }
+        final var currentApplication = application;
+        application = null;
+        if (currentApplication != null) {
+            currentApplication.shutdown();
+        }
+        var id = member == null ? null : member.getId();
+        member = null;
+        kerl = null;
+        stereotomy = null;
+        log.warn("Server shutdown on: {}", id == null ? "<sealed>" : id.toString());
+    }
+
     public void start() {
         if (!started.compareAndSet(false, true)) {
             return;
         }
+        var local = configuration.apiEndpoint instanceof InProcessSocketAddress;
+        if (local) {
+            log.info("Starting in process API server: {}", configuration.apiEndpoint);
+            var server = InProcessServerBuilder.forAddress(configuration.apiEndpoint)
+                                               .addService(new SphynxServer(service))
+                                               .executor(Executors.newVirtualThreadPerTaskExecutor())
+                                               .build();
+            closeApiServer = Utils.wrapped(() -> {
+                server.shutdown();
+            }, log);
+            try {
+                server.start();
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to start local api server on: %s".formatted(member.getId()));
+            }
+        } else {
+            log.info("Starting in MTLS API server: {}", configuration.apiEndpoint);
+            var server = apiServer();
+            closeApiServer = Utils.wrapped(server::stop, log);
+            try {
+                server.start();
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to start local api server on: %s".formatted(member.getId()));
+            }
+        }
+    }
+
+    private ApiServer apiServer() {
+        CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) configuration.apiEndpoint);
+        var server = new ApiServer(configuration.apiEndpoint, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
+
+            @Override
+            public SslContext forServer(ClientAuth clientAuth, String alias, CertificateValidator validator,
+                                        Provider provider) {
+                return ApiServer.forServer(clientAuth, alias, apiIdentity.getX509Certificate(),
+                                           apiIdentity.getPrivateKey(), validator);
+            }
+
+            @Override
+            public Digest getMemberId(X509Certificate key) {
+                return Digest.NONE;
+            }
+        }, validator(), new SphynxServer(service));
+        return server;
+    }
+
+    private CertificateWithPrivateKey createIdentity(InetSocketAddress address) {
+        KeyPair keyPair = configuration.identity.signatureAlgorithm().generateKeyPair();
+        var notBefore = Instant.now();
+        var notAfter = Instant.now().plusSeconds(10_000);
+        X509Certificate generated = Certificates.selfSign(false, Utils.encode(
+        configuration.identity.digestAlgorithm().getOrigin(), address.getHostName(), address.getPort(),
+        keyPair.getPublic()), keyPair, notBefore, notAfter, Collections.emptyList());
+        return new CertificateWithPrivateKey(generated, keyPair.getPrivate());
     }
 
     private ManagedChannel forSeeds() {
@@ -237,6 +329,7 @@ public class Sphinx {
     }
 
     private void testify() {
+        log.info("Attesting identity, seeds: {} on: {}", configuration.seeds, member.getId());
     }
 
     private void unwrap(byte[] rs) {
@@ -307,6 +400,18 @@ public class Sphinx {
         testify();
     }
 
+    private CertificateValidator validator() {
+        return new CertificateValidator() {
+            @Override
+            public void validateClient(X509Certificate[] chain) throws CertificateException {
+            }
+
+            @Override
+            public void validateServer(X509Certificate[] chain) throws CertificateException {
+            }
+        };
+    }
+
     public enum UNWRAPPING {
         SHAMIR, DELEGATED;
     }
@@ -329,7 +434,7 @@ public class Sphinx {
                 shares.put(share.getKey(), share.getShare().toByteArray());
                 return Status.newBuilder().setShares(shares.size()).setSuccess(true).build();
             } catch (InvalidProtocolBufferException e) {
-                log.info("Not a valid share: {}", e);
+                log.info("Not a valid share: {}", e.toString());
                 return Status.newBuilder().setShares(shares.size()).setSuccess(false).build();
             }
         }

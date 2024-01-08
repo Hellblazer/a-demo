@@ -58,10 +58,12 @@ public class SkyConfiguration {
     @JsonProperty
     public SocketAddress                                       clusterEndpoint;
     @JsonProperty
+    public SocketAddress                                       apiEndpoint;
+    @JsonProperty
     public Digest                                              group;
     @JsonProperty
     public Parameters.Builder                                  choamParameters;
-    public ProcessDomainParameters                             processDomainParameters;
+    public ProcessDomainParameters                             domain;
     @JsonProperty
     public ServerConnectionCache.Builder                       connectionCache;
     @JsonProperty
@@ -84,13 +86,13 @@ public class SkyConfiguration {
         gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
         shamir = new Shamir(3, 2);
         clusterEndpoint = new InetSocketAddress(InetAddress.getLoopbackAddress(), Utils.allocatePort());
+        apiEndpoint = new InetSocketAddress(InetAddress.getLoopbackAddress(), Utils.allocatePort());
         group = DigestAlgorithm.DEFAULT.digest("SLACK");
         connectionCache = ServerConnectionCache.newBuilder().setTarget(30);
         context = Context.newBuilder().setBias(3).setpByz(0.1);
-        processDomainParameters = new ProcessDomainParameters("jdbc:h2:mem:sql-state;DB_CLOSE_DELAY=-1", Duration.ofMinutes(1),
-                                                              "jdbc:h2:mem:dht-state;DB_CLOSE_DELAY=-1", checkpointBaseDir,
-                                                              Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3,
-                                                              10, 0.1);
+        domain = new ProcessDomainParameters("jdbc:h2:mem:sql-state;DB_CLOSE_DELAY=-1", Duration.ofMinutes(1),
+                                             "jdbc:h2:mem:dht-state;DB_CLOSE_DELAY=-1", checkpointBaseDir,
+                                             Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3, 10, 0.1);
         choamParameters = Parameters.newBuilder()
                                     .setViewSigAlgorithm(identity.signatureAlgorithm)
                                     .setDigestAlgorithm(identity.digestAlgorithm)

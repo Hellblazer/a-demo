@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  **/
 public class SphinxTest {
     @Test
-    public void smokin() throws Exception {
+    public void development() throws Exception {
         new File("target/.id").delete();
         new File("target/.digest").delete();
         new File("target/kerl-state.mv.db").delete();
@@ -39,5 +39,22 @@ public class SphinxTest {
             sphinx = new Sphinx(is, devSecret);
         }
         assertNotNull(sphinx);
+        sphinx.start();
+        sphinx.shutdown();
+    }
+    @Test
+    public void shamir() throws Exception {
+        new File("target/.id").delete();
+        new File("target/.digest").delete();
+        new File("target/kerl-state.mv.db").delete();
+        new File("target/kerl-state.trace.db").delete();
+        var devSecret = "Give me food or give me slack or kill me";
+        Sphinx sphinx;
+        try (var is = getClass().getResourceAsStream("/sky-test.yaml")) {
+            sphinx = new Sphinx(is);
+        }
+        assertNotNull(sphinx);
+        sphinx.start();
+        sphinx.shutdown();
     }
 }

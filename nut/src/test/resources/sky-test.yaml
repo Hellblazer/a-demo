@@ -1,4 +1,4 @@
-processDomainParameters:
+domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"
   dhtOperationsTimeout: PT0H0M10S
   dhtDbUrl: "jdbc:h2:mem:dht;DB_CLOSE_DELAY=-1"
