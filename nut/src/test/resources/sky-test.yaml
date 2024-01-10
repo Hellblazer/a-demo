@@ -1,3 +1,4 @@
+
 domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"
   dhtOperationsTimeout: PT0H0M10S

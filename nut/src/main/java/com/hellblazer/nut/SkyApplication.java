@@ -82,8 +82,7 @@ public class SkyApplication {
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.build());
         var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) configuration.clusterEndpoint;
-        node = new Sky(configuration.group, member, configuration.domain,
-                       configuration.choamParameters, runtime, bind,
+        node = new Sky(configuration.group, member, configuration.domain, configuration.choamParameters, runtime, bind,
                        com.salesforce.apollo.fireflies.Parameters.newBuilder(), null);
         certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
         var k = node.getDht().asKERL();

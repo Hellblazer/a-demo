@@ -110,6 +110,7 @@ public class SkyConfiguration {
     static SkyConfiguration from(InputStream is) {
         SkyConfiguration config;
         var mapper = new ObjectMapper(new YAMLFactory());
+        mapper.addMixIn(SocketAddress.class, SocketAddressMixin.class);
         mapper.registerModule(new Jdk8Module());
         mapper.registerModule(new JavaTimeModule());
         try {

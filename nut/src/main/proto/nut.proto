@@ -20,7 +20,7 @@ service Sphynx {
 message EncryptedShare {
   bytes encapsulation = 1;
   bytes iv = 2;
-  bytes tag = 3;
+  bytes associatedData = 3;
   bytes share = 4;
 }
 
