@@ -65,23 +65,23 @@ public class SkyApplication {
         this.member = member;
         certWithKey = member.getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
                                                           SignatureAlgorithm.DEFAULT);
-        var local = configuration.clusterEndpoint instanceof InProcessSocketAddress;
-        RouterSupplier clusterServer;
+        var socketAddress = configuration.clusterEndpoint.socketAddress();
+        var local = socketAddress instanceof InProcessSocketAddress;
         DelegatedCertificateValidator certValidator = new DelegatedCertificateValidator();
-        ;
+
+        RouterSupplier clusterServer;
         if (local) {
-            clusterServer = new LocalServer(((InProcessSocketAddress) configuration.clusterEndpoint).getName(), member);
+            clusterServer = new LocalServer(((InProcessSocketAddress) socketAddress).getName(), member);
         } else {
             Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
-            EndpointProvider ep = new StandardEpProvider(configuration.clusterEndpoint, ClientAuth.REQUIRE,
-                                                         certValidator, resolver);
+            EndpointProvider ep = new StandardEpProvider(socketAddress, ClientAuth.REQUIRE, certValidator, resolver);
             clusterServer = new MtlsServer(member, ep, clientContextSupplier(), serverContextSupplier(certWithKey));
         }
         clusterComms = clusterServer.router(configuration.connectionCache);
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.build());
-        var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) configuration.clusterEndpoint;
+        var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) socketAddress;
         node = new Sky(configuration.group, member, configuration.domain, configuration.choamParameters, runtime, bind,
                        com.salesforce.apollo.fireflies.Parameters.newBuilder(), null);
         certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));

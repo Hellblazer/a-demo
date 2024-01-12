@@ -147,6 +147,10 @@ public class ApiServer implements ClientIdentity {
         server.start();
     }
 
+    public SocketAddress getAddress() {
+        return server.getListenSockets().getFirst();
+    }
+
     public void stop() {
         server.shutdownNow();
     }

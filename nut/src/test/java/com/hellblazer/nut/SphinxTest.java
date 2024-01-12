@@ -78,7 +78,7 @@ public class SphinxTest {
         var status = sphynxClient.unseal(Empty.getDefaultInstance());
 
         assertNotNull(status);
-        assertFalse(status.getSuccess());
+        assertTrue(status.getSuccess());
         assertEquals(0, status.getShares());
 
         var publicKey_ = sphynxClient.sessionKey(Empty.getDefaultInstance());
@@ -106,10 +106,11 @@ public class SphinxTest {
                                .setShare(ByteString.copyFrom(share.getValue()))
                                .build();
             var associatedData = "Hello world    ".getBytes();
-            var cipherText = Sphinx.encrypt(wrapped.toByteArray(), secretKey, associatedData);
+            var encrypted = Sphinx.encrypt(wrapped.toByteArray(), secretKey, associatedData);
             var encryptedShare = EncryptedShare.newBuilder()
+                                               .setIv(ByteString.copyFrom(encrypted.iv()))
                                                .setAssociatedData(ByteString.copyFrom(associatedData))
-                                               .setShare(ByteString.copyFrom(cipherText))
+                                               .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                                .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                                .build();
             var result = sphynxClient.apply(encryptedShare);

@@ -18,30 +18,27 @@
 package com.hellblazer.nut;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.grpc.inprocess.InProcessSocketAddress;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
+ * A unified endpoint, either InProcess or Socket based
+ *
  * @author hal.hildebrand
  **/
-
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "type", defaultImpl = Void.class)
-@JsonSubTypes({ @JsonSubTypes.Type(value = InProcessSocketAddress.class, name = "inproc"),
-                @JsonSubTypes.Type(value = InetSocketAddress.class, name = "inet") })
-abstract class SocketAddressMixin {
-
-    SocketAddressMixin(@JsonProperty("hostName") String hostName, @JsonProperty("port") int port) {
+public record Endpoint(@JsonProperty("hostName") String hostName, @JsonProperty("port") int port,
+                       @JsonProperty("name") String name) {
+    public SocketAddress socketAddress() {
+        if (name == null) {
+            return new InetSocketAddress(hostName, port);
+        } else {
+            return new InProcessSocketAddress(name);
+        }
     }
 
-    @JsonProperty
-    abstract public String getHostName();
-
-    @JsonProperty
-    abstract public String getName();
-
-    @JsonProperty
-    abstract public int getPort();
+    public String toString() {
+        return socketAddress().toString();
+    }
 }

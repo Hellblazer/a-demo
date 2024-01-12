@@ -44,6 +44,7 @@ import com.salesforce.apollo.utils.Entropy;
 import com.salesforce.apollo.utils.Utils;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
@@ -67,7 +68,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -76,13 +76,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 /**
  * Guards the entry to the Sky.  This is the initialization of identity, the unwrapping of key to the keystore for this
@@ -95,7 +95,7 @@ public class Sphinx {
     private static final String                     AES        = "AES";
     private static final String                     ALGORITHM  = "AES/GCM/NoPadding";
     private static final int                        TAG_LENGTH = 128; // bits
-    private static final int                        IV_LENGTH  = 12; // bytes
+    private static final int                        IV_LENGTH  = 16; // bytes
     private static final Logger                     log        = LoggerFactory.getLogger(Sphinx.class);
     private final        AtomicBoolean              started    = new AtomicBoolean();
     private final        AtomicReference<char[]>    root       = new AtomicReference<>();
@@ -106,6 +106,7 @@ public class Sphinx {
     private volatile     ControlledIdentifierMember member;
     private volatile     KERL.AppendKERL            kerl;
     private volatile     Runnable                   closeApiServer;
+    private              SocketAddress              apiAddress;
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -142,24 +143,23 @@ public class Sphinx {
     /**
      * Decrypts encrypted message (see {@link #encrypt(byte[], SecretKey, byte[])}).
      *
-     * @param cipherMessage  iv with ciphertext
-     * @param secretKey      used to decrypt
-     * @param associatedData optional, additional (public) data to verify on decryption with GCM auth associatedData
+     * @param encrypted the encrypted package
+     * @param secretKey used to decrypt
      * @return original plaintext
      * @throws Exception if anything goes wrong
      */
-    public static byte[] decrypt(byte[] cipherMessage, SecretKey secretKey, byte[] associatedData) {
+    public static byte[] decrypt(Encrypted encrypted, SecretKey secretKey) {
         try {
             final Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             //use first 12 bytes for iv
-            AlgorithmParameterSpec gcmIv = new GCMParameterSpec(TAG_LENGTH, cipherMessage, 0, IV_LENGTH);
+            AlgorithmParameterSpec gcmIv = new GCMParameterSpec(TAG_LENGTH, encrypted.iv);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmIv);
 
-            if (associatedData != null) {
-                cipher.updateAAD(associatedData);
+            if (encrypted.associatedData != null) {
+                cipher.updateAAD(encrypted.associatedData);
             }
             //use everything from 12 bytes on as ciphertext
-            return cipher.doFinal(cipherMessage, IV_LENGTH, cipherMessage.length - IV_LENGTH);
+            return cipher.doFinal(encrypted.cipherText);
         } catch (Throwable t) {
             throw new IllegalStateException("Unable to decrypt", t);
         }
@@ -174,9 +174,9 @@ public class Sphinx {
      * @return encrypted message
      * @throws Exception if anything goes wrong
      */
-    public static byte[] encrypt(byte[] plaintext, SecretKey secretKey, byte[] associatedData) {
+    public static Encrypted encrypt(byte[] plaintext, SecretKey secretKey, byte[] associatedData) {
         try {
-            byte[] iv = new byte[IV_LENGTH]; //NEVER REUSE THIS IV WITH SAME KEY
+            byte[] iv = new byte[IV_LENGTH];
             Entropy.nextSecureBytes(iv);
             final Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             GCMParameterSpec parameterSpec = new GCMParameterSpec(TAG_LENGTH, iv); //128 bit auth associatedData length
@@ -186,12 +186,7 @@ public class Sphinx {
                 cipher.updateAAD(associatedData);
             }
 
-            byte[] cipherText = cipher.doFinal(plaintext);
-
-            ByteBuffer byteBuffer = ByteBuffer.allocate(iv.length + cipherText.length);
-            byteBuffer.put(iv);
-            byteBuffer.put(cipherText);
-            return byteBuffer.array();
+            return new Encrypted(cipher.doFinal(plaintext), iv, associatedData);
         } catch (Throwable t) {
             throw new IllegalStateException("Unable to encrypt", t);
         }
@@ -240,15 +235,11 @@ public class Sphinx {
     }
 
     public SocketAddress getApiEndpoint() {
-        return configuration.apiEndpoint;
+        return apiAddress;
     }
 
     public SocketAddress getClusterEndpoint() {
-        return configuration.clusterEndpoint;
-    }
-
-    public KeyPair getSessionKeyPair() {
-        return service.sessionKeyPair;
+        return configuration.clusterEndpoint.socketAddress();
     }
 
     public void shutdown() {
@@ -279,13 +270,15 @@ public class Sphinx {
         if (!started.compareAndSet(false, true)) {
             return;
         }
-        var local = configuration.apiEndpoint instanceof InProcessSocketAddress;
+        var socketAddress = configuration.apiEndpoint.socketAddress();
+        var local = socketAddress instanceof InProcessSocketAddress;
         if (local) {
             log.info("Starting in process API server: {}", configuration.apiEndpoint);
-            var server = InProcessServerBuilder.forAddress(configuration.apiEndpoint)
+            var server = InProcessServerBuilder.forAddress(socketAddress)
                                                .addService(new SphynxServer(service))
                                                .executor(Executors.newVirtualThreadPerTaskExecutor())
                                                .build();
+            apiAddress = socketAddress;
             closeApiServer = Utils.wrapped(() -> {
                 server.shutdown();
             }, log);
@@ -303,12 +296,15 @@ public class Sphinx {
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to start local api server on: %s".formatted(member.getId()));
             }
+            apiAddress = server.getAddress();
         }
+        log.info("Started API server on: {} : {}", configuration.apiEndpoint, apiAddress);
     }
 
     private ApiServer apiServer() {
-        CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) configuration.apiEndpoint);
-        var server = new ApiServer(configuration.apiEndpoint, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
+        var address = configuration.apiEndpoint.socketAddress();
+        CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) address);
+        var server = new ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
 
             @Override
             public SslContext forServer(ClientAuth clientAuth, String alias, CertificateValidator validator,
@@ -395,7 +391,7 @@ public class Sphinx {
                 is = new FileInputStream(storeFile);
             }
             final var ks = KeyStore.getInstance(configuration.identity.keyStoreType());
-            ks.load(is, ((Supplier<char[]>) root::get).get());
+            ks.load(is, root.get());
             keyStore = new FileKeyStore(ks, root::get, storeFile);
         } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
             log.error("Cannot load root: {}", storeFile.getAbsolutePath());
@@ -460,19 +456,31 @@ public class Sphinx {
         SHAMIR, DELEGATED;
     }
 
+    public record Encrypted(byte[] cipherText, byte[] iv, byte[] associatedData) {
+    }
+
     public class Service {
         private final    Map<Integer, byte[]> shares = new ConcurrentHashMap<>();
         private volatile KeyPair              sessionKeyPair;
 
         public Status apply(EncryptedShare eShare) {
-            var secretKey = configuration.identity.encryptionAlgorithm()
-                                                  .decapsulate(sessionKeyPair.getPrivate(),
-                                                               eShare.getEncapsulation().toByteArray(), AES);
-            var decrypted = decrypt(eShare.getShare().toByteArray(), secretKey,
-                                    eShare.getAssociatedData().toByteArray());
+            log.info("Applying encrypted share");
+            byte[] decrypted;
+            try {
+                var secretKey = configuration.identity.encryptionAlgorithm()
+                                                      .decapsulate(sessionKeyPair.getPrivate(),
+                                                                   eShare.getEncapsulation().toByteArray(), AES);
+                var encrypted = new Encrypted(eShare.getShare().toByteArray(), eShare.getIv().toByteArray(),
+                                              eShare.getAssociatedData().toByteArray());
+                decrypted = decrypt(encrypted, secretKey);
+            } catch (Throwable t) {
+                log.warn("Cannot decrypt share", t);
+                return Status.newBuilder().setSuccess(false).build();
+            }
             try {
                 var share = Share.parseFrom(decrypted);
                 shares.put(share.getKey(), share.getShare().toByteArray());
+                log.warn("Share applied: {}", share.getKey());
                 return Status.newBuilder().setShares(shares.size()).setSuccess(true).build();
             } catch (InvalidProtocolBufferException e) {
                 log.info("Not a valid share: {}", e.toString());
@@ -484,10 +492,16 @@ public class Sphinx {
             root.set(new char[0]);
             sessionKeyPair = null;
             application.shutdown();
+            log.info("Service has been sealed");
             return Status.newBuilder().setSuccess(true).build();
         }
 
         public PublicKey_ sessionKey() {
+            if (sessionKeyPair == null) {
+                log.info("Session key pair not available");
+                throw new StatusRuntimeException(io.grpc.Status.FAILED_PRECONDITION);
+            }
+            log.info("Requesting session key pair");
             var alg = configuration.identity.encryptionAlgorithm();
             return PublicKey_.newBuilder()
                              .setAlgorithm(PublicKey_.algo.forNumber(alg.getCode()))
@@ -497,10 +511,12 @@ public class Sphinx {
 
         public Status unseal() {
             if (application != null) {
+                log.info("Service already unwrapped on: {}", member.getId());
                 return Status.newBuilder().setSuccess(true).setShares(shares.size()).build();
             }
+            log.info("Unsealing service");
             sessionKeyPair = configuration.identity.encryptionAlgorithm().generateKeyPair();
-            return Status.getDefaultInstance();
+            return Status.newBuilder().setSuccess(true).setShares(0).build();
         }
 
         public Status unwrap() {
@@ -509,14 +525,15 @@ public class Sphinx {
                          configuration.shamir.threshold(), configuration.shamir.shares());
                 return Status.newBuilder().setSuccess(false).setShares(shares.size()).build();
             }
-            log.info("Unwrapping with: {} shares configured: {} out of {}", shares.size(),
+            log.info("Unwrapping service with: {} shares configured: {} out of {}", shares.size(),
                      configuration.shamir.threshold(), configuration.shamir.shares());
             var scheme = new Scheme(new SecureRandom(), configuration.shamir.shares(),
                                     configuration.shamir.threshold());
-            Sphinx.this.unwrap(scheme.join(shares));
             var status = Status.newBuilder().setShares(shares.size()).setSuccess(true).build();
+            var clone = new HashMap<>(shares);
             shares.clear();
             sessionKeyPair = null;
+            Sphinx.this.unwrap(scheme.join(clone));
             return status;
         }
     }

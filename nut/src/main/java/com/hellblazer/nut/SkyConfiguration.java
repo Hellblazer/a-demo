@@ -56,9 +56,9 @@ public class SkyConfiguration {
     @JsonProperty
     public Shamir                                              shamir;
     @JsonProperty
-    public SocketAddress                                       clusterEndpoint;
+    public Endpoint                                            clusterEndpoint;
     @JsonProperty
-    public SocketAddress                                       apiEndpoint;
+    public Endpoint                                            apiEndpoint;
     @JsonProperty
     public Digest                                              group;
     @JsonProperty
@@ -85,8 +85,9 @@ public class SkyConfiguration {
         unwrapping = Sphinx.UNWRAPPING.SHAMIR;
         gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
         shamir = new Shamir(3, 2);
-        clusterEndpoint = new InetSocketAddress(InetAddress.getLoopbackAddress(), Utils.allocatePort());
-        apiEndpoint = new InetSocketAddress(InetAddress.getLoopbackAddress(), Utils.allocatePort());
+        var localhost = InetAddress.getLoopbackAddress().getHostName();
+        clusterEndpoint = new Endpoint(localhost, Utils.allocatePort(), null);
+        apiEndpoint = new Endpoint(localhost, Utils.allocatePort(), null);
         group = DigestAlgorithm.DEFAULT.digest("SLACK");
         connectionCache = ServerConnectionCache.newBuilder().setTarget(30);
         context = Context.newBuilder().setBias(3).setpByz(0.1);
@@ -110,7 +111,6 @@ public class SkyConfiguration {
     static SkyConfiguration from(InputStream is) {
         SkyConfiguration config;
         var mapper = new ObjectMapper(new YAMLFactory());
-        mapper.addMixIn(SocketAddress.class, SocketAddressMixin.class);
         mapper.registerModule(new Jdk8Module());
         mapper.registerModule(new JavaTimeModule());
         try {

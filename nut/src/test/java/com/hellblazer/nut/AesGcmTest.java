@@ -34,15 +34,17 @@ public class AesGcmTest {
         var encrypted = Sphinx.encrypt(wrapped.toByteArray(), secretKey, associatedData);
 
         var eShare = EncryptedShare.newBuilder()
+                                   .setIv(ByteString.copyFrom(encrypted.iv()))
                                    .setAssociatedData(ByteString.copyFrom(associatedData))
-                                   .setShare(ByteString.copyFrom(encrypted))
+                                   .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                    .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                    .build();
 
         var secretKey2 = algorithm.decapsulate(sessionKeyPair.getPrivate(), eShare.getEncapsulation().toByteArray(),
                                                "AES");
-        var decrypted = Sphinx.decrypt(eShare.getShare().toByteArray(), secretKey2,
-                                       eShare.getAssociatedData().toByteArray());
+        var en = new Sphinx.Encrypted(eShare.getShare().toByteArray(), eShare.getIv().toByteArray(),
+                                      eShare.getAssociatedData().toByteArray());
+        var decrypted = Sphinx.decrypt(en, secretKey2);
         var result = Share.parseFrom(decrypted);
 
         assertNotNull(result);
@@ -62,8 +64,8 @@ public class AesGcmTest {
 
         String message = "the secret message";
 
-        byte[] cipherText = Sphinx.encrypt(message.getBytes(StandardCharsets.UTF_8), secretKey, associatedData);
-        String decrypted = new String(Sphinx.decrypt(cipherText, secretKey, associatedData), StandardCharsets.UTF_8);
+        var encrypted = Sphinx.encrypt(message.getBytes(StandardCharsets.UTF_8), secretKey, associatedData);
+        String decrypted = new String(Sphinx.decrypt(encrypted, secretKey), StandardCharsets.UTF_8);
 
         assertEquals(message, decrypted);
     }

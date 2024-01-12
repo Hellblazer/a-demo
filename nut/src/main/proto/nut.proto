@@ -32,6 +32,7 @@ message Share {
 message Status {
   bool success = 1;
   int32 shares = 2;
+  string message = 3;
 }
 
 message PublicKey_ {
@@ -43,7 +44,3 @@ message PublicKey_ {
   algo algorithm = 1;
   bytes publicKey = 2;
 }
-
-service Nut {
-}
-

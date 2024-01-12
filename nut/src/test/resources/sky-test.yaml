@@ -1,4 +1,12 @@
 
+clusterEndpoint:
+  hostName: localhost
+  port: 0
+
+apiEndpoint:
+  hostName: localhost
+  port: 0
+
 domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"
   dhtOperationsTimeout: PT0H0M10S
