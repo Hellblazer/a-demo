@@ -18,6 +18,8 @@
 package com.hellblazer.nut;
 
 import com.codahale.shamir.Scheme;
+import com.google.protobuf.ByteString;
+import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.Share;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
@@ -44,17 +46,31 @@ public class ShareService {
         this.authenticationTag = authenticationTag;
     }
 
-    public List<Sphinx.Encrypted> shares(int secretByteSize, List<PublicKey> keys, int threshold) {
+    public List<EncryptedShare> shares(int secretByteSize, List<PublicKey> keys, int threshold) {
         var scheme = new Scheme(entropy, keys.size(), threshold);
         var secret = new byte[secretByteSize];
         entropy.nextBytes(secret);
-        var shares = scheme.split(secret).entrySet().stream().map(e -> Share.newBuilder().build()).toList();
+        var shares = scheme.split(secret)
+                           .entrySet()
+                           .stream()
+                           .map(e -> Share.newBuilder()
+                                          .setKey(e.getKey())
+                                          .setShare(ByteString.copyFrom(e.getValue()))
+                                          .build())
+                           .toList();
         return IntStream.range(0, keys.size()).mapToObj(i -> encrypt(shares.get(i), keys.get(i))).toList();
     }
 
-    private Sphinx.Encrypted encrypt(Share s, PublicKey publicKey) {
+    private EncryptedShare encrypt(Share s, PublicKey publicKey) {
         var encapsulated = algorithm.encapsulated(publicKey);
         var key = new SecretKeySpec(encapsulated.key().getEncoded(), Sphinx.AES);
-        return Sphinx.encrypt(s.toByteArray(), key, publicKey.getEncoded());
+        var associatedData = authenticationTag.getBytes();
+        var encrypted = Sphinx.encrypt(s.toByteArray(), key, associatedData);
+        return EncryptedShare.newBuilder()
+                             .setAssociatedData(ByteString.copyFrom(associatedData))
+                             .setIv(ByteString.copyFrom(encrypted.iv()))
+                             .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
+                             .setShare(ByteString.copyFrom(encrypted.cipherText()))
+                             .build();
     }
 }

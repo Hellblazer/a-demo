@@ -21,11 +21,10 @@ public class AesGcmTest {
     private final        SecureRandom secureRandom  = new SecureRandom();
 
     @Test
-    public void applyScenario() throws Exception {
+    public void shareRoundTrip() throws Exception {
         var algorithm = EncryptionAlgorithm.X_25519;
         var sessionKeyPair = algorithm.generateKeyPair(secureRandom);
-        var share = new byte[] { 'a', 'b', 'a', 'b', 'a', 'b', 'a', 'b', 'a', 'b', 'a', 'b', 'a', 'b', 'a', 'b', 'a',
-                                 'b', 'a', 'b', 'a', 'b', 'a', 'b' };
+        var share = "give me food or give me slack or kill me".getBytes(StandardCharsets.UTF_8);
         var wrapped = Share.newBuilder().setKey(1).setShare(ByteString.copyFrom(share)).build();
         var associatedData = "Hello world    ".getBytes();
 
@@ -41,7 +40,7 @@ public class AesGcmTest {
                                    .build();
 
         var secretKey2 = algorithm.decapsulate(sessionKeyPair.getPrivate(), eShare.getEncapsulation().toByteArray(),
-                                               "AES");
+                                               Sphinx.AES);
         var en = new Sphinx.Encrypted(eShare.getShare().toByteArray(), eShare.getIv().toByteArray(),
                                       eShare.getAssociatedData().toByteArray());
         var decrypted = Sphinx.decrypt(en, secretKey2);
@@ -58,11 +57,10 @@ public class AesGcmTest {
         //create new random key
         byte[] key = new byte[16];
         secureRandom.nextBytes(key);
-        SecretKey secretKey = new SecretKeySpec(key, "AES");
-        byte[] associatedData = "ProtocolVersion1".getBytes(
-        StandardCharsets.UTF_8); //meta data you want to verify with the secret message
+        SecretKey secretKey = new SecretKeySpec(key, Sphinx.AES);
+        byte[] associatedData = "Something borrowed, something you".getBytes(StandardCharsets.UTF_8);
 
-        String message = "the secret message";
+        String message = "Give me food or give me slack or kill me";
 
         var encrypted = Sphinx.encrypt(message.getBytes(StandardCharsets.UTF_8), secretKey, associatedData);
         String decrypted = new String(Sphinx.decrypt(encrypted, secretKey), StandardCharsets.UTF_8);

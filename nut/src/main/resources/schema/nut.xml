@@ -21,7 +21,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
 
-    <changeSet author="hhildebrand" id="model-1">
+    <changeSet author="hhildebrand" id="nut-1">
         <sql>create schema if not exists nut</sql>
 
         <createTable tableName="storage"
@@ -35,7 +35,7 @@
             <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
-            <column name="value" type="VARBINARY">
+            <column name="value" type="VARBINARY(1048576)">
                 <constraints nullable="false"/>
             </column>
         </createTable>

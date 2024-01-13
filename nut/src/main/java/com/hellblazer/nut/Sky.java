@@ -29,7 +29,6 @@ import com.salesforce.apollo.state.proto.Txn;
 import com.salesforce.apollo.stereotomy.services.grpc.StereotomyMetrics;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -45,10 +44,6 @@ public class Sky extends ProcessDomain {
                Parameters.Builder builder, Parameters.RuntimeParameters.Builder runtime, InetSocketAddress endpoint,
                com.salesforce.apollo.fireflies.Parameters.Builder ff, StereotomyMetrics stereotomyMetrics) {
         super(group, member, params, builder, runtime, endpoint, ff, stereotomyMetrics);
-    }
-
-    public Geb getGeb() {
-        return new Geb(stateConnection, mutator);
     }
 
     @Override

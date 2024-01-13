@@ -29,7 +29,6 @@ import com.salesforce.apollo.fireflies.View;
 import com.salesforce.apollo.gorgoneion.Gorgoneion;
 import com.salesforce.apollo.gorgoneion.proto.SignedAttestation;
 import com.salesforce.apollo.membership.Member;
-import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
 import com.salesforce.apollo.stereotomy.Stereotomy;
 import com.salesforce.apollo.stereotomy.StereotomyValidator;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
@@ -46,7 +45,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -54,46 +52,46 @@ import java.util.function.Predicate;
  * @author hal.hildebrand
  **/
 public class SkyApplication {
-    private final AtomicReference<char[]>    rootSecret = new AtomicReference<>();
-    private final ControlledIdentifierMember member;
-    private final Sky                        node;
-    private final Router                     clusterComms;
-    private final Gorgoneion                 gorgoneion;
-    private final CertificateWithPrivateKey  certWithKey;
-    private final SanctumSanctorum sanctorum;
+    private final Sky                       node;
+    private final Router                    clusterComms;
+    private final Gorgoneion                gorgoneion;
+    private final CertificateWithPrivateKey certWithKey;
+    private final SanctumSanctorum          sanctorum;
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum) {
         this.sanctorum = sanctorum;
-        this.member = sanctorum.member();
-        certWithKey = member.getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
-                                                          SignatureAlgorithm.DEFAULT);
+        certWithKey = sanctorum.member()
+                               .getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
+                                                             SignatureAlgorithm.DEFAULT);
         var socketAddress = configuration.clusterEndpoint.socketAddress();
         var local = socketAddress instanceof InProcessSocketAddress;
         DelegatedCertificateValidator certValidator = new DelegatedCertificateValidator();
 
         RouterSupplier clusterServer;
         if (local) {
-            clusterServer = new LocalServer(((InProcessSocketAddress) socketAddress).getName(), member);
+            clusterServer = new LocalServer(((InProcessSocketAddress) socketAddress).getName(), sanctorum.member());
         } else {
             Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
             EndpointProvider ep = new StandardEpProvider(socketAddress, ClientAuth.REQUIRE, certValidator, resolver);
-            clusterServer = new MtlsServer(member, ep, clientContextSupplier(), serverContextSupplier(certWithKey));
+            clusterServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
+                                           serverContextSupplier(certWithKey));
         }
         clusterComms = clusterServer.router(configuration.connectionCache);
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.build());
         var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) socketAddress;
-        node = new Sky(configuration.group, member, configuration.domain, configuration.choamParameters, runtime, bind,
-                       com.salesforce.apollo.fireflies.Parameters.newBuilder(), null);
+        node = new Sky(configuration.group, sanctorum.member(), configuration.domain, configuration.choamParameters,
+                       runtime, bind, com.salesforce.apollo.fireflies.Parameters.newBuilder(), null);
         certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
         var k = node.getDht().asKERL();
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k);
         Predicate<SignedAttestation> verifier = null;
-        gorgoneion = new Gorgoneion(this::verify, gorgoneionParameters.build(), member, runtime.getContext(),
-                                    new DirectPublisher(new ProtoKERLAdapter(k)), clusterComms, null, clusterComms);
+        gorgoneion = new Gorgoneion(this::verify, gorgoneionParameters.build(), sanctorum.member(),
+                                    runtime.getContext(), new DirectPublisher(new ProtoKERLAdapter(k)), clusterComms,
+                                    null, clusterComms);
     }
 
     public void shutdown() {
