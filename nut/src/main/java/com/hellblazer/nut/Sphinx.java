@@ -30,17 +30,7 @@ import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.cert.Certificates;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
-import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
-import com.salesforce.apollo.stereotomy.KERL;
-import com.salesforce.apollo.stereotomy.StereotomyImpl;
-import com.salesforce.apollo.stereotomy.StereotomyKeyStore;
-import com.salesforce.apollo.stereotomy.db.UniKERLDirect;
-import com.salesforce.apollo.stereotomy.event.proto.Ident;
-import com.salesforce.apollo.stereotomy.identifier.Identifier;
-import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
-import com.salesforce.apollo.stereotomy.jks.FileKeyStore;
 import com.salesforce.apollo.thoth.LoggingOutputStream;
-import com.salesforce.apollo.utils.BbBackedInputStream;
 import com.salesforce.apollo.utils.Entropy;
 import com.salesforce.apollo.utils.Utils;
 import io.grpc.ManagedChannel;
@@ -69,11 +59,12 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
-import java.security.*;
+import java.security.KeyPair;
+import java.security.Provider;
+import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Collections;
@@ -92,20 +83,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  **/
 public class Sphinx {
 
-    public static final  String                     AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
-    public static final  String                     AES                = "AES";
-    public static final  int                        TAG_LENGTH         = 128; // bits
-    public static final  int                        IV_LENGTH          = 16; // bytes
-    private static final Logger                     log                = LoggerFactory.getLogger(Sphinx.class);
+    public static final  String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
+    public static final  String AES                = "AES";
+    public static final  int    TAG_LENGTH         = 128; // bits
+    public static final  int    IV_LENGTH          = 16; // bytes
+    private static final Logger log                = LoggerFactory.getLogger(Sphinx.class);
 
-    private final        AtomicBoolean              started            = new AtomicBoolean();
-    private final        SkyConfiguration           configuration;
-    private final        Service                    service            = new Service();
-    private final        SecureRandom               entropy;
-    private volatile     SanctumSanctorum           sanctum;
-    private volatile     SkyApplication             application;
-    private volatile     Runnable                   closeApiServer;
-    private              SocketAddress              apiAddress;
+    private final    AtomicBoolean    started = new AtomicBoolean();
+    private final    SkyConfiguration configuration;
+    private final    Service          service = new Service();
+    private final    SecureRandom     entropy;
+    private volatile SanctumSanctorum sanctum;
+    private volatile SkyApplication   application;
+    private volatile Runnable         closeApiServer;
+    private          SocketAddress    apiAddress;
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -297,9 +288,10 @@ public class Sphinx {
 
     private ManagedChannel forSeeds() {
         var seeds = configuration.seeds;
-        var local = seeds.isEmpty() ? false : seeds.getFirst() instanceof InProcessSocketAddress;
+        var local = seeds.isEmpty() ? false : seeds.getFirst().socketAddress() instanceof InProcessSocketAddress;
         var builder = local ? InProcessChannelBuilder.forTarget("service") : ManagedChannelBuilder.forTarget("service");
-        return builder.nameResolverFactory(new SimpleNameResolverFactory(seeds))
+        return builder.nameResolverFactory(
+                      new SimpleNameResolverFactory(seeds.stream().map(s -> s.socketAddress()).toList()))
                       .defaultLoadBalancingPolicy("round_robin")
                       .usePlaintext()
                       .build();

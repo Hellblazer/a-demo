@@ -37,8 +37,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
@@ -70,7 +68,7 @@ public class SkyConfiguration {
     public Context.Builder<Member>                             context;
     @JsonProperty
     public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters;
-    public List<SocketAddress>                                 seeds = Collections.emptyList();
+    public List<Endpoint>                                      seeds = Collections.emptyList();
     public boolean                                             local = false;
 
     {

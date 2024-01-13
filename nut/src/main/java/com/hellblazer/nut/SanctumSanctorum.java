@@ -30,6 +30,7 @@ import com.salesforce.apollo.stereotomy.identifier.Identifier;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.jks.FileKeyStore;
 import com.salesforce.apollo.utils.BbBackedInputStream;
+import com.salesforce.apollo.utils.Hex;
 import com.salesforce.apollo.utils.Utils;
 import org.h2.jdbc.JdbcConnection;
 import org.slf4j.Logger;
@@ -64,12 +65,8 @@ public class SanctumSanctorum {
                             SkyConfiguration configuration) {
         this.member = member;
         this.stereotomy = stereotomy;
-        var pwd = new char[root.length];
-        for (var i = 0; i < root.length; i++) {
-            pwd[i] = (char) root[i];
-        }
         this.entropy = entropy;
-        this.root = pwd;
+        this.root = Hex.hexChars(root);
         this.master = new SecretKeySpec(algorithm.digest(root).getBytes(), "AES");
         assert master.getEncoded().length == 32 : "Must result in a 32 byte AES key: " + master.getEncoded().length;
         generator = new TokenGenerator(master, entropy);

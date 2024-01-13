@@ -1,4 +1,15 @@
-sky(clusterPort, apiPort, memberId) ::= <<
+
+seeds(seed) ::= <<
+seeds:
+  - hostName: localHost
+    port: <seed>
+>>
+
+sky(clusterPort, apiPort, memberId, seed, n, k) ::= <<
+
+<if(seed)><seeds(seed = seed)>
+<endif>
+
 clusterEndpoint:
   hostName: localhost
   port: <clusterPort>
@@ -7,11 +18,15 @@ apiEndpoint:
   hostName: localhost
   port: <apiPort>
 
+shamir:
+    shares: <n>
+    threshold: <k>
+
 domain:
   dbURL: "jdbc:h2:mem:sql-<memberId>;DB_CLOSE_DELAY=-1"
   dhtOperationsTimeout: PT0H0M10S
   dhtDbUrl: "jdbc:h2:mem:dht-<memberId>;DB_CLOSE_DELAY=-1"
-  checkpointBaseDir: ./target/cp
+  checkpointBaseDir: ./target/e2e/cp
   dhtOpsFrequency: PT0H0M00001S
   dhtFpr: 0.000125
   dhtEventValidTO: PT0H0M30S
@@ -20,10 +35,10 @@ domain:
   dhtPbyz: 0.01
 
 identity:
-  keyStore: "target/<memberId>.id"
+  keyStore: "target/e2e/<memberId>.id"
   keyStoreType: JCEKS
-  kerlURL: "jdbc:h2:file:./target/kerl-state-<memberId>"
-  identityFile: "target/<memberId>.digest"
+  kerlURL: "jdbc:h2:file:./target/e2e/kerl-state-<memberId>"
+  identityFile: "target/e2e/<memberId>.digest"
   digestAlgorithm: BLAKE2B_256
   signatureAlgorithm: ED_25519
   encryptionAlgorithm: X_25519
