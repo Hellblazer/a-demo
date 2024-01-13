@@ -72,40 +72,18 @@ public class E2ETest {
 
     @Test
     public void smokin() throws Exception {
+        byte[] associatedData = "Give me food or give me slack or kill me".getBytes(Charset.defaultCharset());
         var cardinality = 5;
         var threshold = 3;
         var secretByteSize = 1024;
+        var shares = initialize(cardinality, secretByteSize, threshold);
 
-        STGroup g = new STGroupFile("src/test/resources/sky.stg");
-        var authTag = DigestAlgorithm.DEFAULT.digest("Slack");
+        sphinxes.forEach(s -> s.start());
 
-        var algorithm = EncryptionAlgorithm.DEFAULT;
-        var entropy = new SecureRandom();
-        var secrets = new ShareService(authTag, entropy, algorithm);
-        var keys = IntStream.range(0, cardinality).mapToObj(i -> algorithm.generateKeyPair()).toList();
-        var encryptedShares = secrets.shares(secretByteSize, keys.stream().map(kp -> kp.getPublic()).toList(),
-                                             threshold);
+        // seed first
+        unwrap(0, sphinxes.getFirst(), shares, EncryptionAlgorithm.DEFAULT, associatedData);
 
-        var processes = IntStream.range(0, cardinality)
-                                 .mapToObj(i -> new Process(Utils.allocatePort(), i, Utils.allocatePort(),
-                                                            share(i, algorithm, keys, encryptedShares)))
-                                 .toList();
-        var seed = new Sphinx(configFor(g, processes.getFirst(), cardinality, threshold, null));
-        sphinxes = new ArrayList<>();
-        sphinxes.add(seed);
-        processes.subList(1, cardinality)
-                 .stream()
-                 .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().clusterPort))
-                 .map(is -> new Sphinx(is))
-                 .forEach(s -> sphinxes.add(s));
-
-        seed.start();
-        sphinxes.subList(1, cardinality).forEach(s -> s.start());
-
-        var shares = processes.stream().map(p -> p.share).toList();
-
-        byte[] associatedData = "Give me food or give me slack or kill me".getBytes(Charset.defaultCharset());
-        unwrap(0, seed, shares, EncryptionAlgorithm.DEFAULT, associatedData);
+        // then the rest of the crew
         for (int i = 1; i < cardinality; i++) {
             unwrap(i, sphinxes.get(i), shares, EncryptionAlgorithm.DEFAULT, associatedData);
         }
@@ -113,7 +91,7 @@ public class E2ETest {
         sphinxes.forEach(s -> s.shutdown());
     }
 
-    private MtlsClient client(int i, InetSocketAddress serverAddress) {
+    private MtlsClient apiClient(int i, InetSocketAddress serverAddress) {
         CertificateWithPrivateKey clientCert = Utils.getMember(i);
 
         MtlsClient client = new MtlsClient(serverAddress, ClientAuth.REQUIRE, "foo", clientCert.getX509Certificate(),
@@ -133,6 +111,33 @@ public class E2ETest {
         return new ByteArrayInputStream(rendered.getBytes(Charset.defaultCharset()));
     }
 
+    private List<Share> initialize(int cardinality, int secretByteSize, int threshold) {
+        STGroup g = new STGroupFile("src/test/resources/sky.stg");
+        var authTag = DigestAlgorithm.DEFAULT.digest("Slack");
+
+        var algorithm = EncryptionAlgorithm.DEFAULT;
+        var entropy = new SecureRandom();
+        var secrets = new ShareService(authTag, entropy, algorithm);
+        var keys = IntStream.range(0, cardinality).mapToObj(i -> algorithm.generateKeyPair()).toList();
+        var encryptedShares = secrets.shares(secretByteSize, keys.stream().map(kp -> kp.getPublic()).toList(),
+                                             threshold);
+
+        var processes = IntStream.range(0, cardinality)
+                                 .mapToObj(i -> new Process(Utils.allocatePort(), i, Utils.allocatePort(),
+                                                            share(i, algorithm, keys, encryptedShares)))
+                                 .toList();
+        var seed = new Sphinx(configFor(g, processes.getFirst(), cardinality, threshold, null));
+        sphinxes = new ArrayList<>();
+        sphinxes.add(seed);
+
+        processes.subList(1, cardinality)
+                 .stream()
+                 .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().clusterPort))
+                 .map(is -> new Sphinx(is))
+                 .forEach(s -> sphinxes.add(s));
+        return processes.stream().map(p -> p.share).toList();
+    }
+
     private Share share(int i, EncryptionAlgorithm algorithm, List<KeyPair> keys,
                         List<EncryptedShare> encryptedShares) {
         var key = algorithm.decapsulate(keys.get(i).getPrivate(),
@@ -150,7 +155,7 @@ public class E2ETest {
 
     private void unwrap(int i, Sphinx sphinx, List<Share> shares, EncryptionAlgorithm algorithm,
                         byte[] associatedData) {
-        var client = client(i, (InetSocketAddress) sphinx.getApiEndpoint());
+        var client = apiClient(i, (InetSocketAddress) sphinx.getApiEndpoint());
 
         try {
             var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
