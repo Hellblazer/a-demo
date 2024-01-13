@@ -44,18 +44,21 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
+ * encapsulation of ye olde thyme secrets n' associated sensitives
+ *
  * @author hal.hildebrand
  **/
 public class SanctumSanctorum {
-    private static final Logger                     log = LoggerFactory.getLogger(SanctumSanctorum.class);
-    private final        Digest                     id;
-    private volatile     char[]                     root;
-    private volatile     TokenGenerator             generator;
-    private volatile     SecureRandom               entropy;
-    private volatile     Key                        master;
-    private volatile     Stereotomy                 stereotomy;
-    private volatile     ControlledIdentifierMember member;
-    private volatile     KERL.AppendKERL            kerl;
+    private static final Logger log = LoggerFactory.getLogger(SanctumSanctorum.class);
+
+    private final    Digest                     id;
+    private volatile char[]                     root;
+    private volatile TokenGenerator             generator;
+    private volatile SecureRandom               entropy;
+    private volatile Key                        master;
+    private volatile Stereotomy                 stereotomy;
+    private volatile ControlledIdentifierMember member;
+    private volatile KERL.AppendKERL            kerl;
 
     public SanctumSanctorum(byte[] root, DigestAlgorithm algorithm, SecureRandom entropy,
                             SkyConfiguration configuration) {
@@ -70,37 +73,30 @@ public class SanctumSanctorum {
         this.master = new SecretKeySpec(algorithm.digest(root).getBytes(), "AES");
         assert master.getEncoded().length == 32 : "Must result in a 32 byte AES key: " + master.getEncoded().length;
         generator = new TokenGenerator(master, entropy);
+        initializeKerl(configuration);
+        initializeIdentifier(configuration, initializeKeyStore(configuration));
+        this.id = member.getId();
+    }
 
-        Connection connection = null;
-        try {
-            connection = new JdbcConnection(configuration.identity.kerlURL(), new Properties(), "", "", false);
-        } catch (SQLException e) {
-            log.error("Unable to create JDBC connection: {}", configuration.identity.kerlURL());
-        }
-        kerl = new UniKERLDirect(connection, configuration.identity.digestAlgorithm());
+    public Digest getId() {
+        return id;
+    }
 
-        StereotomyKeyStore keyStore = null;
-        var storeFile = configuration.identity.keyStore().toFile();
-        InputStream is = null;
-        try {
-            if (storeFile.exists()) {
-                is = new FileInputStream(storeFile);
-            }
-            final var ks = KeyStore.getInstance(configuration.identity.keyStoreType());
-            ks.load(is, rootPassword());
-            keyStore = new FileKeyStore(ks, () -> rootPassword(), storeFile);
-        } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-            log.error("Cannot load root: {}", storeFile.getAbsolutePath());
-            throw new IllegalStateException("Cannot load root", e);
-        } finally {
-            try {
-                if (is != null) {
-                    is.close();
-                }
-            } catch (IOException e) {
-                // ignored
-            }
-        }
+    void clear() {
+        master = null;
+        root = new char[0];
+        generator.clear();
+    }
+
+    ControlledIdentifierMember member() {
+        return member;
+    }
+
+    char[] rootPassword() {
+        return root;
+    }
+
+    private void initializeIdentifier(SkyConfiguration configuration, StereotomyKeyStore keyStore) {
         Identifier id = null;
         try (var dis = new FileInputStream(configuration.identity.identityFile().toFile());
              var baos = new ByteArrayOutputStream()) {
@@ -133,25 +129,42 @@ public class SanctumSanctorum {
             log.info("Resuming identifier: {} file: {}", member.getId(),
                      configuration.identity.identityFile().toAbsolutePath());
         }
-        this.id = member.getId();
     }
 
-    public Digest getId() {
-        return id;
+    private void initializeKerl(SkyConfiguration configuration) {
+        Connection connection = null;
+        try {
+            connection = new JdbcConnection(configuration.identity.kerlURL(), new Properties(), "", "", false);
+        } catch (SQLException e) {
+            log.error("Unable to create JDBC connection: {}", configuration.identity.kerlURL());
+        }
+        kerl = new UniKERLDirect(connection, configuration.identity.digestAlgorithm());
     }
 
-    void clear() {
-        master = null;
-        root = new char[0];
-        generator.clear();
-    }
-
-    ControlledIdentifierMember member() {
-        return member;
-    }
-
-    char[] rootPassword() {
-        return root;
+    private StereotomyKeyStore initializeKeyStore(SkyConfiguration configuration) {
+        StereotomyKeyStore keyStore = null;
+        var storeFile = configuration.identity.keyStore().toFile();
+        InputStream is = null;
+        try {
+            if (storeFile.exists()) {
+                is = new FileInputStream(storeFile);
+            }
+            final var ks = KeyStore.getInstance(configuration.identity.keyStoreType());
+            ks.load(is, rootPassword());
+            keyStore = new FileKeyStore(ks, () -> rootPassword(), storeFile);
+        } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
+            log.error("Cannot load root: {}", storeFile.getAbsolutePath());
+            throw new IllegalStateException("Cannot load root", e);
+        } finally {
+            try {
+                if (is != null) {
+                    is.close();
+                }
+            } catch (IOException e) {
+                // ignored
+            }
+        }
+        return keyStore;
     }
 
 }
