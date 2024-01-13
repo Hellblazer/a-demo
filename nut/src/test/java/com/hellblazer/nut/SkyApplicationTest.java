@@ -25,12 +25,14 @@ import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
 import com.salesforce.apollo.utils.Entropy;
 import com.salesforce.apollo.utils.Utils;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
 
 /**
  * @author hal.hildebrand
@@ -47,8 +49,10 @@ public class SkyApplicationTest {
         var stereotomy = new StereotomyImpl(new MemKeyStore(), new MemKERL(DigestAlgorithm.DEFAULT), entropy);
         var member = new ControlledIdentifierMember(stereotomy.newIdentifier());
         SkyApplication app;
+        var sanctum = Mockito.mock(SanctumSanctorum.class);
+        when(sanctum.member()).thenReturn(member);
         try (var is = getClass().getResourceAsStream("/sky-test.yaml")) {
-            app = new SkyApplication(SkyConfiguration.from(is), member);
+            app = new SkyApplication(SkyConfiguration.from(is), sanctum);
         }
         app.start();
         app.shutdown();

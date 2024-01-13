@@ -60,9 +60,11 @@ public class SkyApplication {
     private final Router                     clusterComms;
     private final Gorgoneion                 gorgoneion;
     private final CertificateWithPrivateKey  certWithKey;
+    private final SanctumSanctorum sanctorum;
 
-    public SkyApplication(SkyConfiguration configuration, ControlledIdentifierMember member) {
-        this.member = member;
+    public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum) {
+        this.sanctorum = sanctorum;
+        this.member = sanctorum.member();
         certWithKey = member.getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
                                                           SignatureAlgorithm.DEFAULT);
         var socketAddress = configuration.clusterEndpoint.socketAddress();

@@ -28,8 +28,12 @@ import java.util.function.Function;
  * @author hal.hildebrand
  **/
 public class TokenGenerator implements Function<Message, Token> {
-    private final Key          master;
-    private final SecureRandom entropy;
+    private final    SecureRandom entropy;
+    private volatile Key          master;
+
+    public TokenGenerator(java.security.Key master, SecureRandom entropy) {
+        this(new Key(master.getEncoded()), entropy);
+    }
 
     public TokenGenerator(Key master, SecureRandom entropy) {
         this.master = master;
@@ -39,5 +43,9 @@ public class TokenGenerator implements Function<Message, Token> {
     @Override
     public Token apply(Message message) {
         return Token.generate(entropy, master, message.toByteArray());
+    }
+
+    void clear() {
+        master = null;
     }
 }

@@ -26,6 +26,7 @@ import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.proto.Status;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
+import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.cert.Certificates;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
@@ -64,10 +65,10 @@ import org.slf4j.LoggerFactory;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.charset.Charset;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -82,7 +83,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Guards the entry to the Sky.  This is the initialization of identity, the unwrapping of key to the keystore for this
@@ -92,19 +92,18 @@ import java.util.concurrent.atomic.AtomicReference;
  **/
 public class Sphinx {
 
-    private static final String                     AES        = "AES";
-    private static final String                     ALGORITHM  = "AES/GCM/NoPadding";
-    private static final int                        TAG_LENGTH = 128; // bits
-    private static final int                        IV_LENGTH  = 16; // bytes
-    private static final Logger                     log        = LoggerFactory.getLogger(Sphinx.class);
-    private final        AtomicBoolean              started    = new AtomicBoolean();
-    private final        AtomicReference<char[]>    root       = new AtomicReference<>();
+    public static final  String                     AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
+    public static final  String                     AES                = "AES";
+    public static final  int                        TAG_LENGTH         = 128; // bits
+    public static final  int                        IV_LENGTH          = 16; // bytes
+    private static final Logger                     log                = LoggerFactory.getLogger(Sphinx.class);
+
+    private final        AtomicBoolean              started            = new AtomicBoolean();
     private final        SkyConfiguration           configuration;
-    private final        Service                    service    = new Service();
+    private final        Service                    service            = new Service();
+    private final        SecureRandom               entropy;
+    private volatile     SanctumSanctorum           sanctum;
     private volatile     SkyApplication             application;
-    private volatile     StereotomyImpl             stereotomy;
-    private volatile     ControlledIdentifierMember member;
-    private volatile     KERL.AppendKERL            kerl;
     private volatile     Runnable                   closeApiServer;
     private              SocketAddress              apiAddress;
 
@@ -121,64 +120,39 @@ public class Sphinx {
     }
 
     public Sphinx(SkyConfiguration configuration, String devSecret) {
+        this.entropy = new SecureRandom();
         this.configuration = configuration;
         initializeSchema();
-        Connection connection = null;
-        try {
-            connection = getConnection();
-        } catch (SQLException e) {
-            log.error("Unable to create JDBC connection: {}", configuration.identity.kerlURL());
-        }
-        kerl = new UniKERLDirect(connection, configuration.identity.digestAlgorithm());
 
         if (devSecret != null) {
             log.warn("Operating in development mode with dev secret");
-            unwrap(devSecret.toCharArray());
+            unwrap(devSecret.getBytes(Charset.defaultCharset()));
             started.set(true);
         } else {
             log.info("Operating in sealed mode: {}", configuration.shamir);
         }
     }
 
-    /**
-     * Decrypts encrypted message (see {@link #encrypt(byte[], SecretKey, byte[])}).
-     *
-     * @param encrypted the encrypted package
-     * @param secretKey used to decrypt
-     * @return original plaintext
-     * @throws Exception if anything goes wrong
-     */
     public static byte[] decrypt(Encrypted encrypted, SecretKey secretKey) {
         try {
-            final Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            //use first 12 bytes for iv
+            final Cipher cipher = Cipher.getInstance(AES_GCM_NO_PADDING);
             AlgorithmParameterSpec gcmIv = new GCMParameterSpec(TAG_LENGTH, encrypted.iv);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmIv);
 
             if (encrypted.associatedData != null) {
                 cipher.updateAAD(encrypted.associatedData);
             }
-            //use everything from 12 bytes on as ciphertext
             return cipher.doFinal(encrypted.cipherText);
         } catch (Throwable t) {
             throw new IllegalStateException("Unable to decrypt", t);
         }
     }
 
-    /**
-     * Encrypt a plaintext with given key.
-     *
-     * @param plaintext      to encrypt
-     * @param secretKey      to encrypt, must be AES type, see {@link SecretKeySpec}
-     * @param associatedData optional, additional (public) data to verify on decryption with GCM auth associatedData
-     * @return encrypted message
-     * @throws Exception if anything goes wrong
-     */
     public static Encrypted encrypt(byte[] plaintext, SecretKey secretKey, byte[] associatedData) {
         try {
             byte[] iv = new byte[IV_LENGTH];
             Entropy.nextSecureBytes(iv);
-            final Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            final Cipher cipher = Cipher.getInstance(AES_GCM_NO_PADDING);
             GCMParameterSpec parameterSpec = new GCMParameterSpec(TAG_LENGTH, iv); //128 bit auth associatedData length
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);
 
@@ -246,23 +220,13 @@ public class Sphinx {
         if (!started.compareAndSet(true, false)) {
             return;
         }
-        root.set(new char[0]);
-        service.shares.clear();
-        service.sessionKeyPair = null;
+        var id = sanctum == null ? null : sanctum.getId();
+        service.seal();
         final var current = closeApiServer;
         closeApiServer = null;
         if (current != null) {
             current.run();
         }
-        final var currentApplication = application;
-        application = null;
-        if (currentApplication != null) {
-            currentApplication.shutdown();
-        }
-        var id = member == null ? null : member.getId();
-        member = null;
-        kerl = null;
-        stereotomy = null;
         log.warn("Server shutdown on: {}", id == null ? "<sealed>" : id.toString());
     }
 
@@ -285,7 +249,7 @@ public class Sphinx {
             try {
                 server.start();
             } catch (IOException e) {
-                throw new IllegalStateException("Unable to start local api server on: %s".formatted(member.getId()));
+                throw new IllegalStateException("Unable to start local api server on: %s".formatted(sanctum.getId()));
             }
         } else {
             log.info("Starting in MTLS API server: {}", configuration.apiEndpoint);
@@ -294,7 +258,7 @@ public class Sphinx {
             try {
                 server.start();
             } catch (IOException e) {
-                throw new IllegalStateException("Unable to start local api server on: %s".formatted(member.getId()));
+                throw new IllegalStateException("Unable to start local api server on: %s".formatted(sanctum.getId()));
             }
             apiAddress = server.getAddress();
         }
@@ -364,79 +328,17 @@ public class Sphinx {
     }
 
     private void startSky() {
-        application = new SkyApplication(configuration, member);
+        application = new SkyApplication(configuration, sanctum);
         application.start();
     }
 
     private void testify() {
-        log.info("Attesting identity, seeds: {} on: {}", configuration.seeds, member.getId());
-    }
-
-    private void unwrap(byte[] rs) {
-        var pwd = new char[rs.length];
-        for (var i = 0; i < rs.length; i++) {
-            pwd[i] = (char) rs[i];
-        }
-        unwrap(pwd);
+        log.info("Attesting identity, seeds: {} on: {}", configuration.seeds, sanctum.getId());
     }
 
     // Unwrap the root identity keystore and establish either a new identifier or resume the previous identifier
-    private void unwrap(char[] pwd) {
-        root.set(pwd);
-        StereotomyKeyStore keyStore = null;
-        var storeFile = configuration.identity.keyStore().toFile();
-        InputStream is = null;
-        try {
-            if (storeFile.exists()) {
-                is = new FileInputStream(storeFile);
-            }
-            final var ks = KeyStore.getInstance(configuration.identity.keyStoreType());
-            ks.load(is, root.get());
-            keyStore = new FileKeyStore(ks, root::get, storeFile);
-        } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-            log.error("Cannot load root: {}", storeFile.getAbsolutePath());
-            throw new IllegalStateException("Cannot load root", e);
-        } finally {
-            try {
-                if (is != null) {
-                    is.close();
-                }
-            } catch (IOException e) {
-                // ignored
-            }
-        }
-        Identifier id = null;
-        try (var dis = new FileInputStream(configuration.identity.identityFile().toFile());
-             var baos = new ByteArrayOutputStream()) {
-            Utils.copy(dis, baos);
-            id = Identifier.from(Ident.parseFrom(baos.toByteArray()));
-        } catch (FileNotFoundException e) {
-            // new identifier
-        } catch (IOException e) {
-            log.error("Unable to read identifier file: {}", configuration.identity.identityFile().toAbsolutePath(), e);
-            throw new IllegalStateException(
-            "Unable to read identifier file: %s".formatted(configuration.identity.identityFile().toAbsolutePath()), e);
-        }
-        stereotomy = new StereotomyImpl(keyStore, kerl, new SecureRandom());
-        if (id == null) {
-            member = new ControlledIdentifierMember(stereotomy.newIdentifier());
-            try (var fos = new FileOutputStream(configuration.identity.identityFile().toFile());
-                 var bbis = BbBackedInputStream.aggregate(
-                 member.getIdentifier().getIdentifier().toIdent().toByteString())) {
-                Utils.copy(bbis, fos);
-            } catch (IOException e) {
-                log.error("Unable to create identifier file: {}",
-                          configuration.identity.identityFile().toAbsolutePath(), e);
-                throw new IllegalStateException("Unable to create identifier file: %s".formatted(
-                configuration.identity.identityFile().toAbsolutePath()), e);
-            }
-            log.info("New identifier: {} file: {}", member.getId(),
-                     configuration.identity.identityFile().toAbsolutePath());
-        } else {
-            member = new ControlledIdentifierMember(stereotomy.controlOf((SelfAddressingIdentifier) id));
-            log.info("Resuming identifier: {} file: {}", member.getId(),
-                     configuration.identity.identityFile().toAbsolutePath());
-        }
+    private void unwrap(byte[] master) {
+        sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
         testify();
     }
 
@@ -489,10 +391,20 @@ public class Sphinx {
         }
 
         public Status seal() {
-            root.set(new char[0]);
+            var id = sanctum == null ? null : sanctum.getId();
+            final var sanctorum = sanctum;
+            sanctum = null;
+            if (sanctorum != null) {
+                sanctorum.clear();
+            }
             sessionKeyPair = null;
-            application.shutdown();
-            log.info("Service has been sealed");
+            service.shares.clear();
+            final var currentApplication = application;
+            application = null;
+            if (currentApplication != null) {
+                currentApplication.shutdown();
+            }
+            log.info("Service has been sealed on: {}", id);
             return Status.newBuilder().setSuccess(true).build();
         }
 
@@ -511,7 +423,7 @@ public class Sphinx {
 
         public Status unseal() {
             if (application != null) {
-                log.info("Service already unwrapped on: {}", member.getId());
+                log.info("Service already unwrapped on: {}", sanctum.getId());
                 return Status.newBuilder().setSuccess(true).setShares(shares.size()).build();
             }
             log.info("Unsealing service");

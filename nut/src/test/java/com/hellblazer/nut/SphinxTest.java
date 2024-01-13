@@ -122,6 +122,8 @@ public class SphinxTest {
         assertTrue(unwrapStatus.getSuccess());
         assertEquals(shares.size(), unwrapStatus.getShares());
 
+        sphynxClient.seal(Empty.getDefaultInstance());
+
         sphinx.shutdown();
     }
 
