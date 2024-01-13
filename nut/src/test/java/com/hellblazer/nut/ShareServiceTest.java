@@ -53,7 +53,9 @@ public class ShareServiceTest {
                                                  encryptedShares.get(i).getAssociatedData().toByteArray());
             var plainText = Sphinx.decrypt(encrypted, key);
             shares.add(Share.parseFrom(plainText));
-        } assertEquals(keys.size(), shares.size());
+        }
+
+        assertEquals(keys.size(), shares.size());
         var scheme = new Scheme(entropy, keys.size(), 2);
         var secret = scheme.join(
         shares.stream().limit(2).collect(Collectors.toMap(s -> s.getKey(), s -> s.getShare().toByteArray())));

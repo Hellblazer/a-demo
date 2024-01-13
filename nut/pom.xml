@@ -123,6 +123,11 @@
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>ST4</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
