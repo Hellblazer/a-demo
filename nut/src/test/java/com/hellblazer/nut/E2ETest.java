@@ -73,7 +73,7 @@ public class E2ETest {
     @Test
     public void smokin() throws Exception {
         var cardinality = 5;
-        var threshold = 2;
+        var threshold = 3;
         var secretByteSize = 1024;
 
         STGroup g = new STGroupFile("src/test/resources/sky.stg");
@@ -98,13 +98,17 @@ public class E2ETest {
                  .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().clusterPort))
                  .map(is -> new Sphinx(is))
                  .forEach(s -> sphinxes.add(s));
+
         seed.start();
+        sphinxes.subList(1, cardinality).forEach(s -> s.start());
+
         var shares = processes.stream().map(p -> p.share).toList();
 
         byte[] associatedData = "Give me food or give me slack or kill me".getBytes(Charset.defaultCharset());
         unwrap(0, seed, shares, EncryptionAlgorithm.DEFAULT, associatedData);
-
-        sphinxes.subList(1, cardinality).forEach(s -> s.start());
+        for (int i = 1; i < cardinality; i++) {
+            unwrap(i, sphinxes.get(i), shares, EncryptionAlgorithm.DEFAULT, associatedData);
+        }
 
         sphinxes.forEach(s -> s.shutdown());
     }
@@ -144,45 +148,51 @@ public class E2ETest {
         }
     }
 
-    private void unwrap(int i, Sphinx sphinx, List<Share> shares, EncryptionAlgorithm algorithm, byte[] associatedData)
-    throws Exception {
+    private void unwrap(int i, Sphinx sphinx, List<Share> shares, EncryptionAlgorithm algorithm,
+                        byte[] associatedData) {
         var client = client(i, (InetSocketAddress) sphinx.getApiEndpoint());
 
-        var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
-        var status = sphynxClient.unseal(Empty.getDefaultInstance());
+        try {
+            var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
+            var status = sphynxClient.unseal(Empty.getDefaultInstance());
 
-        assertNotNull(status);
-        assertTrue(status.getSuccess());
-        assertEquals(0, status.getShares());
+            assertNotNull(status);
+            assertTrue(status.getSuccess());
+            assertEquals(0, status.getShares());
 
-        var publicKey_ = sphynxClient.sessionKey(Empty.getDefaultInstance());
-        assertNotNull(publicKey_);
+            var publicKey_ = sphynxClient.sessionKey(Empty.getDefaultInstance());
+            assertNotNull(publicKey_);
 
-        var publicKey = EncryptionAlgorithm.lookup(publicKey_.getAlgorithmValue())
-                                           .publicKey(publicKey_.getPublicKey().toByteArray());
-        assertNotNull(publicKey);
+            var publicKey = EncryptionAlgorithm.lookup(publicKey_.getAlgorithmValue())
+                                               .publicKey(publicKey_.getPublicKey().toByteArray());
+            assertNotNull(publicKey);
 
-        var encapsulated = algorithm.encapsulated(publicKey);
+            var encapsulated = algorithm.encapsulated(publicKey);
 
-        var secretKey = new SecretKeySpec(encapsulated.key().getEncoded(), "AES");
+            var secretKey = new SecretKeySpec(encapsulated.key().getEncoded(), "AES");
 
-        int count = 0;
-        for (var wrapped : shares) {
-            var encrypted = Sphinx.encrypt(wrapped.toByteArray(), secretKey, associatedData);
-            var encryptedShare = EncryptedShare.newBuilder()
-                                               .setIv(ByteString.copyFrom(encrypted.iv()))
-                                               .setAssociatedData(ByteString.copyFrom(associatedData))
-                                               .setShare(ByteString.copyFrom(encrypted.cipherText()))
-                                               .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
-                                               .build();
-            var result = sphynxClient.apply(encryptedShare);
-            count++;
-            assertEquals(count, result.getShares());
+            int count = 0;
+            for (var wrapped : shares) {
+                var encrypted = Sphinx.encrypt(wrapped.toByteArray(), secretKey, associatedData);
+                var encryptedShare = EncryptedShare.newBuilder()
+                                                   .setIv(ByteString.copyFrom(encrypted.iv()))
+                                                   .setAssociatedData(ByteString.copyFrom(associatedData))
+                                                   .setShare(ByteString.copyFrom(encrypted.cipherText()))
+                                                   .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
+                                                   .build();
+                var result = sphynxClient.apply(encryptedShare);
+                count++;
+                assertEquals(count, result.getShares());
+            }
+
+            var unwrapStatus = sphynxClient.unwrap(Empty.getDefaultInstance());
+            assertTrue(unwrapStatus.getSuccess());
+            assertEquals(shares.size(), unwrapStatus.getShares());
+        } finally {
+            if (client != null) {
+                client.stop();
+            }
         }
-
-        var unwrapStatus = sphynxClient.unwrap(Empty.getDefaultInstance());
-        assertTrue(unwrapStatus.getSuccess());
-        assertEquals(shares.size(), unwrapStatus.getShares());
     }
 
     record Process(int clusterPort, int memberId, int apiPort, Share share) {
