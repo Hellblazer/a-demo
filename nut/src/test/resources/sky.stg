@@ -5,7 +5,7 @@ seeds:
     port: <seed>
 >>
 
-sky(clusterPort, apiPort, memberId, seed, n, k) ::= <<
+sky(clusterPort, apiPort, memberId, seed, n, k, approachPort) ::= <<
 
 <if(seed)><seeds(seed = seed)>
 <endif>
@@ -17,6 +17,10 @@ clusterEndpoint:
 apiEndpoint:
   hostName: localhost
   port: <apiPort>
+
+approachEndpoint:
+  hostName: localhost
+  port: <approachPort>
 
 shamir:
     shares: <n>

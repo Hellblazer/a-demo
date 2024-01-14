@@ -117,8 +117,8 @@ public class Sphinx {
 
         if (devSecret != null) {
             log.warn("Operating in development mode with dev secret");
-            unwrap(devSecret.getBytes(Charset.defaultCharset()));
             started.set(true);
+            unwrap(devSecret.getBytes(Charset.defaultCharset()));
         } else {
             log.info("Operating in sealed mode: {}", configuration.shamir);
         }
@@ -286,17 +286,6 @@ public class Sphinx {
         return new CertificateWithPrivateKey(generated, keyPair.getPrivate());
     }
 
-    private ManagedChannel forSeeds() {
-        var seeds = configuration.seeds;
-        var local = seeds.isEmpty() ? false : seeds.getFirst().socketAddress() instanceof InProcessSocketAddress;
-        var builder = local ? InProcessChannelBuilder.forTarget("service") : ManagedChannelBuilder.forTarget("service");
-        return builder.nameResolverFactory(
-                      new SimpleNameResolverFactory(seeds.stream().map(s -> s.socketAddress()).toList()))
-                      .defaultLoadBalancingPolicy("round_robin")
-                      .usePlaintext()
-                      .build();
-    }
-
     private JdbcConnection getConnection() throws SQLException {
         return new JdbcConnection(configuration.identity.kerlURL(), new Properties(), "", "", false);
     }
@@ -319,19 +308,11 @@ public class Sphinx {
         }
     }
 
-    private void startSky() {
-        application = new SkyApplication(configuration, sanctum);
-        application.start();
-    }
-
-    private void testify() {
-        log.info("Attesting identity, seeds: {} on: {}", configuration.seeds, sanctum.getId());
-    }
-
     // Unwrap the root identity keystore and establish either a new identifier or resume the previous identifier
     private void unwrap(byte[] master) {
         sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
-        testify();
+        application = new SkyApplication(configuration, sanctum);
+        application.testify(configuration.seeds.stream().map(e -> e.socketAddress()).toList());
     }
 
     private CertificateValidator validator() {

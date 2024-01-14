@@ -16,7 +16,7 @@
  */
 package com.hellblazer.nut;
 
-import com.salesforce.apollo.archipelago.ManagedServerChannel;
+import com.salesforce.apollo.gorgoneion.client.client.comm.Admissions;
 import com.salesforce.apollo.gorgoneion.client.client.comm.GorgoneionClientMetrics;
 import com.salesforce.apollo.gorgoneion.proto.AdmissionsGrpc;
 import com.salesforce.apollo.gorgoneion.proto.Credentials;
@@ -24,6 +24,7 @@ import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
 import com.salesforce.apollo.membership.Member;
 import com.salesforce.apollo.stereotomy.event.proto.KERL_;
 import com.salesforce.apollo.stereotomy.event.proto.Validations;
+import io.grpc.ManagedChannel;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -31,13 +32,15 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author hal.hildebrand
  */
-public class AdmissionsClient {
+public class AdmissionsClient implements Admissions {
 
-    private final ManagedServerChannel                  channel;
+    private final ManagedChannel                        channel;
+    private final Member                                member;
     private final AdmissionsGrpc.AdmissionsBlockingStub client;
     private final GorgoneionClientMetrics               metrics;
 
-    public AdmissionsClient(ManagedServerChannel channel, GorgoneionClientMetrics metrics) {
+    public AdmissionsClient(Member member, ManagedChannel channel, GorgoneionClientMetrics metrics) {
+        this.member = member;
         this.channel = channel;
         this.client = AdmissionsGrpc.newBlockingStub(channel).withCompression("gzip");
         this.metrics = metrics;
@@ -60,11 +63,11 @@ public class AdmissionsClient {
     }
 
     public void close() {
-        channel.release();
+        channel.shutdown();
     }
 
     public Member getMember() {
-        return channel.getMember();
+        return member;
     }
 
     public Validations register(Credentials credentials, Duration timeout) {

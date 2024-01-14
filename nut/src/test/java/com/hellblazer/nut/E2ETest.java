@@ -83,8 +83,10 @@ public class E2ETest {
         // seed first
         unwrap(0, sphinxes.getFirst(), shares, EncryptionAlgorithm.DEFAULT, associatedData);
 
+        unwrap(1, sphinxes.get(1), shares, EncryptionAlgorithm.DEFAULT, associatedData);
+
         // then the rest of the crew
-        for (int i = 1; i < cardinality; i++) {
+        for (int i = 2; i < cardinality; i++) {
             unwrap(i, sphinxes.get(i), shares, EncryptionAlgorithm.DEFAULT, associatedData);
         }
 
@@ -99,12 +101,13 @@ public class E2ETest {
         return client;
     }
 
-    private InputStream configFor(STGroup g, Process process, int n, int k, Integer seedClusterPort) {
+    private InputStream configFor(STGroup g, Process process, int n, int k, Integer seedApproach) {
         var t = g.getInstanceOf("sky");
         t.add("clusterPort", process.clusterPort);
         t.add("apiPort", process.apiPort);
+        t.add("approachPort", process.approachPort);
         t.add("memberId", process.memberId);
-        t.add("seed", seedClusterPort);
+        t.add("seed", seedApproach);
         t.add("n", n);
         t.add("k", k);
         var rendered = t.render();
@@ -124,7 +127,8 @@ public class E2ETest {
 
         var processes = IntStream.range(0, cardinality)
                                  .mapToObj(i -> new Process(Utils.allocatePort(), i, Utils.allocatePort(),
-                                                            share(i, algorithm, keys, encryptedShares)))
+                                                            share(i, algorithm, keys, encryptedShares),
+                                                            Utils.allocatePort()))
                                  .toList();
         var seed = new Sphinx(configFor(g, processes.getFirst(), cardinality, threshold, null));
         sphinxes = new ArrayList<>();
@@ -132,7 +136,7 @@ public class E2ETest {
 
         processes.subList(1, cardinality)
                  .stream()
-                 .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().clusterPort))
+                 .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().approachPort))
                  .map(is -> new Sphinx(is))
                  .forEach(s -> sphinxes.add(s));
         return processes.stream().map(p -> p.share).toList();
@@ -200,6 +204,6 @@ public class E2ETest {
         }
     }
 
-    record Process(int clusterPort, int memberId, int apiPort, Share share) {
+    record Process(int clusterPort, int memberId, int apiPort, Share share, int approachPort) {
     }
 }

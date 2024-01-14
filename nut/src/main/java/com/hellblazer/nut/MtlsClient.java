@@ -21,9 +21,12 @@ import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.grpc.client.ConcurrencyLimitClientInterceptor;
 import com.netflix.concurrency.limits.grpc.client.GrpcClientLimiterBuilder;
 import com.netflix.concurrency.limits.grpc.client.GrpcClientRequestContext;
+import com.salesforce.apollo.archipelago.RouterImpl;
 import com.salesforce.apollo.comm.grpc.ClientContextSupplier;
+import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
 import io.grpc.ManagedChannel;
+import io.grpc.NameResolver;
 import io.grpc.Status;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.ClientAuth;
@@ -54,6 +57,21 @@ public class MtlsClient {
 
     }
 
+    public MtlsClient(NameResolver.Factory resolver, ClientAuth clientAuth, String alias,
+                      ClientContextSupplier supplier, CertificateValidator validator, Executor exec) {
+
+        Limiter<GrpcClientRequestContext> limiter = new GrpcClientLimiterBuilder().blockOnLimit(false).build();
+        channel = NettyChannelBuilder.forTarget("approach")
+                                     .nameResolverFactory(resolver)
+                                     .executor(exec)
+                                     .sslContext(supplier.forClient(clientAuth, alias, validator, ApiServer.TL_SV1_3))
+                                     .intercept(new ConcurrencyLimitClientInterceptor(limiter,
+                                                                                      () -> Status.RESOURCE_EXHAUSTED.withDescription(
+                                                                                      "Client side concurrency limit exceeded")))
+                                     .build();
+
+    }
+
     public MtlsClient(SocketAddress address, ClientAuth clientAuth, String alias, X509Certificate certificate,
                       PrivateKey privateKey, CertificateValidator validator) {
 
@@ -64,6 +82,23 @@ public class MtlsClient {
                                      .intercept(new ConcurrencyLimitClientInterceptor(limiter,
                                                                                       () -> Status.RESOURCE_EXHAUSTED.withDescription(
                                                                                       "Client side concurrency limit exceeded")))
+                                     .build();
+
+    }
+
+    public MtlsClient(NameResolver.Factory factory, ClientAuth clientAuth, String alias, X509Certificate certificate,
+                      PrivateKey privateKey, CertificateValidator validator, Digest context) {
+
+        Limiter<GrpcClientRequestContext> limiter = new GrpcClientLimiterBuilder().blockOnLimit(false).build();
+        channel = NettyChannelBuilder.forTarget("approach")
+                                     .nameResolverFactory(factory)
+                                     .defaultLoadBalancingPolicy("round_robin")
+                                     .executor(exec)
+                                     .sslContext(forClient(clientAuth, alias, certificate, privateKey, validator))
+                                     .intercept(new ConcurrencyLimitClientInterceptor(limiter,
+                                                                                      () -> Status.RESOURCE_EXHAUSTED.withDescription(
+                                                                                      "Client side concurrency limit exceeded")))
+                                     .intercept(RouterImpl.clientInterceptor(context))
                                      .build();
 
     }

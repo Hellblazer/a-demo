@@ -54,6 +54,8 @@ public class SkyConfiguration {
     @JsonProperty
     public Shamir                                              shamir;
     @JsonProperty
+    public Endpoint                                            approachEndpoint;
+    @JsonProperty
     public Endpoint                                            clusterEndpoint;
     @JsonProperty
     public Endpoint                                            apiEndpoint;
@@ -84,6 +86,7 @@ public class SkyConfiguration {
         gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
         shamir = new Shamir(3, 2);
         var localhost = InetAddress.getLoopbackAddress().getHostName();
+        approachEndpoint = new Endpoint(localhost, Utils.allocatePort(), null);
         clusterEndpoint = new Endpoint(localhost, Utils.allocatePort(), null);
         apiEndpoint = new Endpoint(localhost, Utils.allocatePort(), null);
         group = DigestAlgorithm.DEFAULT.digest("SLACK");

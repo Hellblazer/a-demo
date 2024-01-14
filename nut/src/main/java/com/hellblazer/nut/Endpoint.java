@@ -30,6 +30,7 @@ import java.net.SocketAddress;
  **/
 public record Endpoint(@JsonProperty("hostName") String hostName, @JsonProperty("port") int port,
                        @JsonProperty("name") String name) {
+
     public SocketAddress socketAddress() {
         if (name == null) {
             return new InetSocketAddress(hostName, port);
