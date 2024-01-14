@@ -101,6 +101,24 @@
   }, {
     "pattern":"\\Qlogback.xml\\E"
   }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.AnnotationEngine\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.DoNotMockEnforcer\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.InstantiatorProvider2\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.MemberAccessor\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.MockMaker\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.MockResolver\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.MockitoLogger\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.PluginSwitch\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.StackTraceCleanerProvider\\E"
+  }, {
     "pattern":"\\Qmodel/model.xml\\E"
   }, {
     "pattern":"\\Qorg/h2/util/data.zip\\E"
@@ -129,12 +147,12 @@
   }]},
   "bundles":[{
     "name":"com.sun.org.apache.xerces.internal.impl.xpath.regex.message",
-    "locales":["", "und"]
+    "locales":["und"]
   }, {
     "name":"com.sun.rowset.RowSetResourceBundle",
     "locales":["und"]
   }, {
     "name":"liquibase/i18n/liquibase-core",
-    "locales":["", "und"]
+    "locales":["und"]
   }]
 }
