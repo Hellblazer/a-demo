@@ -23,6 +23,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.proto.SphynxGrpc;
+import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
@@ -45,15 +46,20 @@ import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.IntStream;
 
+import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author hal.hildebrand
  **/
 public class E2ETest {
-    private List<Sphinx> sphinxes;
+    private List<Sphinx>  sphinxes;
+    private List<Process> processes;
 
     @AfterEach
     public void after() {
@@ -63,6 +69,9 @@ public class E2ETest {
             }
         }
         sphinxes = null;
+        if (processes != null) {
+            processes = null;
+        }
     }
 
     @BeforeEach
@@ -77,17 +86,23 @@ public class E2ETest {
         var threshold = 3;
         var secretByteSize = 1024;
         var shares = initialize(cardinality, secretByteSize, threshold);
+        var seedStart = new CompletableFuture<Void>();
+        var seed = sphinxes.getFirst();
+        seed.setOnStart(seedStart);
+        seed.start();
+        var identifier = qb64(unwrap(0, seed, shares, EncryptionAlgorithm.DEFAULT, associatedData));
+        seedStart.get(30, TimeUnit.SECONDS);
 
-        sphinxes.forEach(s -> s.start());
-
-        // seed first
-        unwrap(0, sphinxes.getFirst(), shares, EncryptionAlgorithm.DEFAULT, associatedData);
-
-        unwrap(1, sphinxes.get(1), shares, EncryptionAlgorithm.DEFAULT, associatedData);
-
-        // then the rest of the crew
-        for (int i = 2; i < cardinality; i++) {
-            unwrap(i, sphinxes.get(i), shares, EncryptionAlgorithm.DEFAULT, associatedData);
+        initializeRest(cardinality, threshold, identifier);
+        var sphinx = sphinxes.get(1);
+        var nextStart = new CompletableFuture<Void>();
+        sphinx.setOnStart(nextStart);
+        sphinx.start();
+        unwrap(1, sphinx, shares, EncryptionAlgorithm.DEFAULT, associatedData);
+        try {
+            nextStart.get(30, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            System.out.println("Timed out joining :(");
         }
 
         sphinxes.forEach(s -> s.shutdown());
@@ -101,13 +116,16 @@ public class E2ETest {
         return client;
     }
 
-    private InputStream configFor(STGroup g, Process process, int n, int k, Integer seedApproach) {
+    private InputStream configFor(STGroup g, Process process, int n, int k, Integer approach, Integer seed,
+                                  String seedId) {
         var t = g.getInstanceOf("sky");
         t.add("clusterPort", process.clusterPort);
         t.add("apiPort", process.apiPort);
         t.add("approachPort", process.approachPort);
         t.add("memberId", process.memberId);
-        t.add("seed", seedApproach);
+        t.add("approach", approach);
+        t.add("seedPort", seed);
+        t.add("seedId", seedId);
         t.add("n", n);
         t.add("k", k);
         var rendered = t.render();
@@ -125,21 +143,26 @@ public class E2ETest {
         var encryptedShares = secrets.shares(secretByteSize, keys.stream().map(kp -> kp.getPublic()).toList(),
                                              threshold);
 
-        var processes = IntStream.range(0, cardinality)
-                                 .mapToObj(i -> new Process(Utils.allocatePort(), i, Utils.allocatePort(),
-                                                            share(i, algorithm, keys, encryptedShares),
-                                                            Utils.allocatePort()))
-                                 .toList();
-        var seed = new Sphinx(configFor(g, processes.getFirst(), cardinality, threshold, null));
+        processes = IntStream.range(0, cardinality)
+                             .mapToObj(i -> new Process(Utils.allocatePort(), i, Utils.allocatePort(),
+                                                        share(i, algorithm, keys, encryptedShares),
+                                                        Utils.allocatePort()))
+                             .toList();
+        var seed = new Sphinx(configFor(g, processes.getFirst(), cardinality, threshold, null, null, null));
         sphinxes = new ArrayList<>();
         sphinxes.add(seed);
+        return processes.stream().map(p -> p.share).toList();
+    }
+
+    private void initializeRest(int cardinality, int threshold, String seedId) {
+        STGroup g = new STGroupFile("src/test/resources/sky.stg");
 
         processes.subList(1, cardinality)
                  .stream()
-                 .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().approachPort))
+                 .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().approachPort,
+                                     processes.getFirst().clusterPort, seedId))
                  .map(is -> new Sphinx(is))
                  .forEach(s -> sphinxes.add(s));
-        return processes.stream().map(p -> p.share).toList();
     }
 
     private Share share(int i, EncryptionAlgorithm algorithm, List<KeyPair> keys,
@@ -157,8 +180,8 @@ public class E2ETest {
         }
     }
 
-    private void unwrap(int i, Sphinx sphinx, List<Share> shares, EncryptionAlgorithm algorithm,
-                        byte[] associatedData) {
+    private Digest unwrap(int i, Sphinx sphinx, List<Share> shares, EncryptionAlgorithm algorithm,
+                          byte[] associatedData) {
         var client = apiClient(i, (InetSocketAddress) sphinx.getApiEndpoint());
 
         try {
@@ -197,6 +220,7 @@ public class E2ETest {
             var unwrapStatus = sphynxClient.unwrap(Empty.getDefaultInstance());
             assertTrue(unwrapStatus.getSuccess());
             assertEquals(shares.size(), unwrapStatus.getShares());
+            return Digest.from(unwrapStatus.getIdentifier());
         } finally {
             if (client != null) {
                 client.stop();

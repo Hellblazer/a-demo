@@ -18,6 +18,7 @@ package com.hellblazer.nut;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -70,8 +71,10 @@ public class SkyConfiguration {
     public Context.Builder<Member>                             context;
     @JsonProperty
     public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters;
-    public List<Endpoint>                                      seeds = Collections.emptyList();
-    public boolean                                             local = false;
+    @JsonProperty
+    public List<Endpoint>                                      approaches = Collections.emptyList();
+    @JsonProperty
+    public List<Seedling>                                      seeds      = Collections.emptyList();
 
     {
         // Default configuration
@@ -114,6 +117,8 @@ public class SkyConfiguration {
         var mapper = new ObjectMapper(new YAMLFactory());
         mapper.registerModule(new Jdk8Module());
         mapper.registerModule(new JavaTimeModule());
+        var module = new SimpleModule().addDeserializer(Digest.class, new DigestDeserializer());
+        mapper.registerModule(module);
         try {
             config = mapper.reader().readValue(is, SkyConfiguration.class);
         } catch (IOException e) {
@@ -129,5 +134,8 @@ public class SkyConfiguration {
     }
 
     public record Shamir(int shares, int threshold) {
+    }
+
+    public record Seedling(Digest identifier, Endpoint endpoint) {
     }
 }

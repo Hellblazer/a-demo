@@ -20,23 +20,19 @@ package com.hellblazer.nut;
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.hellblazer.nut.proto.EncryptedShare;
-import com.hellblazer.nut.proto.PublicKey_;
-import com.hellblazer.nut.proto.Share;
-import com.hellblazer.nut.proto.Status;
+import com.hellblazer.nut.proto.*;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.cert.Certificates;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
+import com.salesforce.apollo.fireflies.View;
+import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.thoth.LoggingOutputStream;
 import com.salesforce.apollo.utils.Entropy;
 import com.salesforce.apollo.utils.Utils;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
 import io.netty.handler.ssl.ClientAuth;
@@ -71,6 +67,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -89,14 +86,15 @@ public class Sphinx {
     public static final  int    IV_LENGTH          = 16; // bytes
     private static final Logger log                = LoggerFactory.getLogger(Sphinx.class);
 
-    private final    AtomicBoolean    started = new AtomicBoolean();
-    private final    SkyConfiguration configuration;
-    private final    Service          service = new Service();
-    private final    SecureRandom     entropy;
-    private volatile SanctumSanctorum sanctum;
-    private volatile SkyApplication   application;
-    private volatile Runnable         closeApiServer;
-    private          SocketAddress    apiAddress;
+    private final    AtomicBoolean           started = new AtomicBoolean();
+    private final    SkyConfiguration        configuration;
+    private final    Service                 service = new Service();
+    private final    SecureRandom            entropy;
+    private volatile SanctumSanctorum        sanctum;
+    private volatile SkyApplication          application;
+    private volatile Runnable                closeApiServer;
+    private          SocketAddress           apiAddress;
+    private          CompletableFuture<Void> onStart;
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -207,6 +205,10 @@ public class Sphinx {
         return configuration.clusterEndpoint.socketAddress();
     }
 
+    public void setOnStart(CompletableFuture<Void> onStart) {
+        this.onStart = onStart;
+    }
+
     public void shutdown() {
         if (!started.compareAndSet(true, false)) {
             return;
@@ -309,10 +311,17 @@ public class Sphinx {
     }
 
     // Unwrap the root identity keystore and establish either a new identifier or resume the previous identifier
-    private void unwrap(byte[] master) {
+    private Digest unwrap(byte[] master) {
         sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
         application = new SkyApplication(configuration, sanctum);
-        application.testify(configuration.seeds.stream().map(e -> e.socketAddress()).toList());
+        onStart = onStart == null ? new CompletableFuture<>() : onStart;
+        application.testify(configuration.approaches.stream().map(e -> e.socketAddress()).toList(), onStart,
+                            configuration.seeds.stream()
+                                               .map(s -> new View.Seed(new SelfAddressingIdentifier(s.identifier()),
+                                                                       (InetSocketAddress) s.endpoint()
+                                                                                            .socketAddress()))
+                                               .toList());
+        return sanctum.getId();
     }
 
     private CertificateValidator validator() {
@@ -404,22 +413,29 @@ public class Sphinx {
             return Status.newBuilder().setSuccess(true).setShares(0).build();
         }
 
-        public Status unwrap() {
+        public UnwrapStatus unwrap() {
             if (shares.size() < configuration.shamir.threshold()) {
                 log.info("Cannot unwrap with: {} shares configured: {} out of {}", shares.size(),
                          configuration.shamir.threshold(), configuration.shamir.shares());
-                return Status.newBuilder().setSuccess(false).setShares(shares.size()).build();
+                return UnwrapStatus.newBuilder()
+                                   .setSuccess(false)
+                                   .setShares(shares.size())
+                                   .setMessage(
+                                   "Cannot unwrap with: %s shares configured: %s out of %s".formatted(shares.size(),
+                                                                                                      configuration.shamir.threshold(),
+                                                                                                      configuration.shamir.shares()))
+                                   .build();
             }
             log.info("Unwrapping service with: {} shares configured: {} out of {}", shares.size(),
                      configuration.shamir.threshold(), configuration.shamir.shares());
             var scheme = new Scheme(new SecureRandom(), configuration.shamir.shares(),
                                     configuration.shamir.threshold());
-            var status = Status.newBuilder().setShares(shares.size()).setSuccess(true).build();
+            var status = UnwrapStatus.newBuilder().setShares(shares.size()).setSuccess(true);
             var clone = new HashMap<>(shares);
             shares.clear();
             sessionKeyPair = null;
-            Sphinx.this.unwrap(scheme.join(clone));
-            return status;
+            var identifier = Sphinx.this.unwrap(scheme.join(clone));
+            return status.setIdentifier(identifier.toDigeste()).build();
         }
     }
 }

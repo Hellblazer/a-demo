@@ -27,8 +27,8 @@ import com.salesforce.apollo.membership.Context;
 import com.salesforce.apollo.membership.ContextImpl;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
 import com.salesforce.apollo.model.ProcessDomain;
-import com.salesforce.apollo.stereotomy.EventCoordinates;
 import com.salesforce.apollo.stereotomy.StereotomyImpl;
+import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.mem.MemKERL;
 import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
 import com.salesforce.apollo.utils.Entropy;
@@ -238,11 +238,10 @@ public class SkyTest {
             var context = new ContextImpl<>(DigestAlgorithm.DEFAULT.getLast(), CARDINALITY, 0.2, 3);
             final var member = new ControlledIdentifierMember(id);
             var localRouter = new LocalServer(prefix, member).router(ServerConnectionCache.newBuilder().setTarget(30));
-            var pdParams = new ProcessDomain.ProcessDomainParameters("jdbc:h2:mem:sql-%s;DB_CLOSE_DELAY=-1".formatted(digest),
-                                                                     Duration.ofMinutes(1),
-                                                                     "jdbc:h2:mem:dht-%s".formatted(digest),
-                                                                     checkpointDirBase, Duration.ofMillis(10), 0.00125,
-                                                                     Duration.ofMinutes(1), 3, 10, 0.1);
+            var pdParams = new ProcessDomain.ProcessDomainParameters(
+            "jdbc:h2:mem:sql-%s;DB_CLOSE_DELAY=-1".formatted(digest), Duration.ofMinutes(1),
+            "jdbc:h2:mem:dht-%s".formatted(digest), checkpointDirBase, Duration.ofMillis(10), 0.00125,
+            Duration.ofMinutes(1), 3, 10, 0.1);
             var node = new Sky(group, member, pdParams, params, Parameters.RuntimeParameters.newBuilder()
                                                                                             .setFoundation(sealed)
                                                                                             .setContext(context)
@@ -261,13 +260,13 @@ public class SkyTest {
         long then = System.currentTimeMillis();
         final var countdown = new CountDownLatch(domains.size());
         final var seeds = Collections.singletonList(
-        new View.Seed(domains.getFirst().getMember().getEvent(), new InetSocketAddress(0)));
+        new View.Seed(domains.getFirst().getMember().getIdentifier().getIdentifier(), new InetSocketAddress(0)));
         domains.forEach(d -> {
             var listener = new View.ViewLifecycleListener() {
 
                 @Override
-                public void viewChange(Context<View.Participant> context, Digest viewId, List<EventCoordinates> joins,
-                                       List<Digest> leaves) {
+                public void viewChange(Context<View.Participant> context, Digest viewId,
+                                       List<SelfAddressingIdentifier> joins, List<Digest> leaves) {
                     if (context.totalCount() == CARDINALITY) {
                         System.out.println(
                         String.format("Full view: %s members: %s on: %s", viewId, context.totalCount(),

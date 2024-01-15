@@ -19,10 +19,7 @@ package com.hellblazer.nut;
 
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.Sphinx;
-import com.hellblazer.nut.proto.EncryptedShare;
-import com.hellblazer.nut.proto.PublicKey_;
-import com.hellblazer.nut.proto.SphynxGrpc;
-import com.hellblazer.nut.proto.Status;
+import com.hellblazer.nut.proto.*;
 import io.grpc.stub.StreamObserver;
 
 public class SphynxServer extends SphynxGrpc.SphynxImplBase {
@@ -61,7 +58,7 @@ public class SphynxServer extends SphynxGrpc.SphynxImplBase {
     }
 
     @Override
-    public void unwrap(Empty request, StreamObserver<Status> responseObserver) {
+    public void unwrap(Empty request, StreamObserver<UnwrapStatus> responseObserver) {
         var status = service.unwrap();
         responseObserver.onNext(status);
         responseObserver.onCompleted();

@@ -1,13 +1,24 @@
 
-seeds(seed) ::= <<
-seeds:
+approaches(approach) ::= <<
+approaches:
   - hostName: localHost
-    port: <seed>
+    port: <approach>
 >>
 
-sky(clusterPort, apiPort, memberId, seed, n, k, approachPort) ::= <<
+seeds(seedId, seed) ::= <<
+seeds:
+  - identifier: <seedId>
+    endpoint:
+        hostName: localHost
+        port: <seed>
+>>
 
-<if(seed)><seeds(seed = seed)>
+sky(clusterPort, apiPort, memberId, seedPort, n, k, approachPort, approach, seedId) ::= <<
+
+<if(approach)><approaches(approach = approach)>
+<endif>
+
+<if(seedPort)><seeds(seedId = seedId, seed = seedPort)>
 <endif>
 
 clusterEndpoint:

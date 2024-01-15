@@ -29,9 +29,11 @@ import org.mockito.Mockito;
 
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 /**
@@ -54,7 +56,9 @@ public class SkyApplicationTest {
         try (var is = getClass().getResourceAsStream("/sky-test.yaml")) {
             app = new SkyApplication(SkyConfiguration.from(is), sanctum);
         }
-        app.start();
+        CompletableFuture<Void> onStart = new CompletableFuture<>();
+        app.start(Collections.emptyList(), onStart);
+        onStart.get(1, TimeUnit.SECONDS);
         app.shutdown();
     }
 }

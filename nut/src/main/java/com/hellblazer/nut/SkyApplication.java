@@ -55,8 +55,10 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -99,7 +101,7 @@ public class SkyApplication {
         log.info("Cluster communications: {} on: {}", clusterEndpoint, sanctorum.getId());
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setCommunications(clusterComms)
-                                                  .setContext(configuration.context.build());
+                                                  .setContext(configuration.context.setId(configuration.group).build());
         runtime.getContext().activate(sanctorum.member());
         var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) clusterEndpoint;
         node = new Sky(configuration.group, sanctorum.member(), configuration.domain, configuration.choamParameters,
@@ -126,9 +128,9 @@ public class SkyApplication {
         log.info("Approach communications: {} on: {}", approachEndpoint, sanctorum.getId());
 
         admissionsComms = approachServer.router();
-        gorgoneion = new Gorgoneion(this::attest, gorgoneionParameters.build(), sanctorum.member(),
-                                    runtime.getContext(), new DirectPublisher(new ProtoKERLAdapter(k)), admissionsComms,
-                                    null, clusterComms);
+        gorgoneion = new Gorgoneion(configuration.approaches.isEmpty(), this::attest, gorgoneionParameters.build(),
+                                    sanctorum.member(), runtime.getContext(),
+                                    new DirectPublisher(new ProtoKERLAdapter(k)), admissionsComms, null, clusterComms);
         contextId = runtime.getContext().getId();
     }
 
@@ -147,19 +149,21 @@ public class SkyApplication {
         }
     }
 
-    public void start() {
+    public void start(List<View.Seed> seeds, CompletableFuture<Void> onStart) {
         clusterComms.start();
         admissionsComms.start();
         node.start();
+        node.getFoundation().start(onStart, Duration.ofMillis(10), seeds);
         log.info("Started Sky on: {}", sanctorum.getId());
     }
 
-    public void testify(List<SocketAddress> seeds) {
-        if (seeds.isEmpty()) {
-            log.info("Bootstrapping on: {}", sanctorum.getId());
-            start();
+    public void testify(List<SocketAddress> approaches, CompletableFuture<Void> onStart, List<View.Seed> seeds) {
+        if (approaches.isEmpty()) {
+            log.info("Bootstrapping: {} on: {}", approaches, sanctorum.getId());
+            start(Collections.emptyList(), onStart);
         } else {
-            join(seeds);
+            join(approaches);
+            start(seeds, onStart);
         }
     }
 
@@ -176,9 +180,13 @@ public class SkyApplication {
         clientAuth, alias, certWithKey.getX509Certificate(), certWithKey.getPrivateKey(), validator);
     }
 
-    private ManagedChannel forSeeds(List<SocketAddress> seeds) {
-        var local = seeds.isEmpty() ? false : seeds.getFirst() instanceof InProcessSocketAddress;
-        NameResolver.Factory factory = new SimpleNameResolverFactory(seeds);
+    private void enable() {
+
+    }
+
+    private ManagedChannel forApproaches(List<SocketAddress> approaches) {
+        var local = approaches.isEmpty() ? false : approaches.getFirst() instanceof InProcessSocketAddress;
+        NameResolver.Factory factory = new SimpleNameResolverFactory(approaches);
         if (local) {
             return InProcessChannelBuilder.forTarget("approach")
                                           .nameResolverFactory(factory)
@@ -193,9 +201,9 @@ public class SkyApplication {
         }
     }
 
-    private void join(List<SocketAddress> seeds) {
-        log.info("Attesting identity, seeds: {} on: {}", seeds, sanctorum.getId());
-        joinChannel = forSeeds(seeds);
+    private void join(List<SocketAddress> approaches) {
+        log.info("Attesting identity, approaches: {} on: {}", approaches, sanctorum.getId());
+        joinChannel = forApproaches(approaches);
         Admissions admissions = new AdmissionsClient(sanctorum.member(), joinChannel, null);
         var client = new GorgoneionClient(sanctorum.member(), sn -> attest(sn), clock, admissions);
 
@@ -203,6 +211,7 @@ public class SkyApplication {
         assert invitation != null : "NULL invitation";
         assert !Validations.getDefaultInstance().equals(invitation) : "Empty invitation";
         assert invitation.getValidationsCount() > 0 : "No validations";
+
     }
 
     private ServerContextSupplier serverContextSupplier(CertificateWithPrivateKey certWithKey) {
@@ -221,7 +230,7 @@ public class SkyApplication {
                     throw new NoSuchElementException(
                     "Cannot decode certificate: %s on: %s".formatted(key, node.getMember().getId()));
                 }
-                return ((SelfAddressingIdentifier) decoded.get().coordinates().getIdentifier()).getDigest();
+                return ((SelfAddressingIdentifier) decoded.get().identifier()).getDigest();
             }
         };
     }
