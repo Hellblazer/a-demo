@@ -4,7 +4,6 @@ option java_multiple_files = true;
 option java_package = "com.hellblazer.nut.proto";
 option java_outer_classname = "NutProto";
 option objc_class_prefix = "Nut";
-import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 
 import "crypto.proto";

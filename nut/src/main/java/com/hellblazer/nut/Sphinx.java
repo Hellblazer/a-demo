@@ -315,12 +315,17 @@ public class Sphinx {
         sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
         application = new SkyApplication(configuration, sanctum);
         onStart = onStart == null ? new CompletableFuture<>() : onStart;
-        application.testify(configuration.approaches.stream().map(e -> e.socketAddress()).toList(), onStart,
-                            configuration.seeds.stream()
-                                               .map(s -> new View.Seed(new SelfAddressingIdentifier(s.identifier()),
-                                                                       (InetSocketAddress) s.endpoint()
-                                                                                            .socketAddress()))
-                                               .toList());
+
+        var approaches = configuration.approaches.stream().map(e -> e.socketAddress()).toList();
+        var seeds = configuration.seeds.stream()
+                                       .map(s -> new View.Seed(new SelfAddressingIdentifier(s.identifier()),
+                                                               (InetSocketAddress) s.endpoint().socketAddress()))
+                                       .toList();
+        if (approaches.isEmpty()) {
+            application.bootstrap(onStart, configuration.approachEndpoint.socketAddress());
+        } else {
+            application.testify(approaches, onStart, seeds);
+        }
         return sanctum.getId();
     }
 

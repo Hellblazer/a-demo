@@ -157,14 +157,15 @@ public class SkyApplication {
         log.info("Started Sky on: {}", sanctorum.getId());
     }
 
-    public void testify(List<SocketAddress> approaches, CompletableFuture<Void> onStart, List<View.Seed> seeds) {
-        if (approaches.isEmpty()) {
-            log.info("Bootstrapping: {} on: {}", approaches, sanctorum.getId());
-            start(Collections.emptyList(), onStart);
-        } else {
-            join(approaches);
-            start(seeds, onStart);
-        }
+    void bootstrap(CompletableFuture<Void> onStart, SocketAddress myApproach) {
+        log.info("Bootstrapping on: {}", sanctorum.getId());
+        start(Collections.emptyList(), onStart);
+        join(Collections.singletonList(myApproach));
+    }
+
+    void testify(List<SocketAddress> approaches, CompletableFuture<Void> onStart, List<View.Seed> seeds) {
+        join(approaches);
+        start(seeds, onStart);
     }
 
     private Any attest(SignedNonce signedNonce) {
