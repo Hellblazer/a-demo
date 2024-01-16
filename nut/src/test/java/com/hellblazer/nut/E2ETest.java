@@ -102,18 +102,17 @@ public class E2ETest {
         try {
             nextStart.get(30, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
-            System.out.println("Timed out joining :(");
+            System.err.println("Timed out joining :(");
         }
 
-        sphinxes.forEach(s -> s.shutdown());
+        sphinxes.forEach(Sphinx::shutdown);
     }
 
     private MtlsClient apiClient(int i, InetSocketAddress serverAddress) {
         CertificateWithPrivateKey clientCert = Utils.getMember(i);
 
-        MtlsClient client = new MtlsClient(serverAddress, ClientAuth.REQUIRE, "foo", clientCert.getX509Certificate(),
-                                           clientCert.getPrivateKey(), CertificateValidator.NONE);
-        return client;
+        return new MtlsClient(serverAddress, ClientAuth.REQUIRE, "foo", clientCert.getX509Certificate(),
+                              clientCert.getPrivateKey(), CertificateValidator.NONE);
     }
 
     private InputStream configFor(STGroup g, Process process, int n, int k, Integer approach, Integer seed,
@@ -140,8 +139,7 @@ public class E2ETest {
         var entropy = new SecureRandom();
         var secrets = new ShareService(authTag, entropy, algorithm);
         var keys = IntStream.range(0, cardinality).mapToObj(i -> algorithm.generateKeyPair()).toList();
-        var encryptedShares = secrets.shares(secretByteSize, keys.stream().map(kp -> kp.getPublic()).toList(),
-                                             threshold);
+        var encryptedShares = secrets.shares(secretByteSize, keys.stream().map(KeyPair::getPublic).toList(), threshold);
 
         processes = IntStream.range(0, cardinality)
                              .mapToObj(i -> new Process(Utils.allocatePort(), i, Utils.allocatePort(),
@@ -161,7 +159,7 @@ public class E2ETest {
                  .stream()
                  .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().approachPort,
                                      processes.getFirst().clusterPort, seedId))
-                 .map(is -> new Sphinx(is))
+                 .map(Sphinx::new)
                  .forEach(s -> sphinxes.add(s));
     }
 
@@ -222,9 +220,7 @@ public class E2ETest {
             assertEquals(shares.size(), unwrapStatus.getShares());
             return Digest.from(unwrapStatus.getIdentifier());
         } finally {
-            if (client != null) {
-                client.stop();
-            }
+            client.stop();
         }
     }
 

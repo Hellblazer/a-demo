@@ -130,7 +130,8 @@ public class SkyApplication {
         admissionsComms = approachServer.router();
         gorgoneion = new Gorgoneion(configuration.approaches.isEmpty(), this::attest, gorgoneionParameters.build(),
                                     sanctorum.member(), runtime.getContext(),
-                                    new DirectPublisher(new ProtoKERLAdapter(k)), admissionsComms, null, clusterComms);
+                                    new DirectPublisher(sanctorum.member().getId(), new ProtoKERLAdapter(k)),
+                                    admissionsComms, null, clusterComms);
         contextId = runtime.getContext().getId();
     }
 
@@ -161,6 +162,10 @@ public class SkyApplication {
         log.info("Bootstrapping on: {}", sanctorum.getId());
         start(Collections.emptyList(), onStart);
         join(Collections.singletonList(myApproach));
+        if (joinChannel != null) {
+            joinChannel.shutdown();
+            joinChannel = null;
+        }
     }
 
     void testify(List<SocketAddress> approaches, CompletableFuture<Void> onStart, List<View.Seed> seeds) {
