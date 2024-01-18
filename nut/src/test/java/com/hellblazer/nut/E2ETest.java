@@ -48,7 +48,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.IntStream;
 
 import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
@@ -99,11 +98,7 @@ public class E2ETest {
         sphinx.setOnStart(nextStart);
         sphinx.start();
         unwrap(1, sphinx, shares, EncryptionAlgorithm.DEFAULT, associatedData);
-        try {
-            nextStart.get(30, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            System.err.println("Timed out joining :(");
-        }
+        nextStart.get(30, TimeUnit.SECONDS);
 
         sphinxes.forEach(Sphinx::shutdown);
     }
