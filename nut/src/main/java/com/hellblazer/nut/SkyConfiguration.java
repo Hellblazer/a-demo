@@ -75,6 +75,7 @@ public class SkyConfiguration {
     public List<Endpoint>                                      approaches = Collections.emptyList();
     @JsonProperty
     public List<Seedling>                                      seeds      = Collections.emptyList();
+    public com.salesforce.apollo.fireflies.Parameters.Builder  viewParameters;
 
     {
         // Default configuration
@@ -110,6 +111,8 @@ public class SkyConfiguration {
                                                                    .setMaxBatchCount(3000)
                                                                    .build())
                                     .setCheckpointBlockDelta(200);
+        viewParameters = com.salesforce.apollo.fireflies.Parameters.newBuilder()
+                                                                   .setSeedingTimout(Duration.ofSeconds(30));
     }
 
     static SkyConfiguration from(InputStream is) {

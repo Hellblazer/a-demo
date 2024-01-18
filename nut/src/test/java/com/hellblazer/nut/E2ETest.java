@@ -81,13 +81,14 @@ public class E2ETest {
     @Test
     public void smokin() throws Exception {
         byte[] associatedData = "Give me food or give me slack or kill me".getBytes(Charset.defaultCharset());
-        var cardinality = 5;
-        var threshold = 3;
+        var cardinality = 3;
+        var threshold = 2;
         var secretByteSize = 1024;
         var shares = initialize(cardinality, secretByteSize, threshold);
         var seedStart = new CompletableFuture<Void>();
         var seed = sphinxes.getFirst();
         seed.setOnStart(seedStart);
+        System.out.println("** Starting seed");
         seed.start();
         var identifier = qb64(unwrap(0, seed, shares, EncryptionAlgorithm.DEFAULT, associatedData));
         seedStart.get(30, TimeUnit.SECONDS);
@@ -96,9 +97,20 @@ public class E2ETest {
         var sphinx = sphinxes.get(1);
         var nextStart = new CompletableFuture<Void>();
         sphinx.setOnStart(nextStart);
+        System.out.println("** Starting m 1");
         sphinx.start();
         unwrap(1, sphinx, shares, EncryptionAlgorithm.DEFAULT, associatedData);
         nextStart.get(30, TimeUnit.SECONDS);
+
+        int i = 2;
+        for (var s : sphinxes.subList(2, sphinxes.size())) {
+            var start = new CompletableFuture<Void>();
+            s.setOnStart(start);
+            System.out.println("** Starting m " + i);
+            s.start();
+            unwrap(i, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
+            start.get(30, TimeUnit.SECONDS);
+        }
 
         sphinxes.forEach(Sphinx::shutdown);
     }

@@ -105,7 +105,7 @@ public class SkyApplication {
         runtime.getContext().activate(sanctorum.member());
         var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) clusterEndpoint;
         node = new Sky(configuration.group, sanctorum.member(), configuration.domain, configuration.choamParameters,
-                       runtime, bind, com.salesforce.apollo.fireflies.Parameters.newBuilder(), null);
+                       runtime, bind, configuration.viewParameters, null);
         certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
         var k = node.getDht().asKERL();
 
@@ -162,10 +162,6 @@ public class SkyApplication {
         log.info("Bootstrapping on: {}", sanctorum.getId());
         start(Collections.emptyList(), onStart);
         join(Collections.singletonList(myApproach));
-        if (joinChannel != null) {
-            joinChannel.shutdown();
-            joinChannel = null;
-        }
     }
 
     void testify(List<SocketAddress> approaches, CompletableFuture<Void> onStart, List<View.Seed> seeds) {
@@ -210,13 +206,21 @@ public class SkyApplication {
     private void join(List<SocketAddress> approaches) {
         log.info("Attesting identity, approaches: {} on: {}", approaches, sanctorum.getId());
         joinChannel = forApproaches(approaches);
-        Admissions admissions = new AdmissionsClient(sanctorum.member(), joinChannel, null);
-        var client = new GorgoneionClient(sanctorum.member(), sn -> attest(sn), clock, admissions);
+        try {
+            Admissions admissions = new AdmissionsClient(sanctorum.member(), joinChannel, null);
+            var client = new GorgoneionClient(sanctorum.member(), sn -> attest(sn), clock, admissions);
 
-        final var invitation = client.apply(Duration.ofSeconds(120));
-        assert invitation != null : "NULL invitation";
-        assert !Validations.getDefaultInstance().equals(invitation) : "Empty invitation";
-        assert invitation.getValidationsCount() > 0 : "No validations";
+            final var invitation = client.apply(Duration.ofSeconds(120));
+            assert invitation != null : "NULL invitation";
+            assert !Validations.getDefaultInstance().equals(invitation) : "Empty invitation";
+            assert invitation.getValidationsCount() > 0 : "No validations";
+        } finally {
+            var jc = joinChannel;
+            joinChannel = null;
+            if (jc != null) {
+                jc.shutdown();
+            }
+        }
 
     }
 
