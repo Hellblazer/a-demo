@@ -1,0 +1,29 @@
+
+clusterEndpoint:
+  hostName: localhost
+  port: 0
+
+apiEndpoint:
+  hostName: localhost
+  port: 0
+
+domain:
+  dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"
+  dhtOperationsTimeout: PT0H0M10S
+  dhtDbUrl: "jdbc:h2:mem:dht;DB_CLOSE_DELAY=-1"
+  checkpointBaseDir: ./target/cp
+  dhtOpsFrequency: PT0H0M00001S
+  dhtFpr: 0.000125
+  dhtEventValidTO: PT0H0M30S
+  dhtBias: 3
+  jdbcMaxConnections: 10
+  dhtPbyz: 0.01
+
+identity:
+  keyStore: "target/.id"
+  keyStoreType: JCEKS
+  kerlURL: "jdbc:h2:file:./target/kerl-state"
+  identityFile: "target/.digest"
+  digestAlgorithm: BLAKE2B_256
+  signatureAlgorithm: ED_25519
+  encryptionAlgorithm: X_25519
