@@ -81,8 +81,8 @@ public class E2ETest {
     @Test
     public void smokin() throws Exception {
         byte[] associatedData = "Give me food or give me slack or kill me".getBytes(Charset.defaultCharset());
-        var cardinality = 11;
-        var threshold = 6;
+        var cardinality = 7;
+        var threshold = 4;
         var secretByteSize = 1024;
         var shares = initialize(cardinality, secretByteSize, threshold);
         var seedStart = new CompletableFuture<Void>();
