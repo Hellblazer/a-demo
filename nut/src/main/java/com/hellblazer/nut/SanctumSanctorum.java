@@ -24,6 +24,7 @@ import com.salesforce.apollo.stereotomy.KERL;
 import com.salesforce.apollo.stereotomy.Stereotomy;
 import com.salesforce.apollo.stereotomy.StereotomyImpl;
 import com.salesforce.apollo.stereotomy.StereotomyKeyStore;
+import com.salesforce.apollo.stereotomy.caching.CachingKERL;
 import com.salesforce.apollo.stereotomy.db.UniKERLDirect;
 import com.salesforce.apollo.stereotomy.event.proto.Ident;
 import com.salesforce.apollo.stereotomy.identifier.Identifier;
@@ -106,7 +107,7 @@ public class SanctumSanctorum {
             throw new IllegalStateException(
             "Unable to read identifier file: %s".formatted(configuration.identity.identityFile().toAbsolutePath()), e);
         }
-        stereotomy = new StereotomyImpl(keyStore, kerl, new SecureRandom());
+        stereotomy = new StereotomyImpl(keyStore, new CachingKERL(f -> f.apply(kerl)), new SecureRandom());
         if (id == null) {
             member = new ControlledIdentifierMember(stereotomy.newIdentifier());
             try (var fos = new FileOutputStream(configuration.identity.identityFile().toFile());

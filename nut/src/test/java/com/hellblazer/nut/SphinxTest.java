@@ -73,7 +73,6 @@ public class SphinxTest {
         sphinx.start();
         assertNotNull(sphinx.getApiEndpoint());
 
-
         var client = client((InetSocketAddress) sphinx.getApiEndpoint());
 
         var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());

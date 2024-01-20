@@ -112,7 +112,8 @@ public class SkyConfiguration {
                                                                    .build())
                                     .setCheckpointBlockDelta(200);
         viewParameters = com.salesforce.apollo.fireflies.Parameters.newBuilder()
-                                                                   .setSeedingTimout(Duration.ofSeconds(30));
+                                                                   .setFpr(0.00125)
+                                                                   .setSeedingTimout(Duration.ofSeconds(10));
     }
 
     static SkyConfiguration from(InputStream is) {

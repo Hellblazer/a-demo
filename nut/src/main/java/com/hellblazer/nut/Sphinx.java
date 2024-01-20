@@ -80,21 +80,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  **/
 public class Sphinx {
 
-    public static final  String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
-    public static final  String AES                = "AES";
-    public static final  int    TAG_LENGTH         = 128; // bits
-    public static final  int    IV_LENGTH          = 16; // bytes
-    private static final Logger log                = LoggerFactory.getLogger(Sphinx.class);
-
-    private final    AtomicBoolean           started = new AtomicBoolean();
-    private final    SkyConfiguration        configuration;
-    private final    Service                 service = new Service();
-    private final    SecureRandom            entropy;
-    private volatile SanctumSanctorum        sanctum;
-    private volatile SkyApplication          application;
-    private volatile Runnable                closeApiServer;
-    private          SocketAddress           apiAddress;
-    private          CompletableFuture<Void> onStart;
+    public static final  String                  AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
+    public static final  String                  AES                = "AES";
+    public static final  int                     TAG_LENGTH         = 128; // bits
+    public static final  int                     IV_LENGTH          = 16; // bytes
+    private static final Logger                  log                = LoggerFactory.getLogger(Sphinx.class);
+    private final        AtomicBoolean           started            = new AtomicBoolean();
+    private final        SkyConfiguration        configuration;
+    private final        Service                 service            = new Service();
+    private final        SecureRandom            entropy;
+    private volatile     SanctumSanctorum        sanctum;
+    private volatile     SkyApplication          application;
+    private volatile     Runnable                closeApiServer;
+    private              SocketAddress           apiAddress;
+    private              CompletableFuture<Void> onStart;
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -321,11 +320,15 @@ public class Sphinx {
                                        .map(s -> new View.Seed(new SelfAddressingIdentifier(s.identifier()),
                                                                (InetSocketAddress) s.endpoint().socketAddress()))
                                        .toList();
-        if (approaches.isEmpty()) {
-            application.bootstrap(onStart, configuration.approachEndpoint.socketAddress());
-        } else {
-            application.testify(approaches, onStart, seeds);
-        }
+
+        Thread.ofVirtual().start(() -> {
+            if (approaches.isEmpty()) {
+                application.bootstrap(onStart, configuration.approachEndpoint.socketAddress());
+            } else {
+                application.testify(approaches, onStart, seeds);
+            }
+        });
+
         return sanctum.getId();
     }
 

@@ -28,6 +28,10 @@ import java.security.cert.X509Certificate;
 public class DelegatedCertificateValidator implements CertificateValidator {
     private CertificateValidator delegate;
 
+    public DelegatedCertificateValidator(CertificateValidator delegate) {
+        this.delegate = delegate;
+    }
+
     public void setDelegate(CertificateValidator delegate) {
         this.delegate = delegate;
     }

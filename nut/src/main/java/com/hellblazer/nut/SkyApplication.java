@@ -41,6 +41,7 @@ import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
 import com.salesforce.apollo.thoth.DirectPublisher;
 import io.grpc.ManagedChannel;
 import io.grpc.NameResolver;
+import io.grpc.StatusRuntimeException;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
 import io.netty.handler.ssl.ClientAuth;
@@ -59,8 +60,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * @author hal.hildebrand
@@ -68,15 +69,17 @@ import java.util.function.Predicate;
 public class SkyApplication {
     private static final Logger log = LoggerFactory.getLogger(SkyApplication.class);
 
-    private final    Digest                    contextId;
-    private final    Sky                       node;
-    private final    Router                    clusterComms;
-    private final    Gorgoneion                gorgoneion;
-    private final    CertificateWithPrivateKey certWithKey;
-    private final    SanctumSanctorum          sanctorum;
-    private final    Router                    admissionsComms;
-    private final    Clock                     clock;
-    private volatile ManagedChannel            joinChannel;
+    private final    Digest                        contextId;
+    private final    Sky                           node;
+    private final    Router                        clusterComms;
+    private final    CertificateWithPrivateKey     certWithKey;
+    private final    SanctumSanctorum              sanctorum;
+    private final    Router                        admissionsComms;
+    private final    Clock                         clock;
+    private final    AtomicBoolean                 started = new AtomicBoolean();
+    private final    DelegatedCertificateValidator certificateValidator;
+    private volatile ManagedChannel                joinChannel;
+    private          int                           retries = 5;
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum) {
         this.clock = Clock.systemUTC();
@@ -86,14 +89,15 @@ public class SkyApplication {
                                                              SignatureAlgorithm.DEFAULT);
         var clusterEndpoint = configuration.clusterEndpoint.socketAddress();
         var local = clusterEndpoint instanceof InProcessSocketAddress;
-        DelegatedCertificateValidator certValidator = new DelegatedCertificateValidator();
+        certificateValidator = new DelegatedCertificateValidator(CertificateValidator.NONE);
 
         final RouterSupplier clusterServer;
         if (local) {
             clusterServer = new LocalServer(((InProcessSocketAddress) clusterEndpoint).getName(), sanctorum.member());
         } else {
             Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
-            EndpointProvider ep = new StandardEpProvider(clusterEndpoint, ClientAuth.REQUIRE, certValidator, resolver);
+            EndpointProvider ep = new StandardEpProvider(clusterEndpoint, ClientAuth.REQUIRE, certificateValidator,
+                                                         resolver);
             clusterServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
                                            serverContextSupplier(certWithKey));
         }
@@ -106,13 +110,11 @@ public class SkyApplication {
         var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) clusterEndpoint;
         node = new Sky(configuration.group, sanctorum.member(), configuration.domain, configuration.choamParameters,
                        runtime, bind, configuration.viewParameters, null);
-        certValidator.setDelegate(new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
         var k = node.getDht().asKERL();
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
-        var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k);
-        Predicate<SignedAttestation> verifier = null;
 
+        var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k);
         var approachEndpoint = configuration.approachEndpoint.socketAddress();
 
         RouterSupplier approachServer;
@@ -128,14 +130,27 @@ public class SkyApplication {
         log.info("Approach communications: {} on: {}", approachEndpoint, sanctorum.getId());
 
         admissionsComms = approachServer.router();
-        gorgoneion = new Gorgoneion(configuration.approaches.isEmpty(), this::attest, gorgoneionParameters.build(),
-                                    sanctorum.member(), runtime.getContext(),
-                                    new DirectPublisher(sanctorum.member().getId(), new ProtoKERLAdapter(k)),
-                                    admissionsComms, null, clusterComms);
+        new Gorgoneion(configuration.approaches.isEmpty(), this::attest, gorgoneionParameters.build(),
+                       sanctorum.member(), runtime.getContext(),
+                       new DirectPublisher(sanctorum.member().getId(), new ProtoKERLAdapter(k)), admissionsComms, null,
+                       clusterComms);
         contextId = runtime.getContext().getId();
     }
 
+    public void setCertificateValidatorAni() {
+        certificateValidator.setDelegate(
+        new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
+    }
+
+    public void setCertificateValidatorNONE() {
+        certificateValidator.setDelegate(CertificateValidator.NONE);
+    }
+
     public void shutdown() {
+        if (!started.compareAndSet(true, false)) {
+            return;
+        }
+        log.info("Shutting down on: {}", node.getMember().getId());
         if (joinChannel != null) {
             joinChannel.shutdown();
         }
@@ -151,9 +166,13 @@ public class SkyApplication {
     }
 
     public void start(List<View.Seed> seeds, CompletableFuture<Void> onStart) {
+        if (!started.compareAndSet(false, true)) {
+            return;
+        }
         clusterComms.start();
         admissionsComms.start();
         node.start();
+        //        node.setDhtVerifiers();
         node.getFoundation().start(onStart, Duration.ofMillis(10), seeds);
         log.info("Started Sky on: {}", sanctorum.getId());
     }
@@ -187,7 +206,7 @@ public class SkyApplication {
     }
 
     private ManagedChannel forApproaches(List<SocketAddress> approaches) {
-        var local = approaches.isEmpty() ? false : approaches.getFirst() instanceof InProcessSocketAddress;
+        var local = !approaches.isEmpty() && approaches.getFirst() instanceof InProcessSocketAddress;
         NameResolver.Factory factory = new SimpleNameResolverFactory(approaches);
         if (local) {
             return InProcessChannelBuilder.forTarget("approach")
@@ -204,21 +223,36 @@ public class SkyApplication {
     }
 
     private void join(List<SocketAddress> approaches) {
-        log.info("Attesting identity, approaches: {} on: {}", approaches, sanctorum.getId());
-        joinChannel = forApproaches(approaches);
-        try {
-            Admissions admissions = new AdmissionsClient(sanctorum.member(), joinChannel, null);
-            var client = new GorgoneionClient(sanctorum.member(), sn -> attest(sn), clock, admissions);
+        int attempt = retries;
+        while (started.get() && attempt > 0) {
+            log.info("Attesting identity, attempt: {}, approaches: {} on: {}", retries - attempt, approaches,
+                     sanctorum.getId());
+            attempt--;
+            joinChannel = forApproaches(approaches);
+            try {
+                Admissions admissions = new AdmissionsClient(sanctorum.member(), joinChannel, null);
+                var client = new GorgoneionClient(sanctorum.member(), sn -> attest(sn), clock, admissions);
 
-            final var invitation = client.apply(Duration.ofSeconds(120));
-            assert invitation != null : "NULL invitation";
-            assert !Validations.getDefaultInstance().equals(invitation) : "Empty invitation";
-            assert invitation.getValidationsCount() > 0 : "No validations";
-        } finally {
-            var jc = joinChannel;
-            joinChannel = null;
-            if (jc != null) {
-                jc.shutdown();
+                final var invitation = client.apply(Duration.ofSeconds(120));
+                assert invitation != null : "NULL invitation";
+                assert !Validations.getDefaultInstance().equals(invitation) : "Empty invitation";
+                assert invitation.getValidationsCount() > 0 : "No validations";
+                log.info("Successful application on: {}", sanctorum.getId());
+                break;
+            } catch (StatusRuntimeException e) {
+                log.error("Error during application: {} on: {}", e.getMessage(), sanctorum.getId());
+                try {
+                    Thread.sleep(Duration.ofMillis(500));
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            } finally {
+                var jc = joinChannel;
+                joinChannel = null;
+                if (jc != null) {
+                    jc.shutdown();
+                }
             }
         }
 

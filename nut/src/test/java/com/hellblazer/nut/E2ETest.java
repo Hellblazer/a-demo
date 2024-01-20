@@ -81,14 +81,14 @@ public class E2ETest {
     @Test
     public void smokin() throws Exception {
         byte[] associatedData = "Give me food or give me slack or kill me".getBytes(Charset.defaultCharset());
-        var cardinality = 3;
-        var threshold = 2;
+        var cardinality = 11;
+        var threshold = 6;
         var secretByteSize = 1024;
         var shares = initialize(cardinality, secretByteSize, threshold);
         var seedStart = new CompletableFuture<Void>();
         var seed = sphinxes.getFirst();
         seed.setOnStart(seedStart);
-        System.out.println("** Starting seed");
+        System.out.println("** Starting M 1 seed");
         seed.start();
         var identifier = qb64(unwrap(0, seed, shares, EncryptionAlgorithm.DEFAULT, associatedData));
         seedStart.get(30, TimeUnit.SECONDS);
@@ -97,22 +97,22 @@ public class E2ETest {
         var sphinx = sphinxes.get(1);
         var nextStart = new CompletableFuture<Void>();
         sphinx.setOnStart(nextStart);
-        System.out.println("** Starting m 1");
+        System.out.println("** Starting M 2");
         sphinx.start();
         unwrap(1, sphinx, shares, EncryptionAlgorithm.DEFAULT, associatedData);
         nextStart.get(30, TimeUnit.SECONDS);
 
         int i = 2;
         for (var s : sphinxes.subList(2, sphinxes.size())) {
+            Thread.sleep(1000);
             var start = new CompletableFuture<Void>();
             s.setOnStart(start);
-            System.out.println("** Starting m " + i);
+            System.out.println("** Starting m " + (i + 1));
             s.start();
             unwrap(i, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
             start.get(30, TimeUnit.SECONDS);
+            i++;
         }
-
-        sphinxes.forEach(Sphinx::shutdown);
     }
 
     private MtlsClient apiClient(int i, InetSocketAddress serverAddress) {
@@ -166,7 +166,7 @@ public class E2ETest {
                  .stream()
                  .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().approachPort,
                                      processes.getFirst().clusterPort, seedId))
-                 .map(Sphinx::new)
+                 .map(c -> new Sphinx(c))
                  .forEach(s -> sphinxes.add(s));
     }
 
