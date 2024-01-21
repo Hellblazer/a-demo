@@ -26,6 +26,7 @@ import com.salesforce.apollo.model.ProcessDomain;
 import com.salesforce.apollo.state.Mutator;
 import com.salesforce.apollo.state.proto.Migration;
 import com.salesforce.apollo.state.proto.Txn;
+import com.salesforce.apollo.stereotomy.Verifiers;
 import com.salesforce.apollo.stereotomy.services.grpc.StereotomyMetrics;
 
 import java.net.InetSocketAddress;

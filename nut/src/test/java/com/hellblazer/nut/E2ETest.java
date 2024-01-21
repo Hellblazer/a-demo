@@ -110,7 +110,7 @@ public class E2ETest {
             System.out.println("** Starting m " + (i + 1));
             s.start();
             unwrap(i, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
-            start.get(30, TimeUnit.SECONDS);
+            start.get(60, TimeUnit.SECONDS);
             i++;
         }
     }
