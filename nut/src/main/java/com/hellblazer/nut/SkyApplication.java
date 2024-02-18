@@ -137,6 +137,14 @@ public class SkyApplication {
         contextId = runtime.getContext().getId();
     }
 
+    public boolean active() {
+        return node.active();
+    }
+
+    public String logState() {
+        return node.logState();
+    }
+
     public void setCertificateValidatorAni() {
         certificateValidator.setDelegate(
         new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));
@@ -171,10 +179,10 @@ public class SkyApplication {
         }
         clusterComms.start();
         admissionsComms.start();
+        node.setDhtVerifiers();
         node.start();
-        //        node.setDhtVerifiers();
         node.getFoundation().start(onStart, Duration.ofMillis(10), seeds);
-        log.info("Started Sky on: {}", sanctorum.getId());
+        log.info("Started Sky: {}", sanctorum.getId());
     }
 
     void bootstrap(CompletableFuture<Void> onStart, SocketAddress myApproach) {

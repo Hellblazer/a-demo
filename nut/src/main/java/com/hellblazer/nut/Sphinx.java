@@ -28,6 +28,7 @@ import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.cert.Certificates;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
 import com.salesforce.apollo.fireflies.View;
+import com.salesforce.apollo.stereotomy.Stereotomy;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.thoth.LoggingOutputStream;
 import com.salesforce.apollo.utils.Entropy;
@@ -58,15 +59,11 @@ import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -169,7 +166,7 @@ public class Sphinx {
             System.exit(1);
         }
         log.info("Reading configuration from: {}", file.getAbsolutePath());
-        SkyConfiguration config = null;
+        SkyConfiguration config;
         try (var fis = new FileInputStream(file)) {
             config = SkyConfiguration.from(fis);
         }
@@ -196,12 +193,22 @@ public class Sphinx {
         t.start();
     }
 
+    public boolean active() {
+        var current = application;
+        return current != null && current.active();
+    }
+
     public SocketAddress getApiEndpoint() {
         return apiAddress;
     }
 
     public SocketAddress getClusterEndpoint() {
         return configuration.clusterEndpoint.socketAddress();
+    }
+
+    public String logState() {
+        var current = application;
+        return current == null ? "Unavailable" : current.logState();
     }
 
     public void setOnStart(CompletableFuture<Void> onStart) {
@@ -260,7 +267,7 @@ public class Sphinx {
     private ApiServer apiServer() {
         var address = configuration.apiEndpoint.socketAddress();
         CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) address);
-        var server = new ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
+        return new ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
 
             @Override
             public SslContext forServer(ClientAuth clientAuth, String alias, CertificateValidator validator,
@@ -271,10 +278,13 @@ public class Sphinx {
 
             @Override
             public Digest getMemberId(X509Certificate key) {
-                return Digest.NONE;
+                var decoded = Stereotomy.decode(key);
+                if (decoded.isEmpty()) {
+                    throw new NoSuchElementException("Cannot decode certificate: %s".formatted(key));
+                }
+                return ((SelfAddressingIdentifier) decoded.get().identifier()).getDigest();
             }
         }, validator(), new SphynxServer(service));
-        return server;
     }
 
     private CertificateWithPrivateKey createIdentity(InetSocketAddress address) {
@@ -315,19 +325,23 @@ public class Sphinx {
         application = new SkyApplication(configuration, sanctum);
         onStart = onStart == null ? new CompletableFuture<>() : onStart;
 
-        var approaches = configuration.approaches.stream().map(e -> e.socketAddress()).toList();
+        var approaches = configuration.approaches.stream().map(Endpoint::socketAddress).toList();
         var seeds = configuration.seeds.stream()
                                        .map(s -> new View.Seed(new SelfAddressingIdentifier(s.identifier()),
                                                                (InetSocketAddress) s.endpoint().socketAddress()))
                                        .toList();
 
-        Thread.ofVirtual().start(() -> {
-            if (approaches.isEmpty()) {
-                application.bootstrap(onStart, configuration.approachEndpoint.socketAddress());
-            } else {
-                application.testify(approaches, onStart, seeds);
+        Thread.ofVirtual().start(Utils.wrapped(() -> {
+            var current = application;
+            if (current == null) {
+                return;
             }
-        });
+            if (approaches.isEmpty()) {
+                current.bootstrap(onStart, configuration.approachEndpoint.socketAddress());
+            } else {
+                current.testify(approaches, onStart, seeds);
+            }
+        }, log));
 
         return sanctum.getId();
     }
@@ -335,17 +349,17 @@ public class Sphinx {
     private CertificateValidator validator() {
         return new CertificateValidator() {
             @Override
-            public void validateClient(X509Certificate[] chain) throws CertificateException {
+            public void validateClient(X509Certificate[] chain) {
             }
 
             @Override
-            public void validateServer(X509Certificate[] chain) throws CertificateException {
+            public void validateServer(X509Certificate[] chain) {
             }
         };
     }
 
     public enum UNWRAPPING {
-        SHAMIR, DELEGATED;
+        SHAMIR, DELEGATED
     }
 
     public record Encrypted(byte[] cipherText, byte[] iv, byte[] associatedData) {

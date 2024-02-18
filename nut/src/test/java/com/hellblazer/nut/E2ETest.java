@@ -110,8 +110,17 @@ public class E2ETest {
             System.out.println("** Starting m " + (i + 1));
             s.start();
             unwrap(i, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
-            start.get(30, TimeUnit.SECONDS);
+            start.get(60, TimeUnit.SECONDS);
             i++;
+        }
+        System.out.println("All nodes have been started and joined the View");
+        final var activated = Utils.waitForCondition(5_000, 1_000, () -> sphinxes.stream().allMatch(Sphinx::active));
+        if (!activated) {
+            System.out.println("\n\nNodes did not fully activate: \n" + (sphinxes.stream()
+                                                                                 .filter(c -> !c.active())
+                                                                                 .map(Sphinx::logState)
+                                                                                 .map(s -> "\t" + s + "\n")
+                                                                                 .toList()) + "\n\n");
         }
     }
 

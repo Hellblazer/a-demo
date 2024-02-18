@@ -34,7 +34,11 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.thoth" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.stereotomy" level="warn" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.thoth" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
