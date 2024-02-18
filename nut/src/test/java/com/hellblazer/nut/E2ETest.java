@@ -240,6 +240,6 @@ public class E2ETest {
         }
     }
 
-    record Process(int clusterPort, int memberId, int apiPort, Share share, int approachPort) {
+    public record Process(int clusterPort, int memberId, int apiPort, Share share, int approachPort) {
     }
 }
