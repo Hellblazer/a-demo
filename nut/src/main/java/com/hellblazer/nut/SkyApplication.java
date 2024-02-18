@@ -137,6 +137,14 @@ public class SkyApplication {
         contextId = runtime.getContext().getId();
     }
 
+    public boolean active() {
+        return node.active();
+    }
+
+    public String logState() {
+        return node.logState();
+    }
+
     public void setCertificateValidatorAni() {
         certificateValidator.setDelegate(
         new StereotomyValidator(node.getDht().getAni().verifiers(Duration.ofSeconds(30))));

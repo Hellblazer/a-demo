@@ -45,6 +45,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -265,16 +266,16 @@ public class SkyTest {
             var listener = new View.ViewLifecycleListener() {
 
                 @Override
-                public void viewChange(Context<View.Participant> context, Digest viewId,
-                                       List<SelfAddressingIdentifier> joins, List<Digest> leaves) {
-                    if (context.totalCount() == CARDINALITY) {
+                public void viewChange(Function<SelfAddressingIdentifier, View.Participant> members, Digest viewId,
+                                       int cardinality, List<SelfAddressingIdentifier> joins, List<Digest> leaves) {
+                    if (cardinality== CARDINALITY) {
                         System.out.println(
-                        String.format("Full view: %s members: %s on: %s", viewId, context.totalCount(),
+                        String.format("Full view: %s members: %s on: %s", viewId, cardinality,
                                       d.getMember().getId()));
                         countdown.countDown();
                     } else {
                         System.out.println(
-                        String.format("Members joining: %s members: %s on: %s", viewId, context.totalCount(),
+                        String.format("Members joining: %s members: %s on: %s", viewId, cardinality,
                                       d.getMember().getId()));
                     }
                 }
