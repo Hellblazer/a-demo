@@ -18,7 +18,12 @@
 package com.hellblazer.nut;
 
 import com.google.protobuf.Any;
+import com.google.protobuf.ByteString;
+import com.macasaet.fernet.StringValidator;
+import com.macasaet.fernet.Token;
 import com.salesforce.apollo.archipelago.*;
+import com.salesforce.apollo.archipelago.client.FernetCallCredentials;
+import com.salesforce.apollo.archipelago.server.FernetServerInterceptor;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.comm.grpc.ClientContextSupplier;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
@@ -38,6 +43,7 @@ import com.salesforce.apollo.stereotomy.StereotomyValidator;
 import com.salesforce.apollo.stereotomy.event.proto.Validations;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
+import com.salesforce.apollo.test.proto.ByteMessage;
 import com.salesforce.apollo.thoth.DirectPublisher;
 import io.grpc.ManagedChannel;
 import io.grpc.NameResolver;
@@ -62,6 +68,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * @author hal.hildebrand
@@ -101,7 +108,28 @@ public class SkyApplication {
             clusterServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
                                            serverContextSupplier(certWithKey));
         }
-        clusterComms = clusterServer.router(configuration.connectionCache);
+        Predicate<Token> validator = token -> {
+            var current = sanctorum;
+            if (current == null) {
+                return false;
+            }
+            var generator = current.getGenerator();
+            var result = generator == null ? null : generator.validate(token, new StringValidator() {
+            });
+            return result != null;
+        };
+        var credentials = FernetCallCredentials.blocking(() -> {
+            var current = sanctorum;
+            if (current == null) {
+                return null;
+            }
+            var generator = current.getGenerator();
+            return generator == null ? null : generator.apply(
+            ByteMessage.newBuilder().setContents(ByteString.copyFromUtf8("My test message")).build());
+        });
+        clusterComms = clusterServer.router(configuration.connectionCache.setCredentials(credentials),
+                                            RouterImpl::defaultServerLimit, null,
+                                            Collections.singletonList(new FernetServerInterceptor()), validator);
         log.info("Cluster communications: {} on: {}", clusterEndpoint, sanctorum.getId());
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setCommunications(clusterComms)
