@@ -62,6 +62,10 @@ public class SanctumSanctorum {
     private volatile ControlledIdentifierMember member;
     private volatile KERL.AppendKERL            kerl;
 
+    public TokenGenerator getGenerator() {
+        return generator;
+    }
+
     public SanctumSanctorum(byte[] root, DigestAlgorithm algorithm, SecureRandom entropy,
                             SkyConfiguration configuration) {
         this.member = member;

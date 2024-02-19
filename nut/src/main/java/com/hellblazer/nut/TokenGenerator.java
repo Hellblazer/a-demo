@@ -20,6 +20,7 @@ package com.hellblazer.nut;
 import com.google.protobuf.Message;
 import com.macasaet.fernet.Key;
 import com.macasaet.fernet.Token;
+import com.macasaet.fernet.Validator;
 
 import java.security.SecureRandom;
 import java.util.function.Function;
@@ -42,7 +43,11 @@ public class TokenGenerator implements Function<Message, Token> {
 
     @Override
     public Token apply(Message message) {
-        return Token.generate(entropy, master, message.toByteArray());
+        return master != null ? Token.generate(entropy, master, message.toByteArray()) : null;
+    }
+
+    public <T> T validate(Token token, Validator<T> validator) {
+        return master != null ? token.validateAndDecrypt(master, validator) : null;
     }
 
     void clear() {
