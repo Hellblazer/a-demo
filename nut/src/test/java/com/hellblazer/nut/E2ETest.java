@@ -57,8 +57,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author hal.hildebrand
  **/
 public class E2ETest {
-    private List<Sphinx>  sphinxes;
-    private List<Process> processes;
+    public  List<E2ETest.Process> processes;
+    private List<Sphinx>          sphinxes;
 
     @AfterEach
     public void after() {
@@ -162,7 +162,8 @@ public class E2ETest {
                                                         share(i, algorithm, keys, encryptedShares),
                                                         Utils.allocatePort()))
                              .toList();
-        var seed = new Sphinx(configFor(g, processes.getFirst(), cardinality, threshold, null, null, null));
+        E2ETest.Process first = processes.getFirst();
+        var seed = new Sphinx(configFor(g, first, cardinality, threshold, null, null, null));
         sphinxes = new ArrayList<>();
         sphinxes.add(seed);
         return processes.stream().map(p -> p.share).toList();
@@ -171,10 +172,10 @@ public class E2ETest {
     private void initializeRest(int cardinality, int threshold, String seedId) {
         STGroup g = new STGroupFile("src/test/resources/sky.stg");
 
+        E2ETest.Process first = processes.getFirst();
         processes.subList(1, cardinality)
                  .stream()
-                 .map(p -> configFor(g, p, cardinality, threshold, processes.getFirst().approachPort,
-                                     processes.getFirst().clusterPort, seedId))
+                 .map(p -> configFor(g, p, cardinality, threshold, first.approachPort, first.clusterPort, seedId))
                  .map(c -> new Sphinx(c))
                  .forEach(s -> sphinxes.add(s));
     }

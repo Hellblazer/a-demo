@@ -27,6 +27,7 @@ import com.salesforce.apollo.archipelago.server.FernetServerInterceptor;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.comm.grpc.ClientContextSupplier;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
+import com.salesforce.apollo.context.DynamicContext;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
@@ -134,7 +135,7 @@ public class SkyApplication {
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.setId(configuration.group).build());
-        runtime.getContext().activate(sanctorum.member());
+        ((DynamicContext<Member>) runtime.getContext()).activate(sanctorum.member());
         var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) clusterEndpoint;
         node = new Sky(configuration.group, sanctorum.member(), configuration.domain, configuration.choamParameters,
                        runtime, bind, configuration.viewParameters, null);

@@ -25,11 +25,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.salesforce.apollo.archipelago.ServerConnectionCache;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.choam.Parameters.ProducerParameters;
+import com.salesforce.apollo.context.DynamicContext;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
-import com.salesforce.apollo.membership.Context;
 import com.salesforce.apollo.membership.Member;
 import com.salesforce.apollo.model.ProcessDomain.ProcessDomainParameters;
 import com.salesforce.apollo.utils.Utils;
@@ -68,7 +68,7 @@ public class SkyConfiguration {
     @JsonProperty
     public ServerConnectionCache.Builder                       connectionCache;
     @JsonProperty
-    public Context.Builder<Member>                             context;
+    public DynamicContext.Builder<Member>                      context;
     @JsonProperty
     public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters;
     @JsonProperty
@@ -95,7 +95,8 @@ public class SkyConfiguration {
         apiEndpoint = new Endpoint(localhost, Utils.allocatePort(), null);
         group = DigestAlgorithm.DEFAULT.digest("SLACK");
         connectionCache = ServerConnectionCache.newBuilder().setTarget(30);
-        context = Context.newBuilder().setBias(3).setpByz(0.1);
+        context = DynamicContext.newBuilder();
+        context.setBias(3).setpByz(0.1);
         domain = new ProcessDomainParameters("jdbc:h2:mem:sql-state;DB_CLOSE_DELAY=-1", Duration.ofMinutes(1),
                                              "jdbc:h2:mem:dht-state;DB_CLOSE_DELAY=-1", checkpointBaseDir,
                                              Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3, 10, 0.1);
