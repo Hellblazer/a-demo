@@ -23,13 +23,13 @@
         <protobuf.version>3.25.2</protobuf.version>
         <junit.version>5.9.1</junit.version>
         <slf4j.version>2.0.3</slf4j.version>
-        <version.java>21</version.java>
-        <graal.vm.version>23.1.0</graal.vm.version>
+        <version.java>22</version.java>
+        <graal.vm.version>23.1.2</graal.vm.version>
         <native.maven.plugin.version>0.9.28</native.maven.plugin.version>
         <h2.version>2.2.220</h2.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>22</maven.compiler.source>
+        <maven.compiler.target>22</maven.compiler.target>
     </properties>
 
     <repositories>
@@ -199,7 +199,7 @@
                                 </requireMavenVersion>
                                 <dependencyConvergence/>
                                 <requireJavaVersion>
-                                    <version>[21,)</version>
+                                    <version>[22,)</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
