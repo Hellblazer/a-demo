@@ -63,11 +63,14 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.TemporalAmount;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -84,10 +87,12 @@ public class SkyApplication {
     private final    SanctumSanctorum              sanctorum;
     private final    Router                        admissionsComms;
     private final    Clock                         clock;
-    private final    AtomicBoolean                 started = new AtomicBoolean();
+    private final    AtomicBoolean                 started   = new AtomicBoolean();
     private final    DelegatedCertificateValidator certificateValidator;
+    private final    Lock                          tokenLock = new ReentrantLock();
+    private volatile Token                         token;
     private volatile ManagedChannel                joinChannel;
-    private          int                           retries = 5;
+    private          int                           retries   = 5;
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum) {
         this.clock = Clock.systemUTC();
@@ -109,13 +114,17 @@ public class SkyApplication {
             clusterServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
                                            serverContextSupplier(certWithKey));
         }
-        Predicate<Token> validator = token -> {
+        Predicate<FernetServerInterceptor.HashedToken> validator = token -> {
             var current = sanctorum;
             if (current == null) {
                 return false;
             }
             var generator = current.getGenerator();
             var result = generator == null ? null : generator.validate(token, new StringValidator() {
+                @Override
+                public TemporalAmount getTimeToLive() {
+                    return Duration.ofDays(60);
+                }
             });
             return result != null;
         };
@@ -125,8 +134,7 @@ public class SkyApplication {
                 return null;
             }
             var generator = current.getGenerator();
-            return generator == null ? null : generator.apply(
-            ByteMessage.newBuilder().setContents(ByteString.copyFromUtf8("My test message")).build());
+            return generator == null ? null : generate(generator);
         });
         clusterComms = clusterServer.router(configuration.connectionCache.setCredentials(credentials),
                                             RouterImpl::defaultServerLimit, null,
@@ -137,8 +145,13 @@ public class SkyApplication {
                                                   .setContext(configuration.context.setId(configuration.group).build());
         ((DynamicContext<Member>) runtime.getContext()).activate(sanctorum.member());
         var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) clusterEndpoint;
-        node = new Sky(configuration.group, sanctorum.member(), configuration.domain, configuration.choamParameters,
-                       runtime, bind, configuration.viewParameters, null);
+        var choamParameters = configuration.choamParameters;
+        choamParameters.setProducer(configuration.producerParameters.build());
+        choamParameters.setGenesisViewId(configuration.genesisViewId);
+        choamParameters.setViewSigAlgorithm(configuration.identity.signatureAlgorithm());
+        choamParameters.setDigestAlgorithm(configuration.identity.digestAlgorithm());
+        node = new Sky(configuration.group, sanctorum.member(), configuration.domain, choamParameters, runtime, bind,
+                       configuration.viewParameters, null);
         var k = node.getDht().asKERL();
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
@@ -188,6 +201,7 @@ public class SkyApplication {
             return;
         }
         log.info("Shutting down on: {}", node.getMember().getId());
+        token = null;
         if (joinChannel != null) {
             joinChannel.shutdown();
         }
@@ -256,6 +270,22 @@ public class SkyApplication {
             MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo", certWithKey.getX509Certificate(),
                                                certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId);
             return client.getChannel();
+        }
+    }
+
+    private Token generate(TokenGenerator generator) {
+        tokenLock.lock();
+        try {
+            var current = token;
+            if (current == null && started.get()) {
+                var msg = ByteMessage.newBuilder().setContents(ByteString.copyFromUtf8("My test message")).build();
+                token = generator.apply(msg);
+                log.info("Generating recognition token on context: {} on: {}", contextId, sanctorum.getId());
+                return token;
+            }
+            return current;
+        } finally {
+            tokenLock.unlock();
         }
     }
 

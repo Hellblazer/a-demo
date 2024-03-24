@@ -45,9 +45,11 @@ import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
@@ -57,8 +59,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author hal.hildebrand
  **/
 public class E2ETest {
-    public  List<E2ETest.Process> processes;
-    private List<Sphinx>          sphinxes;
+    public  List<com.hellblazer.nut.E2ETest.Proc> processes;
+    private List<Sphinx>                          sphinxes;
 
     @AfterEach
     public void after() {
@@ -88,39 +90,100 @@ public class E2ETest {
         var seedStart = new CompletableFuture<Void>();
         var seed = sphinxes.getFirst();
         seed.setOnStart(seedStart);
-        System.out.println("** Starting M 1 seed");
+        System.out.println();
+        System.out.println("** Starting m 1 (seed)");
+        System.out.println();
         seed.start();
         var identifier = qb64(unwrap(0, seed, shares, EncryptionAlgorithm.DEFAULT, associatedData));
         seedStart.get(30, TimeUnit.SECONDS);
 
+        initializeKernel(cardinality, threshold, identifier);
         initializeRest(cardinality, threshold, identifier);
         var sphinx = sphinxes.get(1);
         var nextStart = new CompletableFuture<Void>();
         sphinx.setOnStart(nextStart);
-        System.out.println("** Starting M 2");
+        System.out.println();
+        System.out.println("** Starting m 2");
+        System.out.println();
         sphinx.start();
         unwrap(1, sphinx, shares, EncryptionAlgorithm.DEFAULT, associatedData);
         nextStart.get(30, TimeUnit.SECONDS);
 
-        int i = 2;
-        for (var s : sphinxes.subList(2, sphinxes.size())) {
-            Thread.sleep(1000);
+        // Bring up a minimal quorum
+        var kernel = sphinxes.subList(2, 4);
+        var m = new AtomicInteger(2);
+        kernel.parallelStream().forEach(s -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            var mi = m.incrementAndGet() - 1;
             var start = new CompletableFuture<Void>();
-            s.setOnStart(start);
-            System.out.println("** Starting m " + (i + 1));
+            s.setOnStart(start.whenComplete((v, t) -> {
+                System.out.format("** Member %s has joined the view", (mi + 1));
+            }));
+            System.out.println();
+            System.out.println("** Starting m " + (mi + 1));
+            System.out.println();
             s.start();
-            unwrap(i, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
-            start.get(60, TimeUnit.SECONDS);
-            i++;
-        }
-        System.out.println("All nodes have been started and joined the View");
-        final var activated = Utils.waitForCondition(5_000, 1_000, () -> sphinxes.stream().allMatch(Sphinx::active));
+            unwrap(mi, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
+            System.out.println();
+            System.out.format("** Member: %s has been started", (mi + 1));
+            System.out.println();
+        });
+
+        System.out.println();
+        System.out.println("** Minimal quorum has been started and have joined the view");
+        System.out.println();
+
+        var domains = sphinxes.subList(0, 4);
+        var activated = Utils.waitForCondition(180_000, 1_000,
+                                               () -> domains.stream().filter(c -> !c.active()).count() == 0);
+        assertTrue(activated, "** Minimal quorum did not become active : " + (domains.stream()
+                                                                                     .filter(c -> !c.active())
+                                                                                     .map(d -> d.logState())
+                                                                                     .toList()));
+        System.out.println();
+        System.out.println("** Minimal quorum is active");
+        System.out.println();
+
+        // Bring up the rest of the nodes.
+        var remaining = sphinxes.subList(4, sphinxes.size());
+        remaining.parallelStream().forEach(s -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                return;
+            }
+            var mi = m.incrementAndGet() - 1;
+            var start = new CompletableFuture<Void>();
+            s.setOnStart(start.whenComplete((v, t) -> {
+                System.out.format("** %s has joined the view", (mi + 1));
+            }));
+            System.out.println();
+            System.out.println("** Starting m " + (mi + 1));
+            System.out.println();
+            s.start();
+            unwrap(mi, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
+            System.out.println();
+            System.out.format("** Member: %s has been started", (mi + 1));
+            System.out.println();
+        });
+
+        activated = Utils.waitForCondition(180_000, 1_000, () -> sphinxes.stream().allMatch(Sphinx::active));
         if (!activated) {
+            System.out.println();
             System.out.println("\n\nNodes did not fully activate: \n" + (sphinxes.stream()
                                                                                  .filter(c -> !c.active())
                                                                                  .map(Sphinx::logState)
                                                                                  .map(s -> "\t" + s + "\n")
                                                                                  .toList()) + "\n\n");
+            System.out.println();
+        } else {
+            System.out.println();
+            System.out.println("** All nodes are active");
+            System.out.println();
         }
     }
 
@@ -131,8 +194,8 @@ public class E2ETest {
                               clientCert.getPrivateKey(), CertificateValidator.NONE);
     }
 
-    private InputStream configFor(STGroup g, Process process, int n, int k, Integer approach, Integer seed,
-                                  String seedId) {
+    private InputStream configFor(STGroup g, com.hellblazer.nut.E2ETest.Proc process, int n, int k, Integer approach,
+                                  Integer seed, String seedId, boolean genesis) {
         var t = g.getInstanceOf("sky");
         t.add("clusterPort", process.clusterPort);
         t.add("apiPort", process.apiPort);
@@ -143,6 +206,7 @@ public class E2ETest {
         t.add("seedId", seedId);
         t.add("n", n);
         t.add("k", k);
+        t.add("genesis", genesis);
         var rendered = t.render();
         return new ByteArrayInputStream(rendered.getBytes(Charset.defaultCharset()));
     }
@@ -158,24 +222,37 @@ public class E2ETest {
         var encryptedShares = secrets.shares(secretByteSize, keys.stream().map(KeyPair::getPublic).toList(), threshold);
 
         processes = IntStream.range(0, cardinality)
-                             .mapToObj(i -> new Process(Utils.allocatePort(), i, Utils.allocatePort(),
-                                                        share(i, algorithm, keys, encryptedShares),
-                                                        Utils.allocatePort()))
+                             .mapToObj(
+                             i -> new com.hellblazer.nut.E2ETest.Proc(Utils.allocatePort(), i, Utils.allocatePort(),
+                                                                      share(i, algorithm, keys, encryptedShares),
+                                                                      Utils.allocatePort()))
                              .toList();
-        E2ETest.Process first = processes.getFirst();
-        var seed = new Sphinx(configFor(g, first, cardinality, threshold, null, null, null));
+        com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
+        var seed = new Sphinx(configFor(g, first, cardinality, threshold, null, null, null, true));
         sphinxes = new ArrayList<>();
         sphinxes.add(seed);
         return processes.stream().map(p -> p.share).toList();
     }
 
+    private void initializeKernel(int cardinality, int threshold, String seedId) {
+        STGroup g = new STGroupFile("src/test/resources/sky.stg");
+
+        com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
+        processes.subList(1, 4)
+                 .stream()
+                 .map(p -> configFor(g, p, cardinality, threshold, first.approachPort, first.clusterPort, seedId, true))
+                 .map(c -> new Sphinx(c))
+                 .forEach(s -> sphinxes.add(s));
+    }
+
     private void initializeRest(int cardinality, int threshold, String seedId) {
         STGroup g = new STGroupFile("src/test/resources/sky.stg");
 
-        E2ETest.Process first = processes.getFirst();
-        processes.subList(1, cardinality)
+        com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
+        processes.subList(4, cardinality)
                  .stream()
-                 .map(p -> configFor(g, p, cardinality, threshold, first.approachPort, first.clusterPort, seedId))
+                 .map(
+                 p -> configFor(g, p, cardinality, threshold, first.approachPort, first.clusterPort, seedId, false))
                  .map(c -> new Sphinx(c))
                  .forEach(s -> sphinxes.add(s));
     }
@@ -219,7 +296,10 @@ public class E2ETest {
             var secretKey = new SecretKeySpec(encapsulated.key().getEncoded(), "AES");
 
             int count = 0;
-            for (var wrapped : shares) {
+            var selected = new ArrayList<>(shares);
+            Collections.shuffle(selected);
+            var present = 4;
+            for (var wrapped : selected.subList(0, present)) {
                 var encrypted = Sphinx.encrypt(wrapped.toByteArray(), secretKey, associatedData);
                 var encryptedShare = EncryptedShare.newBuilder()
                                                    .setIv(ByteString.copyFrom(encrypted.iv()))
@@ -234,13 +314,13 @@ public class E2ETest {
 
             var unwrapStatus = sphynxClient.unwrap(Empty.getDefaultInstance());
             assertTrue(unwrapStatus.getSuccess());
-            assertEquals(shares.size(), unwrapStatus.getShares());
+            assertEquals(present, unwrapStatus.getShares());
             return Digest.from(unwrapStatus.getIdentifier());
         } finally {
             client.stop();
         }
     }
 
-    public record Process(int clusterPort, int memberId, int apiPort, Share share, int approachPort) {
+    public record Proc(int clusterPort, int memberId, int apiPort, Share share, int approachPort) {
     }
 }

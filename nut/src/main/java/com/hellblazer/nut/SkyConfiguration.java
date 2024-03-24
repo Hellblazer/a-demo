@@ -63,6 +63,8 @@ public class SkyConfiguration {
     @JsonProperty
     public Digest                                              group;
     @JsonProperty
+    public Digest                                              genesisViewId;
+    @JsonProperty
     public Parameters.Builder                                  choamParameters;
     public ProcessDomainParameters                             domain;
     @JsonProperty
@@ -75,13 +77,16 @@ public class SkyConfiguration {
     public List<Endpoint>                                      approaches = Collections.emptyList();
     @JsonProperty
     public List<Seedling>                                      seeds      = Collections.emptyList();
+    @JsonProperty
     public com.salesforce.apollo.fireflies.Parameters.Builder  viewParameters;
+    @JsonProperty
+    public ProducerParameters.Builder                          producerParameters;
 
     {
         // Default configuration
         var userDir = System.getProperty("user.dir", ".");
         var checkpointBaseDir = new File(userDir).toPath();
-        var genesisViewId = DigestAlgorithm.DEFAULT.digest("Give me food or give me slack or kill me".getBytes());
+        genesisViewId = DigestAlgorithm.DEFAULT.digest("Give me food or give me slack or kill me".getBytes());
 
         identity = new IdentityConfiguration(Path.of(userDir, ".id"), "JCEKS", "jdbc:h2:mem:id-kerl;DB_CLOSE_DELAY=-1",
                                              Path.of(userDir, ".digest"), DigestAlgorithm.DEFAULT,
@@ -101,20 +106,16 @@ public class SkyConfiguration {
                                              "jdbc:h2:mem:dht-state;DB_CLOSE_DELAY=-1", checkpointBaseDir,
                                              Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3, 10, 0.1);
         choamParameters = Parameters.newBuilder()
-                                    .setViewSigAlgorithm(identity.signatureAlgorithm)
-                                    .setDigestAlgorithm(identity.digestAlgorithm)
-                                    .setGenesisViewId(genesisViewId)
-                                    .setGossipDuration(Duration.ofMillis(50))
-                                    .setProducer(ProducerParameters.newBuilder()
-                                                                   .setGossipDuration(Duration.ofMillis(50))
-                                                                   .setBatchInterval(Duration.ofMillis(100))
-                                                                   .setMaxBatchByteSize(10 * 1024 * 1024)
-                                                                   .setMaxBatchCount(3000)
-                                                                   .build())
+                                    .setGossipDuration(Duration.ofMillis(5))
                                     .setCheckpointBlockDelta(200);
         viewParameters = com.salesforce.apollo.fireflies.Parameters.newBuilder()
-                                                                   .setFpr(0.00125)
+                                                                   .setFpr(0.000125)
                                                                    .setSeedingTimout(Duration.ofSeconds(10));
+        producerParameters = ProducerParameters.newBuilder()
+                                               .setGossipDuration(Duration.ofMillis(5))
+                                               .setBatchInterval(Duration.ofMillis(100))
+                                               .setMaxBatchByteSize(10 * 1024 * 1024)
+                                               .setMaxBatchCount(3000);
     }
 
     static SkyConfiguration from(InputStream is) {

@@ -13,13 +13,20 @@ seeds:
         port: <seed>
 >>
 
-sky(clusterPort, apiPort, memberId, seedPort, n, k, approachPort, approach, seedId) ::= <<
+sky(clusterPort, apiPort, memberId, seedPort, n, k, approachPort, approach, seedId, genesis) ::= <<
 
 <if(approach)><approaches(approach = approach)>
 <endif>
 
 <if(seedPort)><seeds(seedId = seedId, seed = seedPort)>
 <endif>
+choamParameters:
+  generateGenesis: <genesis>
+  checkpointBlockDelta: 200
+
+producerParameters:
+  maxBatchByteSize: 10485760
+  maxBatchCount: 3000
 
 clusterEndpoint:
   hostName: localhost
