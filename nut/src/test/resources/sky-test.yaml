@@ -1,3 +1,5 @@
+choamParameters:
+  generateGenesis: true
 
 clusterEndpoint:
   hostName: localhost
