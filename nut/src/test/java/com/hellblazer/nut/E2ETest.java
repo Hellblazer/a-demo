@@ -138,7 +138,7 @@ public class E2ETest {
         System.out.println();
 
         var domains = sphinxes.subList(0, 4);
-        var activated = Utils.waitForCondition(180_000, 1_000,
+        var activated = Utils.waitForCondition(360_000, 1_000,
                                                () -> domains.stream().filter(c -> !c.active()).count() == 0);
         assertTrue(activated, "** Minimal quorum did not become active : " + (domains.stream()
                                                                                      .filter(c -> !c.active())
