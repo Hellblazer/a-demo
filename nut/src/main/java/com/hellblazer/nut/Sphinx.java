@@ -86,11 +86,12 @@ public class Sphinx {
     private final        SkyConfiguration        configuration;
     private final        Service                 service            = new Service();
     private final        SecureRandom            entropy;
+    private final        CompletableFuture<Void> onStart            = new CompletableFuture<>();
     private volatile     SanctumSanctorum        sanctum;
     private volatile     SkyApplication          application;
     private volatile     Runnable                closeApiServer;
     private              SocketAddress           apiAddress;
-    private              CompletableFuture<Void> onStart;
+    private              CompletableFuture<Void> onFailure          = new CompletableFuture<>();
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -206,13 +207,22 @@ public class Sphinx {
         return configuration.clusterEndpoint.socketAddress();
     }
 
+    public CompletableFuture<Void> getOnFailure() {
+        return onFailure;
+    }
+
+    public void setOnFailure(CompletableFuture<Void> onFailure) {
+        this.onFailure = onFailure;
+    }
+
+    public Digest id() {
+        var current = sanctum;
+        return current != null ? current.getId() : null;
+    }
+
     public String logState() {
         var current = application;
         return current == null ? "Unavailable" : current.logState();
-    }
-
-    public void setOnStart(CompletableFuture<Void> onStart) {
-        this.onStart = onStart;
     }
 
     public void shutdown() {
@@ -229,9 +239,12 @@ public class Sphinx {
         log.warn("Server shutdown on: {}", id == null ? "<sealed>" : id.toString());
     }
 
-    public void start() {
+    /**
+     * @return the future completed when the View has been started
+     */
+    public CompletableFuture<Void> start() {
         if (!started.compareAndSet(false, true)) {
-            return;
+            return onStart;
         }
         var socketAddress = configuration.apiEndpoint.socketAddress();
         var local = socketAddress instanceof InProcessSocketAddress;
@@ -262,6 +275,7 @@ public class Sphinx {
             apiAddress = server.getAddress();
         }
         log.info("Started API server on: {} : {}", configuration.apiEndpoint, apiAddress);
+        return onStart;
     }
 
     private ApiServer apiServer() {
@@ -322,8 +336,7 @@ public class Sphinx {
     // Unwrap the root identity keystore and establish either a new identifier or resume the previous identifier
     private Digest unwrap(byte[] master) {
         sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
-        application = new SkyApplication(configuration, sanctum);
-        onStart = onStart == null ? new CompletableFuture<>() : onStart;
+        application = new SkyApplication(configuration, sanctum, onFailure);
 
         var approaches = configuration.approaches.stream().map(Endpoint::socketAddress).toList();
         var seeds = configuration.seeds.stream()

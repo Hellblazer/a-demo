@@ -27,6 +27,8 @@ choamParameters:
 producerParameters:
   maxBatchByteSize: 10485760
   maxBatchCount: 3000
+  ethereal:
+    epochLength: 7
 
 clusterEndpoint:
   hostName: localhost

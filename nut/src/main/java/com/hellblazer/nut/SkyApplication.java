@@ -94,7 +94,8 @@ public class SkyApplication {
     private volatile ManagedChannel                joinChannel;
     private          int                           retries   = 5;
 
-    public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum) {
+    public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum,
+                          CompletableFuture<Void> onFailure) {
         this.clock = Clock.systemUTC();
         this.sanctorum = sanctorum;
         certWithKey = sanctorum.member()
@@ -141,6 +142,7 @@ public class SkyApplication {
                                             Collections.singletonList(new FernetServerInterceptor()), validator);
         log.info("Cluster communications: {} on: {}", clusterEndpoint, sanctorum.getId());
         var runtime = Parameters.RuntimeParameters.newBuilder()
+                                                  .setOnFailure(onFailure)
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.setId(configuration.group).build());
         ((DynamicContext<Member>) runtime.getContext()).activate(sanctorum.member());
@@ -177,6 +179,10 @@ public class SkyApplication {
                        new DirectPublisher(sanctorum.member().getId(), new ProtoKERLAdapter(k)), admissionsComms, null,
                        clusterComms);
         contextId = runtime.getContext().getId();
+    }
+
+    public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctum) {
+        this(configuration, sanctum, new CompletableFuture<>());
     }
 
     public boolean active() {
