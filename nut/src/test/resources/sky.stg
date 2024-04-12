@@ -25,10 +25,10 @@ viewGossipDuration: PT0H0M00.05S
 
 choamParameters:
   generateGenesis: <genesis>
-  checkpointBlockDelta: 50
+  checkpointBlockDelta: 100
   gossipDuration: PT0H0M00.05S
-  synchronizationCycles: 10
-  regenerationCycles: 10
+  synchronizationCycles: 20
+  regenerationCycles: 20
 
 producerParameters:
   maxBatchByteSize: 10485760
