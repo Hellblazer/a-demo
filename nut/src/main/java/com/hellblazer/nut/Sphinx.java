@@ -27,6 +27,7 @@ import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.cert.Certificates;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
+import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.fireflies.View;
 import com.salesforce.apollo.stereotomy.Stereotomy;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
@@ -277,6 +278,10 @@ public class Sphinx {
         }
         log.info("Started API server on: {} : {}", configuration.apiEndpoint, apiAddress);
         return onStart;
+    }
+
+    protected Oracle getDelphi() {
+        return application.getSky().getDelphi();
     }
 
     private ApiServer apiServer() {

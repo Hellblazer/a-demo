@@ -28,6 +28,7 @@ import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
+import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.utils.Utils;
 import io.netty.handler.ssl.ClientAuth;
 import org.junit.jupiter.api.AfterEach;
@@ -129,8 +130,7 @@ public class E2ETest {
         System.out.println();
 
         var domains = sphinxes.subList(0, 4);
-        Utils.waitForCondition(30_000, 1_000,
-                               () -> failures.get() ? true : domains.stream().allMatch(s -> s.active()));
+        Utils.waitForCondition(30_000, 1_000, () -> failures.get() ? true : domains.stream().allMatch(s -> s.active()));
         assertTrue(domains.stream().allMatch(s -> s.active()),
                    "** Minimal quorum did not become active : " + (domains.stream()
                                                                           .filter(c -> !c.active())
@@ -162,20 +162,24 @@ public class E2ETest {
             System.out.println();
         });
 
-        Utils.waitForCondition(30_000, 1_000,
-                               () -> failures.get() ? true : sphinxes.stream().allMatch(Sphinx::active));
+        Utils.waitForCondition(30_000, 1_000, () -> failures.get() ? true : sphinxes.stream().allMatch(Sphinx::active));
         if (!sphinxes.stream().allMatch(Sphinx::active)) {
             System.out.println();
             fail("\n\nNodes did not fully activate: \n" + (sphinxes.stream()
-                                                                                 .filter(c -> !c.active())
-                                                                                 .map(Sphinx::logState)
-                                                                                 .map(s -> "\t" + s + "\n")
-                                                                                 .toList()) + "\n\n");
-        } else {
-            System.out.println();
-            System.out.println("** All nodes are active");
-            System.out.println();
+                                                                   .filter(c -> !c.active())
+                                                                   .map(Sphinx::logState)
+                                                                   .map(s -> "\t" + s + "\n")
+                                                                   .toList()) + "\n\n");
         }
+        System.out.println();
+        System.out.println("** All nodes are active");
+        System.out.println();
+
+        Thread.sleep(1000);
+
+        var oracle = sphinxes.get(0).getDelphi();
+        oracle.add(new Oracle.Namespace("test")).get();
+        SkyTest.smoke(oracle);
     }
 
     private MtlsClient apiClient(int i, InetSocketAddress serverAddress) {
