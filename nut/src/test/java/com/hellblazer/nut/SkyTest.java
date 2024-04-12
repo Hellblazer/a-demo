@@ -19,16 +19,15 @@ import com.salesforce.apollo.archipelago.Router;
 import com.salesforce.apollo.archipelago.ServerConnectionCache;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.choam.proto.FoundationSeal;
+import com.salesforce.apollo.context.Context;
+import com.salesforce.apollo.context.DynamicContextImpl;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.fireflies.View;
-import com.salesforce.apollo.membership.Context;
-import com.salesforce.apollo.membership.ContextImpl;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
 import com.salesforce.apollo.model.ProcessDomain;
 import com.salesforce.apollo.stereotomy.StereotomyImpl;
-import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.mem.MemKERL;
 import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
 import com.salesforce.apollo.utils.Entropy;
@@ -45,7 +44,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -236,7 +235,7 @@ public class SkyTest {
         Digest group = DigestAlgorithm.DEFAULT.getOrigin();
         var sealed = FoundationSeal.newBuilder().build();
         identities.forEach((digest, id) -> {
-            var context = new ContextImpl<>(DigestAlgorithm.DEFAULT.getLast(), CARDINALITY, 0.2, 3);
+            var context = new DynamicContextImpl<>(DigestAlgorithm.DEFAULT.getLast(), CARDINALITY, 0.2, 3);
             final var member = new ControlledIdentifierMember(id);
             var localRouter = new LocalServer(prefix, member).router(ServerConnectionCache.newBuilder().setTarget(30));
             var pdParams = new ProcessDomain.ProcessDomainParameters(
@@ -263,24 +262,17 @@ public class SkyTest {
         final var seeds = Collections.singletonList(
         new View.Seed(domains.getFirst().getMember().getIdentifier().getIdentifier(), new InetSocketAddress(0)));
         domains.forEach(d -> {
-            var listener = new View.ViewLifecycleListener() {
-
-                @Override
-                public void viewChange(Function<SelfAddressingIdentifier, View.Participant> members, Digest viewId,
-                                       int cardinality, List<SelfAddressingIdentifier> joins, List<Digest> leaves) {
-                    if (cardinality== CARDINALITY) {
-                        System.out.println(
-                        String.format("Full view: %s members: %s on: %s", viewId, cardinality,
-                                      d.getMember().getId()));
-                        countdown.countDown();
-                    } else {
-                        System.out.println(
-                        String.format("Members joining: %s members: %s on: %s", viewId, cardinality,
-                                      d.getMember().getId()));
-                    }
+            BiConsumer<Context, Digest> c = (context, viewId) -> {
+                if (context.cardinality() == CARDINALITY) {
+                    System.out.printf("Full view: %s members: %s on: %s%n", viewId, context.cardinality(),
+                                      d.getMember().getId());
+                    countdown.countDown();
+                } else {
+                    System.out.printf("Members joining: %s members: %s on: %s%n", viewId, context.cardinality(),
+                                      d.getMember().getId());
                 }
             };
-            d.getFoundation().register(listener);
+            d.getFoundation().register(c);
         });
         // start seed
         final var started = new AtomicReference<>(new CountDownLatch(1));
@@ -339,6 +331,7 @@ public class SkyTest {
 
     private Parameters.Builder params() {
         var params = Parameters.newBuilder()
+                               .setGenerateGenesis(true)
                                .setGenesisViewId(GENESIS_VIEW_ID)
                                .setGossipDuration(Duration.ofMillis(50))
                                .setProducer(Parameters.ProducerParameters.newBuilder()
