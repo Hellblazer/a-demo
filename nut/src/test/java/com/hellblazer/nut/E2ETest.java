@@ -178,7 +178,7 @@ public class E2ETest {
         Thread.sleep(1000);
 
         var oracle = sphinxes.get(0).getDelphi();
-        oracle.add(new Oracle.Namespace("test")).get();
+        oracle.add(new Oracle.Namespace("test")).get(120, TimeUnit.SECONDS);
         SkyTest.smoke(oracle);
     }
 
