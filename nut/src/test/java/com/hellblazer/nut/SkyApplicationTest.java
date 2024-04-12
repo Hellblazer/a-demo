@@ -29,6 +29,7 @@ import org.mockito.Mockito;
 
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -57,7 +58,7 @@ public class SkyApplicationTest {
             app = new SkyApplication(SkyConfiguration.from(is), sanctum);
         }
         CompletableFuture<Void> onStart = new CompletableFuture<>();
-        app.start(Collections.emptyList(), onStart);
+        app.start(Duration.ofMillis(5), Collections.emptyList(), onStart);
         onStart.get(1, TimeUnit.SECONDS);
         app.shutdown();
     }

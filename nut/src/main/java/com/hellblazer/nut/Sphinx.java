@@ -62,6 +62,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -113,7 +114,7 @@ public class Sphinx {
         if (devSecret != null) {
             log.warn("Operating in development mode with dev secret");
             started.set(true);
-            unwrap(devSecret.getBytes(Charset.defaultCharset()));
+            unwrap(configuration.viewGossipDuration, devSecret.getBytes(Charset.defaultCharset()));
         } else {
             log.info("Operating in sealed mode: {}", configuration.shamir);
         }
@@ -334,7 +335,7 @@ public class Sphinx {
     }
 
     // Unwrap the root identity keystore and establish either a new identifier or resume the previous identifier
-    private Digest unwrap(byte[] master) {
+    private Digest unwrap(Duration viewGossipDuration, byte[] master) {
         sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
         application = new SkyApplication(configuration, sanctum, onFailure);
 
@@ -350,9 +351,9 @@ public class Sphinx {
                 return;
             }
             if (approaches.isEmpty()) {
-                current.bootstrap(onStart, configuration.approachEndpoint.socketAddress());
+                current.bootstrap(viewGossipDuration, onStart, configuration.approachEndpoint.socketAddress());
             } else {
-                current.testify(approaches, onStart, seeds);
+                current.testify(Duration.ofMillis(10), approaches, onStart, seeds);
             }
         }, log));
 
@@ -469,7 +470,7 @@ public class Sphinx {
             var clone = new HashMap<>(shares);
             shares.clear();
             sessionKeyPair = null;
-            var identifier = Sphinx.this.unwrap(scheme.join(clone));
+            var identifier = Sphinx.this.unwrap(configuration.viewGossipDuration, scheme.join(clone));
             return status.setIdentifier(identifier.toDigeste()).build();
         }
     }

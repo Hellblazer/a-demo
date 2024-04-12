@@ -30,7 +30,11 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.archipelago" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.choam.support.BatchingQueue" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.archipelago" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 

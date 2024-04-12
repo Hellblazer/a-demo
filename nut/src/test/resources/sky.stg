@@ -20,13 +20,20 @@ sky(clusterPort, apiPort, memberId, seedPort, n, k, approachPort, approach, seed
 
 <if(seedPort)><seeds(seedId = seedId, seed = seedPort)>
 <endif>
+
+viewGossipDuration: PT0H0M00.01S
+
 choamParameters:
   generateGenesis: <genesis>
-  checkpointBlockDelta: 200
+  checkpointBlockDelta: 50
+  gossipDuration: PT0H0M00.01S
+  synchronizationCycles: 10
+  regenerationCycles: 10
 
 producerParameters:
   maxBatchByteSize: 10485760
   maxBatchCount: 3000
+  gossipDuration: PT0H0M00.01S
   ethereal:
     epochLength: 7
 
@@ -51,7 +58,7 @@ domain:
   dhtOperationsTimeout: PT0H0M10S
   dhtDbUrl: "jdbc:h2:mem:dht-<memberId>;DB_CLOSE_DELAY=-1"
   checkpointBaseDir: ./target/e2e/cp
-  dhtOpsFrequency: PT0H0M00001S
+  dhtOpsFrequency: PT0H0M00.01S
   dhtFpr: 0.000125
   dhtEventValidTO: PT0H0M30S
   dhtBias: 3

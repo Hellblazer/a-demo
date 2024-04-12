@@ -222,7 +222,7 @@ public class SkyApplication {
         }
     }
 
-    public void start(List<View.Seed> seeds, CompletableFuture<Void> onStart) {
+    public void start(Duration viewGossipDuration, List<View.Seed> seeds, CompletableFuture<Void> onStart) {
         if (!started.compareAndSet(false, true)) {
             return;
         }
@@ -230,19 +230,20 @@ public class SkyApplication {
         admissionsComms.start();
         node.setDhtVerifiers();
         node.start();
-        node.getFoundation().start(onStart, Duration.ofMillis(10), seeds);
+        node.getFoundation().start(onStart, viewGossipDuration, seeds);
         log.info("Started Sky: {}", sanctorum.getId());
     }
 
-    void bootstrap(CompletableFuture<Void> onStart, SocketAddress myApproach) {
+    void bootstrap(Duration viewGossipDuration, CompletableFuture<Void> onStart, SocketAddress myApproach) {
         log.info("Bootstrapping on: {}", sanctorum.getId());
-        start(Collections.emptyList(), onStart);
+        start(viewGossipDuration, Collections.emptyList(), onStart);
         join(Collections.singletonList(myApproach));
     }
 
-    void testify(List<SocketAddress> approaches, CompletableFuture<Void> onStart, List<View.Seed> seeds) {
+    void testify(Duration viewGossipDuration, List<SocketAddress> approaches, CompletableFuture<Void> onStart,
+                 List<View.Seed> seeds) {
+        start(viewGossipDuration, seeds, onStart);
         join(approaches);
-        start(seeds, onStart);
     }
 
     private Any attest(SignedNonce signedNonce) {

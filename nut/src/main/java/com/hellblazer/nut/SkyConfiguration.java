@@ -74,13 +74,15 @@ public class SkyConfiguration {
     @JsonProperty
     public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters;
     @JsonProperty
-    public List<Endpoint>                                      approaches = Collections.emptyList();
+    public List<Endpoint>                                      approaches         = Collections.emptyList();
     @JsonProperty
-    public List<Seedling>                                      seeds      = Collections.emptyList();
+    public List<Seedling>                                      seeds              = Collections.emptyList();
     @JsonProperty
     public com.salesforce.apollo.fireflies.Parameters.Builder  viewParameters;
     @JsonProperty
     public ProducerParameters.Builder                          producerParameters;
+    @JsonProperty
+    public Duration                                            viewGossipDuration = Duration.ofMillis(10);
 
     {
         // Default configuration
@@ -104,10 +106,8 @@ public class SkyConfiguration {
         context.setBias(3).setpByz(0.1);
         domain = new ProcessDomainParameters("jdbc:h2:mem:sql-state;DB_CLOSE_DELAY=-1", Duration.ofMinutes(1),
                                              "jdbc:h2:mem:dht-state;DB_CLOSE_DELAY=-1", checkpointBaseDir,
-                                             Duration.ofMillis(10), 0.00125, Duration.ofMinutes(1), 3, 10, 0.1);
-        choamParameters = Parameters.newBuilder()
-                                    .setGossipDuration(Duration.ofMillis(5))
-                                    .setCheckpointBlockDelta(200);
+                                             Duration.ofMillis(5), 0.00125, Duration.ofMinutes(1), 3, 10, 0.1);
+        choamParameters = Parameters.newBuilder().setGossipDuration(Duration.ofMillis(5)).setCheckpointBlockDelta(200);
         viewParameters = com.salesforce.apollo.fireflies.Parameters.newBuilder()
                                                                    .setFpr(0.000125)
                                                                    .setSeedingTimout(Duration.ofSeconds(10));

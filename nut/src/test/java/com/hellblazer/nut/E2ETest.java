@@ -100,17 +100,10 @@ public class E2ETest {
 
         initializeKernel(cardinality, threshold, identifier);
         initializeRest(cardinality, threshold, identifier);
-        var sphinx = sphinxes.get(1);
-        System.out.println();
-        System.out.println("** Starting m 2");
-        System.out.println();
-        var nextStart = sphinx.start();
-        unwrap(1, sphinx, shares, EncryptionAlgorithm.DEFAULT, associatedData);
-        nextStart.get(30, TimeUnit.SECONDS);
 
         // Bring up a minimal quorum
-        var kernel = sphinxes.subList(2, 4);
-        var m = new AtomicInteger(2);
+        var kernel = sphinxes.subList(1, 4);
+        var m = new AtomicInteger(1);
         kernel.parallelStream().forEach(s -> {
             try {
                 Thread.sleep(1000);
@@ -132,11 +125,11 @@ public class E2ETest {
         });
 
         System.out.println();
-        System.out.println("** Minimal quorum have joined the view");
+        System.out.println("** Minimal quorum has started their views");
         System.out.println();
 
         var domains = sphinxes.subList(0, 4);
-        Utils.waitForCondition(360_000, 1_000,
+        Utils.waitForCondition(30_000, 1_000,
                                () -> failures.get() ? true : domains.stream().allMatch(s -> s.active()));
         assertTrue(domains.stream().allMatch(s -> s.active()),
                    "** Minimal quorum did not become active : " + (domains.stream()
@@ -169,16 +162,15 @@ public class E2ETest {
             System.out.println();
         });
 
-        Utils.waitForCondition(360_000, 1_000,
+        Utils.waitForCondition(30_000, 1_000,
                                () -> failures.get() ? true : sphinxes.stream().allMatch(Sphinx::active));
         if (!sphinxes.stream().allMatch(Sphinx::active)) {
             System.out.println();
-            System.out.println("\n\nNodes did not fully activate: \n" + (sphinxes.stream()
+            fail("\n\nNodes did not fully activate: \n" + (sphinxes.stream()
                                                                                  .filter(c -> !c.active())
                                                                                  .map(Sphinx::logState)
                                                                                  .map(s -> "\t" + s + "\n")
                                                                                  .toList()) + "\n\n");
-            System.out.println();
         } else {
             System.out.println();
             System.out.println("** All nodes are active");
