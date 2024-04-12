@@ -246,6 +246,10 @@ public class SkyApplication {
         join(approaches);
     }
 
+    protected Sky getSky() {
+        return node;
+    }
+
     private Any attest(SignedNonce signedNonce) {
         return Any.getDefaultInstance();
     }
