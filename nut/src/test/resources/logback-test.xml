@@ -18,19 +18,19 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.choam.CHOAM" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.support.TxDataSource" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.choam.support.TxDataSource" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.support.OneShot" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.choam.support.OneShot" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.support.BatchingQueue" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.choam.support.BatchingQueue" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -42,7 +42,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.gorgoneion" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.gorgoneion" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -54,11 +54,11 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.thoth.KerlSpace" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.thoth.KerlSpace" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.chiralbehaviors.tron" level="info" additivity="false">
+    <logger name="com.chiralbehaviors.tron" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 

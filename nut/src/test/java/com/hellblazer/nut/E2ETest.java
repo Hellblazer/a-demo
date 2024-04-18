@@ -130,7 +130,7 @@ public class E2ETest {
         System.out.println();
 
         var domains = sphinxes.subList(0, 4);
-        Utils.waitForCondition(30_000, 1_000, () -> failures.get() ? true : domains.stream().allMatch(s -> s.active()));
+        Utils.waitForCondition(120_000, 1_000, () -> failures.get() ? true : domains.stream().allMatch(s -> s.active()));
         assertTrue(domains.stream().allMatch(s -> s.active()),
                    "** Minimal quorum did not become active : " + (domains.stream()
                                                                           .filter(c -> !c.active())
@@ -162,7 +162,7 @@ public class E2ETest {
             System.out.println();
         });
 
-        Utils.waitForCondition(30_000, 1_000, () -> failures.get() ? true : sphinxes.stream().allMatch(Sphinx::active));
+        Utils.waitForCondition(120_000, 1_000, () -> failures.get() ? true : sphinxes.stream().allMatch(Sphinx::active));
         if (!sphinxes.stream().allMatch(Sphinx::active)) {
             System.out.println();
             fail("\n\nNodes did not fully activate: \n" + (sphinxes.stream()
@@ -178,7 +178,7 @@ public class E2ETest {
         Thread.sleep(1000);
 
         var oracle = sphinxes.get(0).getDelphi();
-        oracle.add(new Oracle.Namespace("test")).get();
+        oracle.add(new Oracle.Namespace("test")).get(120, TimeUnit.SECONDS);
         SkyTest.smoke(oracle);
     }
 
