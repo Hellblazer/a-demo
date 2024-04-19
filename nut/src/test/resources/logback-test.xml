@@ -18,6 +18,10 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
+    <logger name="com.chiralbehaviors.tron" level="warn" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
     <logger name="com.salesforce.apollo.choam.CHOAM" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
@@ -55,10 +59,6 @@
     </logger>
 
     <logger name="com.salesforce.apollo.thoth.KerlSpace" level="warn" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.chiralbehaviors.tron" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
