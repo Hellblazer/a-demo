@@ -21,19 +21,19 @@ sky(clusterPort, apiPort, memberId, seedPort, n, k, approachPort, approach, seed
 <if(seedPort)><seeds(seedId = seedId, seed = seedPort)>
 <endif>
 
-viewGossipDuration: PT0H0M00.01S
+viewGossipDuration: PT0H0M00.05S
 
 choamParameters:
   generateGenesis: <genesis>
   checkpointBlockDelta: 50
-  gossipDuration: PT0H0M00.01S
+  gossipDuration: PT0H0M00.05S
   synchronizationCycles: 10
   regenerationCycles: 10
 
 producerParameters:
   maxBatchByteSize: 10485760
   maxBatchCount: 3000
-  gossipDuration: PT0H0M00.01S
+  gossipDuration: PT0H0M00.05S
   ethereal:
     epochLength: 45
 
