@@ -61,9 +61,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author hal.hildebrand
  **/
 public class E2ETest {
-    public  List<com.hellblazer.nut.E2ETest.Proc> processes;
-    private List<Sphinx>                          sphinxes;
-    private AtomicBoolean                         failures;
+    private List<Proc>    processes;
+    private List<Sphinx>  sphinxes;
+    private AtomicBoolean failures;
+    private final int           cardinality = 10;
+    private final int           threshold = 6;
 
     @AfterEach
     public void after() {
@@ -87,8 +89,6 @@ public class E2ETest {
     @Test
     public void smokin() throws Exception {
         byte[] associatedData = "Give me food or give me slack or kill me".getBytes(Charset.defaultCharset());
-        var cardinality = 7;
-        var threshold = 4;
         var secretByteSize = 1024;
         var shares = initialize(cardinality, secretByteSize, threshold);
         var seed = sphinxes.getFirst();
@@ -106,11 +106,6 @@ public class E2ETest {
         var kernel = sphinxes.subList(1, 4);
         var m = new AtomicInteger(1);
         kernel.parallelStream().forEach(s -> {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
             var mi = m.incrementAndGet() - 1;
             System.out.println();
             System.out.println("** Starting m " + (mi + 1));
@@ -130,7 +125,8 @@ public class E2ETest {
         System.out.println();
 
         var domains = sphinxes.subList(0, 4);
-        Utils.waitForCondition(120_000, 1_000, () -> failures.get() ? true : domains.stream().allMatch(s -> s.active()));
+        Utils.waitForCondition(120_000, 1_000,
+                               () -> failures.get() ? true : domains.stream().allMatch(s -> s.active()));
         assertTrue(domains.stream().allMatch(s -> s.active()),
                    "** Minimal quorum did not become active : " + (domains.stream()
                                                                           .filter(c -> !c.active())
@@ -143,11 +139,6 @@ public class E2ETest {
         // Bring up the rest of the nodes.
         var remaining = sphinxes.subList(4, sphinxes.size());
         remaining.parallelStream().forEach(s -> {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                return;
-            }
             var mi = m.incrementAndGet() - 1;
             System.out.println();
             System.out.println("** Starting m " + (mi + 1));
@@ -162,7 +153,8 @@ public class E2ETest {
             System.out.println();
         });
 
-        Utils.waitForCondition(120_000, 1_000, () -> failures.get() ? true : sphinxes.stream().allMatch(Sphinx::active));
+        Utils.waitForCondition(120_000, 1_000,
+                               () -> failures.get() ? true : sphinxes.stream().allMatch(Sphinx::active));
         if (!sphinxes.stream().allMatch(Sphinx::active)) {
             System.out.println();
             fail("\n\nNodes did not fully activate: \n" + (sphinxes.stream()
@@ -305,7 +297,7 @@ public class E2ETest {
             int count = 0;
             var selected = new ArrayList<>(shares);
             Collections.shuffle(selected);
-            var present = 4;
+            var present = threshold + 1;
             for (var wrapped : selected.subList(0, present)) {
                 var encrypted = Sphinx.encrypt(wrapped.toByteArray(), secretKey, associatedData);
                 var encryptedShare = EncryptedShare.newBuilder()
