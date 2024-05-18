@@ -67,6 +67,7 @@ import java.time.temporal.TemporalAmount;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -96,8 +97,9 @@ public class SkyApplication {
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum,
                           CompletableFuture<Void> onFailure) {
+        Objects.requireNonNull(configuration, "Configuration must not be null");
         this.clock = Clock.systemUTC();
-        this.sanctorum = sanctorum;
+        this.sanctorum = Objects.requireNonNull(sanctorum, "Sanctorum must not be null");
         certWithKey = sanctorum.member()
                                .getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
                                                              SignatureAlgorithm.DEFAULT);
@@ -116,11 +118,7 @@ public class SkyApplication {
                                            serverContextSupplier(certWithKey));
         }
         Predicate<FernetServerInterceptor.HashedToken> validator = token -> {
-            var current = sanctorum;
-            if (current == null) {
-                return false;
-            }
-            var generator = current.getGenerator();
+            var generator = sanctorum.getGenerator();
             var result = generator == null ? null : generator.validate(token, new StringValidator() {
                 @Override
                 public TemporalAmount getTimeToLive() {
@@ -130,11 +128,7 @@ public class SkyApplication {
             return result != null;
         };
         var credentials = FernetCallCredentials.blocking(() -> {
-            var current = sanctorum;
-            if (current == null) {
-                return null;
-            }
-            var generator = current.getGenerator();
+            var generator = sanctorum.getGenerator();
             return generator == null ? null : generate(generator);
         });
         clusterComms = clusterServer.router(configuration.connectionCache.setCredentials(credentials),
@@ -211,9 +205,7 @@ public class SkyApplication {
         if (joinChannel != null) {
             joinChannel.shutdown();
         }
-        if (node != null) {
-            node.stop();
-        }
+        node.stop();
         if (clusterComms != null) {
             clusterComms.close(Duration.ofMinutes(1));
         }
@@ -309,7 +301,7 @@ public class SkyApplication {
             joinChannel = forApproaches(approaches);
             try {
                 Admissions admissions = new AdmissionsClient(sanctorum.member(), joinChannel, null);
-                var client = new GorgoneionClient(sanctorum.member(), sn -> attest(sn), clock, admissions);
+                var client = new GorgoneionClient(sanctorum.member(), this::attest, clock, admissions);
 
                 final var invitation = client.apply(Duration.ofSeconds(120));
                 assert invitation != null : "NULL invitation";

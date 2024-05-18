@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {
+      "excludeClasses": "org.mockito.**"
+    },
+    {
+      "excludeClasses": "org.junit.**"
+    },
+    {
+      "excludeClasses": "net.bytebuddy.**"
+    },
+    {
+      "excludeClasses": "ch.qos.**"
+    },
+    {
+      "excludeClasses": "org.apache.maven.**"
+    }
+  ]
+}

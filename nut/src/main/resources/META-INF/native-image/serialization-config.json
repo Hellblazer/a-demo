@@ -1,8 +1,5 @@
 {
   "types":[
-    {
-      "name":"org.junit.platform.launcher.TestIdentifier$SerializedForm"
-    }
   ],
   "lambdaCapturingTypes":[
   ],
