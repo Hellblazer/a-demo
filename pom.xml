@@ -9,6 +9,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>nut</module>
+        <module>sky</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
 
@@ -60,6 +61,11 @@
                 <version>${apollo.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>sky</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
@@ -387,6 +393,11 @@
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>3.6.0</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.5.2</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -401,7 +412,7 @@
         <profile>
             <id>image</id>
             <modules>
-                <module>sky-native</module>
+                <module>sky</module>
                 <module>sky-image</module>
             </modules>
         </profile>
