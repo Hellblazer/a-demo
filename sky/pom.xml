@@ -15,16 +15,15 @@
             <groupId>com.hellblazer.sky</groupId>
             <artifactId>nut</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
         <!--  SLF4J -> JUL Dynamic Logging configuration ala
               https://rmannibucau.metawerx.net/post/graalvm-jul-slf4j-logging -->
         <dependency>
             <groupId>io.yupiik.logging</groupId>
             <artifactId>yupiik-logging-jul</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
         </dependency>
     </dependencies>
 
@@ -59,35 +58,6 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                             </transformers>
-                            <relocations>
-                                <relocation>
-                                    <pattern>org.h2</pattern>
-                                    <shadedPattern>deterministic.org.h2</shadedPattern>
-                                    <excludes>
-                                        <exclude>org.h2.api.Aggregate</exclude>
-                                        <exclude>org.h2.api.AggregateFunction</exclude>
-                                        <exclude>org.h2.api.CredentialsValidator</exclude>
-                                        <exclude>org.h2.api.DatabaseEventListener</exclude>
-                                        <exclude>org.h2.api.ErrorCodes</exclude>
-                                        <exclude>org.h2.api.H2Type</exclude>
-                                        <exclude>org.h2.api.JavaObjectSerializer</exclude>
-                                        <exclude>org.h2.api.TableEngine</exclude>
-                                        <exclude>org.h2.api.Trigger</exclude>
-                                        <exclude>org.h2.api.UserToRolesMapper</exclude>
-                                        <exclude>org.h2.mvstore</exclude>
-                                        <exclude>org.h2.store</exclude>
-                                        <exclude>org.h2.bnf.context</exclude>
-                                    </excludes>
-                                </relocation>
-                            </relocations>
-                            <filters>
-                                <filter>
-                                    <artifact>com.h2database:h2</artifact>
-                                    <excludes>
-                                        <exclude>org/h2/server/**</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
                         </configuration>
                     </execution>
                 </executions>

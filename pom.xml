@@ -412,7 +412,6 @@
         <profile>
             <id>image</id>
             <modules>
-                <module>sky</module>
                 <module>sky-image</module>
             </modules>
         </profile>
