@@ -55,8 +55,12 @@ COPY --from=builder /minimal-jre $JAVA_HOME
 
 # Copy packaged app from builder image.
 COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/target/sky-0.0.1-SNAPSHOT.jar ./app.jar
+# Copy configuration from builder image.
+COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/target/classes/config.yaml ./config.yaml
 
 # Run the application.
 USER $USER_NAME:$GROUP_NAME
 EXPOSE 8123
-ENTRYPOINT ["java", "-XX:+UseZGC", "-XX:+ZGenerational", "-jar", "./app.jar"]
+EXPOSE 8124
+EXPOSE 8125
+ENTRYPOINT ["java", "-XX:+UseZGC", "-XX:+ZGenerational", "-Djava.net.preferIPv6Addresses", "-jar", "./app.jar", "config.yaml"]

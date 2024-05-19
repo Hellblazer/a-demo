@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.archipelago.ServerConnectionCache;
 import com.salesforce.apollo.choam.Parameters;
 import com.salesforce.apollo.choam.Parameters.ProducerParameters;
@@ -32,7 +33,6 @@ import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.membership.Member;
 import com.salesforce.apollo.model.ProcessDomain.ProcessDomainParameters;
-import com.salesforce.apollo.utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,11 +55,11 @@ public class SkyConfiguration {
     @JsonProperty
     public Shamir                                              shamir;
     @JsonProperty
-    public Endpoint                                            approachEndpoint;
+    public String                                              approachEndpoint;
     @JsonProperty
-    public Endpoint                                            clusterEndpoint;
+    public String                                              clusterEndpoint;
     @JsonProperty
-    public Endpoint                                            apiEndpoint;
+    public String                                              apiEndpoint;
     @JsonProperty
     public Digest                                              group;
     @JsonProperty
@@ -74,7 +74,7 @@ public class SkyConfiguration {
     @JsonProperty
     public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters;
     @JsonProperty
-    public List<Endpoint>                                      approaches         = Collections.emptyList();
+    public List<String>                                        approaches         = Collections.emptyList();
     @JsonProperty
     public List<Seedling>                                      seeds              = Collections.emptyList();
     @JsonProperty
@@ -97,9 +97,9 @@ public class SkyConfiguration {
         gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
         shamir = new Shamir(3, 2);
         var localhost = InetAddress.getLoopbackAddress().getHostName();
-        approachEndpoint = new Endpoint(localhost, Utils.allocatePort(), null);
-        clusterEndpoint = new Endpoint(localhost, Utils.allocatePort(), null);
-        apiEndpoint = new Endpoint(localhost, Utils.allocatePort(), null);
+        approachEndpoint = EndpointProvider.allocatePort();
+        clusterEndpoint = EndpointProvider.allocatePort();
+        apiEndpoint = EndpointProvider.allocatePort();
         group = DigestAlgorithm.DEFAULT.digest("SLACK");
         connectionCache = ServerConnectionCache.newBuilder().setTarget(30);
         context = DynamicContext.newBuilder();
@@ -142,6 +142,6 @@ public class SkyConfiguration {
     public record Shamir(int shares, int threshold) {
     }
 
-    public record Seedling(Digest identifier, Endpoint endpoint) {
+    public record Seedling(Digest identifier, String endpoint) {
     }
 }

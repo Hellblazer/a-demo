@@ -1,15 +1,14 @@
-choamParameters:
-  generateGenesis: true
+approachEndpoint: localhost:8123
 
-clusterEndpoint: localhost:0
+clusterEndpoint: localhost:8124
 
-apiEndpoint: localhost:0
+apiEndpoint: localhost:8125
 
 domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"
   dhtOperationsTimeout: PT0H0M10S
   dhtDbUrl: "jdbc:h2:mem:dht;DB_CLOSE_DELAY=-1"
-  checkpointBaseDir: ./target/cp
+  checkpointBaseDir: ./check-points
   dhtOpsFrequency: PT0H0M00001S
   dhtFpr: 0.000125
   dhtEventValidTO: PT0H0M30S
@@ -18,10 +17,10 @@ domain:
   dhtPbyz: 0.01
 
 identity:
-  keyStore: "target/.id"
+  keyStore: ".id"
   keyStoreType: JCEKS
-  kerlURL: "jdbc:h2:file:./target/kerl-state"
-  identityFile: "target/.digest"
+  kerlURL: "jdbc:h2:file:./kerl-state"
+  identityFile: ".digest"
   digestAlgorithm: BLAKE2B_256
   signatureAlgorithm: ED_25519
   encryptionAlgorithm: X_25519

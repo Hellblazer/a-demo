@@ -23,6 +23,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.proto.SphynxGrpc;
+import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
@@ -61,11 +62,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author hal.hildebrand
  **/
 public class E2ETest {
-    private List<Proc>    processes;
-    private List<Sphinx>  sphinxes;
-    private AtomicBoolean failures;
     private final int           cardinality = 10;
-    private final int           threshold = 6;
+    private final int           threshold   = 6;
+    private       List<Proc>    processes;
+    private       List<Sphinx>  sphinxes;
+    private       AtomicBoolean failures;
 
     @AfterEach
     public void after() {
@@ -181,15 +182,15 @@ public class E2ETest {
                               clientCert.getPrivateKey(), CertificateValidator.NONE);
     }
 
-    private InputStream configFor(STGroup g, com.hellblazer.nut.E2ETest.Proc process, int n, int k, Integer approach,
-                                  Integer seed, String seedId, boolean genesis) {
+    private InputStream configFor(STGroup g, com.hellblazer.nut.E2ETest.Proc process, int n, int k,
+                                  List<String> approach, String seed, String seedId, boolean genesis) {
         var t = g.getInstanceOf("sky");
-        t.add("clusterPort", process.clusterPort);
-        t.add("apiPort", process.apiPort);
-        t.add("approachPort", process.approachPort);
+        t.add("clusterEndpoint", process.clusterEndpoint);
+        t.add("apiEndpoint", process.apiEndpoint);
+        t.add("approachEndpoint", process.approachEndpoint);
         t.add("memberId", process.memberId);
         t.add("approach", approach);
-        t.add("seedPort", seed);
+        t.add("seedEndpoint", seed);
         t.add("seedId", seedId);
         t.add("n", n);
         t.add("k", k);
@@ -209,10 +210,11 @@ public class E2ETest {
         var encryptedShares = secrets.shares(secretByteSize, keys.stream().map(KeyPair::getPublic).toList(), threshold);
 
         processes = IntStream.range(0, cardinality)
-                             .mapToObj(
-                             i -> new com.hellblazer.nut.E2ETest.Proc(Utils.allocatePort(), i, Utils.allocatePort(),
-                                                                      share(i, algorithm, keys, encryptedShares),
-                                                                      Utils.allocatePort()))
+                             .mapToObj(i -> new com.hellblazer.nut.E2ETest.Proc(EndpointProvider.allocatePort(), i,
+                                                                                EndpointProvider.allocatePort(),
+                                                                                share(i, algorithm, keys,
+                                                                                      encryptedShares),
+                                                                                EndpointProvider.allocatePort()))
                              .toList();
         com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
         var seed = new Sphinx(configFor(g, first, cardinality, threshold, null, null, null, true));
@@ -227,7 +229,8 @@ public class E2ETest {
         com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
         processes.subList(1, 4)
                  .stream()
-                 .map(p -> configFor(g, p, cardinality, threshold, first.approachPort, first.clusterPort, seedId, true))
+                 .map(p -> configFor(g, p, cardinality, threshold, Collections.singletonList(first.approachEndpoint),
+                                     first.clusterEndpoint, seedId, true))
                  .map(c -> {
                      var sphinx = new Sphinx(c);
                      sphinx.setOnFailure(new CompletableFuture<Void>().whenComplete((v, t) -> {
@@ -244,8 +247,8 @@ public class E2ETest {
         com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
         processes.subList(4, cardinality)
                  .stream()
-                 .map(
-                 p -> configFor(g, p, cardinality, threshold, first.approachPort, first.clusterPort, seedId, false))
+                 .map(p -> configFor(g, p, cardinality, threshold, Collections.singletonList(first.approachEndpoint),
+                                     first.clusterEndpoint, seedId, false))
                  .map(c -> {
                      var sphinx = new Sphinx(c);
                      sphinx.setOnFailure(new CompletableFuture<Void>().whenComplete((v, t) -> {
@@ -320,6 +323,6 @@ public class E2ETest {
         }
     }
 
-    public record Proc(int clusterPort, int memberId, int apiPort, Share share, int approachPort) {
+    public record Proc(String clusterEndpoint, int memberId, String apiEndpoint, Share share, String approachEndpoint) {
     }
 }
