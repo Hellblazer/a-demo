@@ -14,19 +14,19 @@ approaches:
 <if(seedEndpoint)><seeds(seedId = seedId, seed = seedEndpoint)>
 <endif>
 
-viewGossipDuration: PT0H0M00.02S
+viewGossipDuration: PT0H0M00.05S
 
 choamParameters:
   generateGenesis: <genesis>
   checkpointBlockDelta: 7
-  gossipDuration: PT0H0M00.02S
+  gossipDuration: PT0H0M00.05S
   synchronizationCycles: 10
   regenerationCycles: 10
 
 producerParameters:
   maxBatchByteSize: 10485760
   maxBatchCount: 3000
-  gossipDuration: PT0H0M00.02S
+  gossipDuration: PT0H0M00.05S
   ethereal:
     epochLength: 7
 
