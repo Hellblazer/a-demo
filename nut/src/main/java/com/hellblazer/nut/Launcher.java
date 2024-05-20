@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
 
@@ -33,6 +34,7 @@ import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
 public class Launcher {
     public final static String SEEDS_VAR      = "SEEDS";
     public final static String APPROACHES_VAR = "APPROACHES";
+    public final static String GENESIS        = "GENESIS";
 
     private static final Logger log = LoggerFactory.getLogger(Sphinx.class);
 
@@ -50,26 +52,29 @@ public class Launcher {
             System.err.printf("Configuration file: %s is a directory", argv[0]).println();
             System.exit(1);
         }
-        log.info("Reading configuration from: {}", file.getAbsolutePath());
         SkyConfiguration config;
         try (var fis = new FileInputStream(file)) {
             config = SkyConfiguration.from(fis);
         }
 
+        var genesis = System.getenv(GENESIS) == null ? false : Boolean.parseBoolean(System.getenv(GENESIS));
+        log.info("Generating Genesis: {}", genesis);
         var seeds = System.getenv(SEEDS_VAR);
         var approaches = System.getenv(APPROACHES_VAR);
         if (seeds == null || approaches == null) {
-            System.err.printf("Environment [%s] and [%s] are required", SEEDS_VAR, APPROACHES_VAR).println();
-            System.exit(1);
+            log.info("Environment [{}] and [{}}] are empty, bootstrapping", SEEDS_VAR, APPROACHES_VAR);
+            config.seeds = Collections.emptyList();
+            config.approaches = Collections.emptyList();
+        } else {
+            config.seeds = Arrays.stream(seeds.split(","))
+                                 .map(String::trim)
+                                 .map(s -> s.split(":"))
+                                 .map(s -> new SkyConfiguration.Seedling(digest(s[0]), s[1]))
+                                 .toList();
+            config.approaches = Arrays.stream(approaches.split(",")).map(String::trim).toList();
+            log.info("Seeds: {} Approaches: {}", SEEDS_VAR, APPROACHES_VAR);
         }
-
-        config.seeds = Arrays.stream(seeds.split(","))
-                             .map(String::trim)
-                             .map(s -> s.split(":"))
-                             .map(s -> new SkyConfiguration.Seedling(digest(s[0]), s[1]))
-                             .toList();
-        config.approaches = Arrays.stream(approaches.split(",")).toList();
-
+        config.choamParameters.setGenerateGenesis(genesis);
         Sphinx sphinx = new Sphinx(config);
 
         sphinx.start();
