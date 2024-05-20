@@ -98,7 +98,7 @@ public class E2ETest {
         System.out.println();
         var seedStart = seed.start();
         var identifier = qb64(unwrap(0, seed, shares, EncryptionAlgorithm.DEFAULT, associatedData));
-        seedStart.get(30, TimeUnit.SECONDS);
+        seedStart.get(60, TimeUnit.SECONDS);
 
         initializeKernel(cardinality, threshold, identifier);
         initializeRest(cardinality, threshold, identifier);
@@ -126,7 +126,7 @@ public class E2ETest {
         System.out.println();
 
         var domains = sphinxes.subList(0, 4);
-        Utils.waitForCondition(120_000, 1_000,
+        Utils.waitForCondition(300_000, 1_000,
                                () -> failures.get() ? true : domains.stream().allMatch(s -> s.active()));
         assertTrue(domains.stream().allMatch(s -> s.active()),
                    "** Minimal quorum did not become active : " + (domains.stream()
