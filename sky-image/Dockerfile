@@ -63,4 +63,4 @@ USER $USER_NAME:$GROUP_NAME
 EXPOSE 8123
 EXPOSE 8124
 EXPOSE 8125
-ENTRYPOINT ["java", "-XX:+UseZGC", "-XX:+ZGenerational", "-Djava.net.preferIPv6Addresses", "-jar", "./app.jar", "config.yaml"]
+ENTRYPOINT ["java", "-XX:+UseZGC", "-XX:+ZGenerational", "-Djava.net.preferIPv6Addresses", "-jar", "./app.jar", "config.yaml", "Give me food or give me slack or kill me"]

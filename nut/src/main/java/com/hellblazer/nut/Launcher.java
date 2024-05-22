@@ -39,8 +39,8 @@ public class Launcher {
     private static final Logger log = LoggerFactory.getLogger(Sphinx.class);
 
     public static void main(String[] argv) throws Exception {
-        if (argv.length != 1) {
-            System.err.println("Usage: Launcher <config file name>");
+        if (argv.length < 1 || argv.length > 2) {
+            System.err.println("Usage: Launcher <config file name> (<development secret>)");
             System.exit(1);
         }
         var file = new File(System.getProperty("user.dir"), argv[0]);
@@ -57,7 +57,7 @@ public class Launcher {
             config = SkyConfiguration.from(fis);
         }
 
-        var genesis = System.getenv(GENESIS) == null ? false : Boolean.parseBoolean(System.getenv(GENESIS));
+        var genesis = System.getenv(GENESIS) != null && Boolean.parseBoolean(System.getenv(GENESIS));
         log.info("Generating Genesis: {}", genesis);
         var seeds = System.getenv(SEEDS_VAR);
         var approaches = System.getenv(APPROACHES_VAR);
@@ -75,7 +75,7 @@ public class Launcher {
             log.info("Seeds: {} Approaches: {}", SEEDS_VAR, APPROACHES_VAR);
         }
         config.choamParameters.setGenerateGenesis(genesis);
-        Sphinx sphinx = new Sphinx(config);
+        Sphinx sphinx = argv.length == 1 ? new Sphinx(config) : new Sphinx(config, argv[1]);
 
         sphinx.start();
         var t = new Thread(() -> {
