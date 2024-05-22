@@ -62,8 +62,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author hal.hildebrand
  **/
 public class E2ETest {
-    private final int           cardinality = 10;
-    private final int           threshold   = 6;
+    private final int           cardinality = 7;
+    private final int           threshold   = 4;
     private       List<Proc>    processes;
     private       List<Sphinx>  sphinxes;
     private       AtomicBoolean failures;
