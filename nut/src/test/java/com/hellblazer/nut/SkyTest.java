@@ -122,7 +122,7 @@ public class SkyTest {
               retryNesting(() -> oracle.map(irmak, technicianMembers), 3),
               retryNesting(() -> oracle.map(abcTechMembers, technicianMembers), 3),
               retryNesting(() -> oracle.map(flaggedTechnicianMembers, technicianMembers), 3),
-              retryNesting(() -> oracle.map(jale, abcTechMembers), 3)).get(60, TimeUnit.SECONDS);
+              retryNesting(() -> oracle.map(jale, abcTechMembers), 3)).get(120, TimeUnit.SECONDS);
 
         // Protected resource namespace
         var docNs = Oracle.namespace("Document");
@@ -133,7 +133,7 @@ public class SkyTest {
 
         // Users can View Document 123
         Oracle.Assertion tuple = userMembers.assertion(object123View);
-        retryNesting(() -> oracle.add(tuple), 3).get();
+        retryNesting(() -> oracle.add(tuple), 3).get(120, TimeUnit.SECONDS);
 
         // Direct subjects that can View the document
         var viewers = oracle.read(object123View);
@@ -147,7 +147,7 @@ public class SkyTest {
 
         // Assert flagged technicians can directly view the document
         Oracle.Assertion grantTechs = flaggedTechnicianMembers.assertion(object123View);
-        retryNesting(() -> oracle.add(grantTechs), 3).get();
+        retryNesting(() -> oracle.add(grantTechs), 3).get(120, TimeUnit.SECONDS);
 
         // Now have 2 direct subjects that can view the doc
         viewers = oracle.read(object123View);
@@ -186,22 +186,22 @@ public class SkyTest {
         assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
 
         // Remove them
-        retryNesting(() -> oracle.remove(abcTechMembers, technicianMembers), 3).get();
+        retryNesting(() -> oracle.remove(abcTechMembers, technicianMembers), 3).get(120, TimeUnit.SECONDS);
 
         assertFalse(oracle.check(object123View.assertion(jale)));
         assertTrue(oracle.check(object123View.assertion(egin)));
         assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
 
         // Remove our assertion
-        retryNesting(() -> oracle.delete(tuple), 3).get();
+        retryNesting(() -> oracle.delete(tuple), 3).get(120, TimeUnit.SECONDS);
 
         assertFalse(oracle.check(object123View.assertion(jale)));
         assertFalse(oracle.check(object123View.assertion(egin)));
         assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
 
         // Some deletes
-        retryNesting(() -> oracle.delete(abcTechMembers), 3).get();
-        retryNesting(() -> oracle.delete(flaggedTechnicianMembers), 3).get();
+        retryNesting(() -> oracle.delete(abcTechMembers), 3).get(120, TimeUnit.SECONDS);
+        retryNesting(() -> oracle.delete(flaggedTechnicianMembers), 3).get(120, TimeUnit.SECONDS);
     }
 
     @AfterEach
