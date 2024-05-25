@@ -62,7 +62,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.ring" level="warn" additivity="false">
+    <logger name="com.salesforce.apollo.ring" level="trace" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
