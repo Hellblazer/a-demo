@@ -15,10 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.nut;
+package com.hellblazer.nut.support;
 
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
+import com.hellblazer.nut.Sphinx;
 import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.Share;
 import com.salesforce.apollo.cryptography.Digest;

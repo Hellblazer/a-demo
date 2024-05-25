@@ -20,6 +20,7 @@ package com.hellblazer.nut;
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.hellblazer.nut.comms.SphynxServer;
 import com.hellblazer.nut.proto.*;
 import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
@@ -27,6 +28,7 @@ import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.cert.Certificates;
+import com.salesforce.apollo.cryptography.proto.Digeste;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
 import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.fireflies.View;
@@ -282,16 +284,16 @@ public class Sphinx {
         return application.getSky().getDelphi();
     }
 
-    private ApiServer apiServer() {
+    private Geb.ApiServer apiServer() {
         var address = EndpointProvider.reify(configuration.apiEndpoint);
         CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) address);
-        return new ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
+        return new Geb.ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
 
             @Override
             public SslContext forServer(ClientAuth clientAuth, String alias, CertificateValidator validator,
                                         Provider provider) {
-                return ApiServer.forServer(clientAuth, alias, apiIdentity.getX509Certificate(),
-                                           apiIdentity.getPrivateKey(), validator);
+                return Geb.ApiServer.forServer(clientAuth, alias, apiIdentity.getX509Certificate(),
+                                               apiIdentity.getPrivateKey(), validator);
             }
 
             @Override
@@ -457,6 +459,10 @@ public class Sphinx {
             log.info("Unsealing service");
             sessionKeyPair = configuration.identity.encryptionAlgorithm().generateKeyPair();
             return Status.newBuilder().setSuccess(true).setShares(0).build();
+        }
+
+        public Digeste identifier() {
+            return id().toDigeste();
         }
 
         public UnwrapStatus unwrap() {

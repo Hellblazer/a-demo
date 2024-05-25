@@ -16,6 +16,7 @@ service Sphynx {
   rpc seal(google.protobuf.Empty) returns(Status) {}
   rpc unseal(google.protobuf.Empty) returns(Status) {}
   rpc sessionKey(google.protobuf.Empty) returns(PublicKey_) {}
+  rpc identifier(google.protobuf.Empty) returns (crypto.Digeste) {}
 }
 
 message EncryptedShare {

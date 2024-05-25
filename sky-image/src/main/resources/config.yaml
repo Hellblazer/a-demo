@@ -1,8 +1,7 @@
-approachEndpoint: localhost:8123
 
-clusterEndpoint: localhost:8124
-
-apiEndpoint: localhost:8125
+apiEndpoint: localhost:8123
+approachEndpoint: localhost:8124
+clusterEndpoint: localhost:8125
 
 domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"

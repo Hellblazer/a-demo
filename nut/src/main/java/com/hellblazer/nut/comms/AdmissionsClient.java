@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-package com.hellblazer.nut;
+package com.hellblazer.nut.comms;
 
 import com.salesforce.apollo.gorgoneion.client.client.comm.Admissions;
 import com.salesforce.apollo.gorgoneion.client.client.comm.GorgoneionClientMetrics;

@@ -1,4 +1,4 @@
-/*
+package com.hellblazer.nut.support;/*
  * Copyright (c) 2024 Hal Hildebrand. All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -15,27 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.nut;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.deser.std.FromStringDeserializer;
+import com.salesforce.apollo.cryptography.Digest;
 
-import com.google.protobuf.Message;
-import com.macasaet.fernet.Validator;
+import java.io.IOException;
 
-import java.util.function.Function;
+import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
 
 /**
  * @author hal.hildebrand
  **/
-abstract public class MessageValidator<T extends Message> implements Validator<T> {
-    @Override
-    public Function<byte[], T> getTransformer() {
-        return bytes -> {
-            try {
-                return parse(bytes);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Unable to parse message bytes", e);
-            }
-        };
+public class DigestDeserializer extends FromStringDeserializer {
+    public DigestDeserializer() {
+        super(Digest.class);
     }
 
-    abstract protected T parse(byte[] bytes) throws Exception;
+    @Override
+    protected Digest _deserialize(String value, DeserializationContext ctxt) throws IOException {
+        return digest(value);
+    }
 }

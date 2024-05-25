@@ -17,8 +17,8 @@ services:
       - 9125:8125
     environment:
       GENESIS: 'true'
-      SEEDS: 'F00@localhost:8123'
-      APPROACHES: 'localhost:8124'
+      APPROACHES: 'constantine:8124'
+      SEEDS: 'constantine:8125'
 
   kernel2:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
@@ -28,8 +28,8 @@ services:
       - 10125:8125
     environment:
       GENESIS: 'true'
-      SEEDS: 'F00@localhost:8123'
-      APPROACHES: 'localhost:8124'
+      APPROACHES: 'constantine:8124'
+      SEEDS: 'constantine:8125'
 
   kernel3:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
@@ -39,5 +39,5 @@ services:
       - 11125:8125
     environment:
       GENESIS: 'true'
-      SEEDS: 'F00@localhost:8123'
-      APPROACHES: 'localhost:8124'
+      APPROACHES: 'constantine:8124'
+      SEEDS: 'constantine:8125'

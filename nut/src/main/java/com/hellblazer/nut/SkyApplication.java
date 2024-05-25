@@ -19,6 +19,11 @@ package com.hellblazer.nut;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import com.hellblazer.nut.comms.AdmissionsClient;
+import com.hellblazer.nut.comms.DelegatedCertificateValidator;
+import com.hellblazer.nut.comms.MtlsClient;
+import com.hellblazer.nut.comms.SimpleNameResolverFactory;
+import com.hellblazer.nut.support.TokenGenerator;
 import com.macasaet.fernet.StringValidator;
 import com.macasaet.fernet.Token;
 import com.salesforce.apollo.archipelago.*;
@@ -87,9 +92,9 @@ public class SkyApplication {
     private final    SanctumSanctorum              sanctorum;
     private final    Router                        admissionsComms;
     private final    Clock                         clock;
-    private final    AtomicBoolean                 started   = new AtomicBoolean();
-    private final    DelegatedCertificateValidator certificateValidator;
-    private final    Lock                          tokenLock = new ReentrantLock();
+    private final AtomicBoolean                 started   = new AtomicBoolean();
+    private final DelegatedCertificateValidator certificateValidator;
+    private final Lock                          tokenLock = new ReentrantLock();
     private volatile Token                         token;
     private volatile ManagedChannel                joinChannel;
     private          int                           retries   = 5;
@@ -269,8 +274,8 @@ public class SkyApplication {
                                           .usePlaintext()
                                           .build();
         } else {
-            MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo", certWithKey.getX509Certificate(),
-                                               certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId);
+            com.hellblazer.nut.comms.MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo", certWithKey.getX509Certificate(),
+                                                                        certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId);
             return client.getChannel();
         }
     }

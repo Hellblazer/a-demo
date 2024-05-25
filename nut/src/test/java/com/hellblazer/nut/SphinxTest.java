@@ -20,6 +20,7 @@ package com.hellblazer.nut;
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
+import com.hellblazer.nut.comms.MtlsClient;
 import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.proto.SphynxGrpc;

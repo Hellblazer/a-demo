@@ -45,7 +45,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.archipelago" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.archipelago" level="trace" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -77,7 +77,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <root level="info">
+    <root level="trace">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

@@ -15,8 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.nut;
+package com.hellblazer.nut.comms;
 
+import com.hellblazer.nut.Geb;
 import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.grpc.client.ConcurrencyLimitClientInterceptor;
 import com.netflix.concurrency.limits.grpc.client.GrpcClientLimiterBuilder;
@@ -37,7 +38,7 @@ import java.security.cert.X509Certificate;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import static com.hellblazer.nut.ApiServer.forClient;
+import static com.hellblazer.nut.Geb.ApiServer.forClient;
 
 public class MtlsClient {
     private static final Executor       exec = Executors.newVirtualThreadPerTaskExecutor();
@@ -49,7 +50,7 @@ public class MtlsClient {
         Limiter<GrpcClientRequestContext> limiter = new GrpcClientLimiterBuilder().blockOnLimit(false).build();
         channel = NettyChannelBuilder.forAddress(address)
                                      .executor(exec)
-                                     .sslContext(supplier.forClient(clientAuth, alias, validator, ApiServer.TL_SV1_3))
+                                     .sslContext(supplier.forClient(clientAuth, alias, validator, Geb.ApiServer.TL_SV1_3))
                                      .intercept(new ConcurrencyLimitClientInterceptor(limiter,
                                                                                       () -> Status.RESOURCE_EXHAUSTED.withDescription(
                                                                                       "Client side concurrency limit exceeded")))
@@ -64,7 +65,7 @@ public class MtlsClient {
         channel = NettyChannelBuilder.forTarget("approach")
                                      .nameResolverFactory(resolver)
                                      .executor(exec)
-                                     .sslContext(supplier.forClient(clientAuth, alias, validator, ApiServer.TL_SV1_3))
+                                     .sslContext(supplier.forClient(clientAuth, alias, validator, Geb.ApiServer.TL_SV1_3))
                                      .intercept(new ConcurrencyLimitClientInterceptor(limiter,
                                                                                       () -> Status.RESOURCE_EXHAUSTED.withDescription(
                                                                                       "Client side concurrency limit exceeded")))

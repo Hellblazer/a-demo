@@ -16,11 +16,23 @@
  */
 package com.hellblazer.nut;
 
+import com.google.common.net.HostAndPort;
+import com.google.protobuf.Empty;
+import com.hellblazer.nut.comms.MtlsClient;
+import com.hellblazer.nut.proto.SphynxGrpc;
+import com.salesforce.apollo.cryptography.Digest;
+import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
+import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
+import com.salesforce.apollo.utils.Utils;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.netty.handler.ssl.ClientAuth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -70,7 +82,8 @@ public class Launcher {
             config.seeds = Arrays.stream(seeds.split(","))
                                  .map(String::trim)
                                  .map(s -> s.split("@"))
-                                 .map(s -> new SkyConfiguration.Seedling(digest(s[0]), s[1]))
+                                 .map(s -> (s.length == 1) ? new SkyConfiguration.Seedling(resolve(s[0]), s[0])
+                                                           : new SkyConfiguration.Seedling(digest(s[0]), s[1]))
                                  .toList();
             config.approaches = Arrays.stream(approaches.split(",")).map(String::trim).toList();
         }
@@ -92,4 +105,37 @@ public class Launcher {
         t.start();
     }
 
+    // Cheesy work around for full bootstrap - do better HSH
+    private static Digest resolve(String server) {
+        var endpoint = HostAndPort.fromString(server);
+        var client = apiClient(new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
+        try {
+            while (true) {
+                try {
+                    log.info("resolving server: {}", endpoint);
+                    var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
+                    return Digest.from(sphynxClient.identifier(Empty.getDefaultInstance()));
+                } catch (StatusRuntimeException e) {
+                    if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
+                        log.info("server: {} unavailable", endpoint);
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ex) {
+                            Thread.currentThread().interrupt();
+                        }
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+        } finally {
+            client.stop();
+        }
+    }
+
+    private static MtlsClient apiClient(InetSocketAddress serverAddress) {
+        CertificateWithPrivateKey clientCert = Utils.getMember(0);
+        return new MtlsClient(serverAddress, ClientAuth.REQUIRE, "foo", clientCert.getX509Certificate(),
+                              clientCert.getPrivateKey(), CertificateValidator.NONE);
+    }
 }
