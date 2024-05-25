@@ -16,14 +16,8 @@
             <artifactId>nut</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-        </dependency>
-        <!--  SLF4J -> JUL Dynamic Logging configuration ala
-              https://rmannibucau.metawerx.net/post/graalvm-jul-slf4j-logging -->
-        <dependency>
-            <groupId>io.yupiik.logging</groupId>
-            <artifactId>yupiik-logging-jul</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
         </dependency>
     </dependencies>
 
