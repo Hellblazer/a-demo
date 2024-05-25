@@ -1,51 +1,43 @@
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Docker compose reference guide at
-# https://docs.docker.com/compose/compose-file/
-
-# Here the instructions define your application as a service called "app".
-# This service is built from the Dockerfile in the current directory.
-# You can add other services your application may depend on here, such as a
-# database or a cache. For examples, see the Awesome Compose repository:
-# https://github.com/docker/awesome-compose
+# Test Cluster
 services:
-  app:
-    build:
-      context: .
-      target: final
+  bootstrap:
+    image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
     ports:
       - 8123:8123
       - 8124:8124
       - 8125:8125
+    environment:
+      GENESIS: 'true'
 
-    # The commented out section below is an example of how to define a PostgreSQL
-    # database that your application can use. `depends_on` tells Docker Compose to
-    # start the database before your application. The `db-data` volume persists the
-    # database data between container restarts. The `db-password` secret is used
-    # to set the database password. You must create `db/password.txt` and add
-    # a password of your choosing to it before running `docker compose up`.
-    #     depends_on:
-    #       db:
-    #         condition: service_healthy
-    #   db:
-    #     image: postgres
-    #     restart: always
-    #     user: postgres
-    #     secrets:
-    #       - db-password
-    #     volumes:
-    #       - db-data:/var/lib/postgresql/data
-    #     environment:
-    #       - POSTGRES_DB=example
-    #       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
-    #     expose:
-    #       - 5432
-    #     healthcheck:
-    #       test: [ "CMD", "pg_isready" ]
-    #       interval: 10s
-    #       timeout: 5s
-    #       retries: 5
-    # volumes:
-    #   db-data:
-    # secrets:
-    #   db-password:
-    #     file: db/password.txt
+  kernel1:
+    image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
+    ports:
+      - 9123:8123
+      - 9124:8124
+      - 9125:8125
+    environment:
+      GENESIS: 'true'
+      SEEDS: 'F00@localhost:8123'
+      APPROACHES: 'localhost:8124'
+
+  kernel2:
+    image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
+    ports:
+      - 10123:8123
+      - 10124:8124
+      - 10125:8125
+    environment:
+      GENESIS: 'true'
+      SEEDS: 'F00@localhost:8123'
+      APPROACHES: 'localhost:8124'
+
+  kernel3:
+    image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
+    ports:
+      - 11123:8123
+      - 11124:8124
+      - 11125:8125
+    environment:
+      GENESIS: 'true'
+      SEEDS: 'F00@localhost:8123'
+      APPROACHES: 'localhost:8124'

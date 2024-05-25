@@ -66,13 +66,13 @@ public class Launcher {
             config.seeds = Collections.emptyList();
             config.approaches = Collections.emptyList();
         } else {
+            log.info("Seeds: [{}] Approaches: [{}}]", seeds, approaches);
             config.seeds = Arrays.stream(seeds.split(","))
                                  .map(String::trim)
-                                 .map(s -> s.split(":"))
+                                 .map(s -> s.split("@"))
                                  .map(s -> new SkyConfiguration.Seedling(digest(s[0]), s[1]))
                                  .toList();
             config.approaches = Arrays.stream(approaches.split(",")).map(String::trim).toList();
-            log.info("Seeds: {} Approaches: {}", SEEDS_VAR, APPROACHES_VAR);
         }
         config.choamParameters.setGenerateGenesis(genesis);
         Sphinx sphinx = argv.length == 1 ? new Sphinx(config) : new Sphinx(config, argv[1]);
