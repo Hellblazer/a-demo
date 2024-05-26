@@ -22,7 +22,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam" level="debug" additivity="false">
+    <logger name="com.salesforce.apollo.choam" level="trace" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -38,23 +38,23 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.archipelago" level="warn" additivity="false">
+    <logger name="com.salesforce.apollo.archipelago" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.fireflies" level="warn" additivity="false">
+    <logger name="com.salesforce.apollo.fireflies" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.gorgoneion" level="warn" additivity="false">
+    <logger name="com.salesforce.apollo.gorgoneion" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.stereotomy" level="warn" additivity="false">
+    <logger name="com.salesforce.apollo.stereotomy" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.thoth" level="warn" additivity="false">
+    <logger name="com.salesforce.apollo.thoth" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
