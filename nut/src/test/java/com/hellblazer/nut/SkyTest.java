@@ -42,6 +42,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -107,31 +108,45 @@ public class SkyTest {
         // Map direct edges. Transitive edges added as a side effect
 
         var countDown = new CountDownLatch(17);
+        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
 
-        retryNesting(() -> oracle.map(helpDeskMembers, adminMembers), 3).whenCompleteAsync(
-        (_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(ali, adminMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(ali, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(burcu, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(can, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(managerMembers, userMembers), 3).whenCompleteAsync(
-        (_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(technicianMembers, userMembers), 3).whenCompleteAsync(
-        (_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(demet, helpDeskMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(egin, helpDeskMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(egin, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(fuat, managerMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(gl, managerMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(hakan, technicianMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(irmak, technicianMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(abcTechMembers, technicianMembers), 3).whenCompleteAsync(
-        (_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(flaggedTechnicianMembers, technicianMembers), 3).whenCompleteAsync(
-        (_, _) -> countDown.countDown());
-        retryNesting(() -> oracle.map(jale, abcTechMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown());
+            retryNesting(() -> oracle.map(helpDeskMembers, adminMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(ali, adminMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                   exec);
+            retryNesting(() -> oracle.map(ali, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                  exec);
+            retryNesting(() -> oracle.map(burcu, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                    exec);
+            retryNesting(() -> oracle.map(can, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                  exec);
+            retryNesting(() -> oracle.map(managerMembers, userMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(technicianMembers, userMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(demet, helpDeskMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                        exec);
+            retryNesting(() -> oracle.map(egin, helpDeskMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                       exec);
+            retryNesting(() -> oracle.map(egin, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                   exec);
+            retryNesting(() -> oracle.map(fuat, managerMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                      exec);
+            retryNesting(() -> oracle.map(gl, managerMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                    exec);
+            retryNesting(() -> oracle.map(hakan, technicianMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(irmak, technicianMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(abcTechMembers, technicianMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(flaggedTechnicianMembers, technicianMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(jale, abcTechMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                      exec);
 
-        countDown.await(120, TimeUnit.SECONDS);
+            countDown.await(120, TimeUnit.SECONDS);
+        }
 
         // Protected resource namespace
         var docNs = Oracle.namespace("Document");

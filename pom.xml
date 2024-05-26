@@ -21,6 +21,7 @@
         <h2.version>2.2.224</h2.version>
         <jooq.version>3.18.15</jooq.version>
         <jackson.version>2.15.2</jackson.version>
+        <liquibase.version>4.8.0</liquibase.version>
 
         <version.java>22</version.java>
         <graal.vm.version>23.1.2</graal.vm.version>
@@ -171,6 +172,7 @@
                 <plugin>
                     <groupId>org.liquibase</groupId>
                     <artifactId>liquibase-maven-plugin</artifactId>
+                    <version>${liquibase.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.graalvm.buildtools</groupId>
@@ -307,6 +309,7 @@
                 <plugin>
                     <groupId>org.jooq</groupId>
                     <artifactId>jooq-codegen-maven</artifactId>
+                    <version>${jooq.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
