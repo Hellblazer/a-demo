@@ -10,6 +10,10 @@
     </parent>
     <artifactId>nut</artifactId>
 
+    <properties>
+        <db.password>foo</db.password>
+    </properties>
+
 
     <profiles>
         <profile>
@@ -328,7 +332,6 @@
                         <dependency>
                             <groupId>com.h2database</groupId>
                             <artifactId>h2</artifactId>
-                            <version>${h2.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -339,7 +342,6 @@
                         <dependency>
                             <groupId>com.h2database</groupId>
                             <artifactId>h2</artifactId>
-                            <version>${h2.version}</version>
                         </dependency>
                         <dependency>
                             <groupId>com.fasterxml.jackson.core</groupId>
@@ -350,7 +352,6 @@
                     <configuration>
                         <jdbc>
                             <driver>org.h2.Driver</driver>
-                            <url>${h2.db.url}</url>
                         </jdbc>
                         <generator>
                             <database>
