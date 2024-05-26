@@ -33,6 +33,20 @@
 
     <repositories>
         <repository>
+            <id>central</id>
+            <url>https://repo.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>central-1</id>
+            <url>https://repo1.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
             <id>hell-repo</id>
             <url>https://raw.githubusercontent.com/Hellblazer/repo-hell/main/mvn-artifact</url>
             <snapshots>
@@ -42,6 +56,20 @@
     </repositories>
 
     <pluginRepositories>
+        <pluginRepository>
+            <id>central</id>
+            <url>https://repo.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+            <id>central-1</id>
+            <url>https://repo1.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
         <pluginRepository>
             <id>plugin-hell-repo</id>
             <url>https://raw.githubusercontent.com/Hellblazer/repo-hell/main/mvn-artifact</url>
