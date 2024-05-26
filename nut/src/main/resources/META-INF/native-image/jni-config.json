@@ -1,19 +1,7 @@
 [
 {
-  "name":"com.hellblazer.nut.SkyApplication",
-  "methods":[{"name":"main","parameterTypes":["java.lang.String[]"] }]
-},
-{
-  "name":"com.intellij.rt.junit.JUnitStarter",
-  "methods":[{"name":"main","parameterTypes":["java.lang.String[]"] }]
-},
-{
   "name":"java.lang.Boolean",
   "methods":[{"name":"getBoolean","parameterTypes":["java.lang.String"] }]
-},
-{
-  "name":"java.lang.InternalError",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"java.lang.String",
@@ -22,14 +10,6 @@
 {
   "name":"java.lang.System",
   "methods":[{"name":"getProperty","parameterTypes":["java.lang.String"] }, {"name":"setProperty","parameterTypes":["java.lang.String","java.lang.String"] }]
-},
-{
-  "name":"org.apache.maven.surefire.booter.ForkedBooter",
-  "methods":[{"name":"main","parameterTypes":["java.lang.String[]"] }]
-},
-{
-  "name":"sun.instrument.InstrumentationImpl",
-  "methods":[{"name":"<init>","parameterTypes":["long","boolean","boolean","boolean"] }, {"name":"loadClassAndCallAgentmain","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"loadClassAndCallPremain","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"transform","parameterTypes":["java.lang.Module","java.lang.ClassLoader","java.lang.String","java.lang.Class","java.security.ProtectionDomain","byte[]","boolean"] }]
 },
 {
   "name":"sun.management.VMManagementImpl",

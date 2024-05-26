@@ -26,10 +26,8 @@ import com.salesforce.apollo.model.ProcessDomain;
 import com.salesforce.apollo.state.Mutator;
 import com.salesforce.apollo.state.proto.Migration;
 import com.salesforce.apollo.state.proto.Txn;
-import com.salesforce.apollo.stereotomy.Verifiers;
 import com.salesforce.apollo.stereotomy.services.grpc.StereotomyMetrics;
 
-import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -42,7 +40,7 @@ import static java.nio.file.Path.of;
  **/
 public class Sky extends ProcessDomain {
     public Sky(Digest group, ControlledIdentifierMember member, ProcessDomain.ProcessDomainParameters params,
-               Parameters.Builder builder, Parameters.RuntimeParameters.Builder runtime, InetSocketAddress endpoint,
+               Parameters.Builder builder, Parameters.RuntimeParameters.Builder runtime, String endpoint,
                com.salesforce.apollo.fireflies.Parameters.Builder ff, StereotomyMetrics stereotomyMetrics) {
         super(group, member, params, builder, runtime, endpoint, ff, stereotomyMetrics);
     }

@@ -77,17 +77,21 @@
                         <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
                         <buildArg>--enable-http</buildArg>
                         <buildArg>--add-modules java.sql.rowset</buildArg>
-                        <buildArg>-H:+AllowDeprecatedBuilderClassesOnImageClasspath</buildArg>
                         <buildArg>-H:+BuildReport</buildArg>
-                        <buildArgs>--enable-sbom</buildArgs>
-                        <buildArgs>-march=native</buildArgs>
+                        <buildArg>--allow-incomplete-classpath</buildArg>
+                        <buildArg>--enable-sbom</buildArg>
+                        <buildArg>-march=native</buildArg>
 
                         <!--  SLF4J -> JUL Dynamic Logging configuration ala
                               https://rmannibucau.metawerx.net/post/graalvm-jul-slf4j-logging -->
                         <buildArg>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</buildArg>
+
                         <buildArg>--initialize-at-build-time=org.slf4j.LoggerFactory</buildArg>
                         <buildArg>--initialize-at-build-time=org.slf4j.jul.JDK14LoggerAdapter</buildArg>
                         <buildArg>--initialize-at-build-time=org.slf4j.impl.StaticLoggerBinder</buildArg>
+
+                        <buildArg>--trace-object-instantiation=io.yupiik.logging.jul.handler.AsyncHandler</buildArg>
+
 
                         <buildArg>--initialize-at-build-time=org.jooq</buildArg>
                         <buildArg>--initialize-at-build-time=javax.sql.rowset.RowSetProvider</buildArg>
@@ -101,25 +105,8 @@
                         <buildArg>--initialize-at-run-time=io.netty</buildArg>
                         <buildArg>--initialize-at-run-time=org.h2.store.fs.FilePath</buildArg>
                     </buildArgs>
-                    <verbose>false</verbose>
-                    <metadataRepository>
-                        <enabled>true</enabled>
-                    </metadataRepository>
-                    <classpath>
-                        <param>
-                            ${project.build.directory}/${project.artifactId}-${project.version}-graalvm-jar-with-dependencies.jar
-                        </param>
-                    </classpath>
+                    <verbose>true</verbose>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.graalvm.buildtools</groupId>
-                        <artifactId>graalvm-reachability-metadata</artifactId>
-                        <version>${native.maven.plugin.version}</version>
-                        <classifier>repository</classifier>
-                        <type>zip</type>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>

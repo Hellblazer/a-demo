@@ -35,7 +35,7 @@
             <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
-            <column name="value" type="VARBINARY(1048576)">
+            <column name="value" type="VARBINARY(32768)">
                 <constraints nullable="false"/>
             </column>
         </createTable>

@@ -9,30 +9,43 @@
     <packaging>pom</packaging>
     <modules>
         <module>nut</module>
+        <module>sky</module>
+        <module>sky-image</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
         <apollo.version>0.0.1-SNAPSHOT</apollo.version>
-        <logback.version>1.4.12</logback.version>
-        <jooq.version>3.17.2</jooq.version>
-        <dropwizard.version>4.0.5</dropwizard.version>
+        <grpc.version>1.64.0</grpc.version>
+        <protobuf.version>4.27.0</protobuf.version>
+        <h2.version>2.2.224</h2.version>
+        <jooq.version>3.18.15</jooq.version>
+        <jackson.version>2.15.2</jackson.version>
         <liquibase.version>4.8.0</liquibase.version>
-        <jackson.version>2.16.1</jackson.version>
-        <grpc.version>1.61.0</grpc.version>
-        <protobuf.version>3.25.2</protobuf.version>
-        <junit.version>5.9.1</junit.version>
-        <slf4j.version>2.0.3</slf4j.version>
+
         <version.java>22</version.java>
         <graal.vm.version>23.1.2</graal.vm.version>
-        <native.maven.plugin.version>0.9.28</native.maven.plugin.version>
-        <h2.version>2.2.220</h2.version>
+        <native.maven.plugin.version>0.10.2</native.maven.plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>22</maven.compiler.source>
         <maven.compiler.target>22</maven.compiler.target>
     </properties>
 
     <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>central-1</id>
+            <url>https://repo1.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <repository>
             <id>hell-repo</id>
             <url>https://raw.githubusercontent.com/Hellblazer/repo-hell/main/mvn-artifact</url>
@@ -43,6 +56,20 @@
     </repositories>
 
     <pluginRepositories>
+        <pluginRepository>
+            <id>central</id>
+            <url>https://repo.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+            <id>central-1</id>
+            <url>https://repo1.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
         <pluginRepository>
             <id>plugin-hell-repo</id>
             <url>https://raw.githubusercontent.com/Hellblazer/repo-hell/main/mvn-artifact</url>
@@ -63,6 +90,11 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>sky</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>sky-image</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -77,36 +109,6 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${h2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2-mvstore</artifactId>
-                <version>${h2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.mattbertolini</groupId>
-                <artifactId>liquibase-slf4j</artifactId>
-                <version>4.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jooq</groupId>
-                <artifactId>jooq</artifactId>
-                <version>${jooq.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jooq</groupId>
-                <artifactId>jooq-meta</artifactId>
-                <version>${jooq.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jooq</groupId>
-                <artifactId>jooq-codegen</artifactId>
-                <version>${jooq.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.codahale</groupId>
                 <artifactId>shamir</artifactId>
                 <version>0.7.0</version>
@@ -115,20 +117,6 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>ST4</artifactId>
                 <version>4.3.4</version>
-            </dependency>
-
-            <!-- Test only dependencies below this line -->
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>4.8.1</version>
-                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -217,7 +205,6 @@
                 <plugin>
                     <groupId>org.graalvm.buildtools</groupId>
                     <artifactId>native-maven-plugin</artifactId>
-                    <version>${native.maven.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -381,6 +368,11 @@
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>3.6.0</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.5.2</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -390,13 +382,6 @@
             <id>native</id>
             <modules>
                 <module>sky-native</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>image</id>
-            <modules>
-                <module>sky-native</module>
-                <module>sky-image</module>
             </modules>
         </profile>
     </profiles>

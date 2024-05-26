@@ -19,6 +19,11 @@ package com.hellblazer.nut;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import com.hellblazer.nut.comms.AdmissionsClient;
+import com.hellblazer.nut.comms.DelegatedCertificateValidator;
+import com.hellblazer.nut.comms.MtlsClient;
+import com.hellblazer.nut.comms.SimpleNameResolverFactory;
+import com.hellblazer.nut.support.TokenGenerator;
 import com.macasaet.fernet.StringValidator;
 import com.macasaet.fernet.Token;
 import com.salesforce.apollo.archipelago.*;
@@ -56,7 +61,6 @@ import io.netty.handler.ssl.SslContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Provider;
 import java.security.cert.X509Certificate;
@@ -67,6 +71,7 @@ import java.time.temporal.TemporalAmount;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -87,21 +92,22 @@ public class SkyApplication {
     private final    SanctumSanctorum              sanctorum;
     private final    Router                        admissionsComms;
     private final    Clock                         clock;
-    private final    AtomicBoolean                 started   = new AtomicBoolean();
-    private final    DelegatedCertificateValidator certificateValidator;
-    private final    Lock                          tokenLock = new ReentrantLock();
+    private final AtomicBoolean                 started   = new AtomicBoolean();
+    private final DelegatedCertificateValidator certificateValidator;
+    private final Lock                          tokenLock = new ReentrantLock();
     private volatile Token                         token;
     private volatile ManagedChannel                joinChannel;
     private          int                           retries   = 5;
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum,
                           CompletableFuture<Void> onFailure) {
+        Objects.requireNonNull(configuration, "Configuration must not be null");
         this.clock = Clock.systemUTC();
-        this.sanctorum = sanctorum;
+        this.sanctorum = Objects.requireNonNull(sanctorum, "Sanctorum must not be null");
         certWithKey = sanctorum.member()
                                .getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
                                                              SignatureAlgorithm.DEFAULT);
-        var clusterEndpoint = configuration.clusterEndpoint.socketAddress();
+        var clusterEndpoint = EndpointProvider.reify(configuration.clusterEndpoint);
         var local = clusterEndpoint instanceof InProcessSocketAddress;
         certificateValidator = new DelegatedCertificateValidator(CertificateValidator.NONE);
 
@@ -109,18 +115,14 @@ public class SkyApplication {
         if (local) {
             clusterServer = new LocalServer(((InProcessSocketAddress) clusterEndpoint).getName(), sanctorum.member());
         } else {
-            Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
-            EndpointProvider ep = new StandardEpProvider(clusterEndpoint, ClientAuth.REQUIRE, certificateValidator,
-                                                         resolver);
+            Function<Member, String> resolver = m -> ((View.Participant) m).endpoint();
+            EndpointProvider ep = new StandardEpProvider(configuration.clusterEndpoint, ClientAuth.REQUIRE,
+                                                         certificateValidator, resolver);
             clusterServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
                                            serverContextSupplier(certWithKey));
         }
         Predicate<FernetServerInterceptor.HashedToken> validator = token -> {
-            var current = sanctorum;
-            if (current == null) {
-                return false;
-            }
-            var generator = current.getGenerator();
+            var generator = sanctorum.getGenerator();
             var result = generator == null ? null : generator.validate(token, new StringValidator() {
                 @Override
                 public TemporalAmount getTimeToLive() {
@@ -130,11 +132,7 @@ public class SkyApplication {
             return result != null;
         };
         var credentials = FernetCallCredentials.blocking(() -> {
-            var current = sanctorum;
-            if (current == null) {
-                return null;
-            }
-            var generator = current.getGenerator();
+            var generator = sanctorum.getGenerator();
             return generator == null ? null : generate(generator);
         });
         clusterComms = clusterServer.router(configuration.connectionCache.setCredentials(credentials),
@@ -146,7 +144,7 @@ public class SkyApplication {
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.setId(configuration.group).build());
         ((DynamicContext<Member>) runtime.getContext()).activate(sanctorum.member());
-        var bind = local ? new InetSocketAddress(0) : (InetSocketAddress) clusterEndpoint;
+        var bind = local ? EndpointProvider.allocatePort() : configuration.clusterEndpoint;
         var choamParameters = configuration.choamParameters;
         choamParameters.setProducer(configuration.producerParameters.build());
         choamParameters.setGenesisViewId(configuration.genesisViewId);
@@ -159,14 +157,14 @@ public class SkyApplication {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 
         var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k);
-        var approachEndpoint = configuration.approachEndpoint.socketAddress();
+        var approachEndpoint = EndpointProvider.reify(configuration.approachEndpoint);
 
         RouterSupplier approachServer;
         if (local) {
             approachServer = new LocalServer(((InProcessSocketAddress) approachEndpoint).getName(), sanctorum.member());
         } else {
-            Function<Member, SocketAddress> resolver = m -> ((View.Participant) m).endpoint();
-            EndpointProvider ep = new StandardEpProvider(approachEndpoint, ClientAuth.OPTIONAL,
+            Function<Member, String> resolver = m -> ((View.Participant) m).endpoint();
+            EndpointProvider ep = new StandardEpProvider(configuration.approachEndpoint, ClientAuth.OPTIONAL,
                                                          CertificateValidator.NONE, resolver);
             approachServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
                                             serverContextSupplier(certWithKey));
@@ -174,8 +172,8 @@ public class SkyApplication {
         log.info("Approach communications: {} on: {}", approachEndpoint, sanctorum.getId());
 
         admissionsComms = approachServer.router();
-        new Gorgoneion(configuration.approaches.isEmpty(), this::attest, gorgoneionParameters.build(),
-                       sanctorum.member(), runtime.getContext(),
+        new Gorgoneion(configuration.approaches == null || configuration.approaches.isEmpty(), this::attest,
+                       gorgoneionParameters.build(), sanctorum.member(), runtime.getContext(),
                        new DirectPublisher(sanctorum.member().getId(), new ProtoKERLAdapter(k)), admissionsComms, null,
                        clusterComms);
         contextId = runtime.getContext().getId();
@@ -211,9 +209,7 @@ public class SkyApplication {
         if (joinChannel != null) {
             joinChannel.shutdown();
         }
-        if (node != null) {
-            node.stop();
-        }
+        node.stop();
         if (clusterComms != null) {
             clusterComms.close(Duration.ofMinutes(1));
         }
@@ -278,8 +274,8 @@ public class SkyApplication {
                                           .usePlaintext()
                                           .build();
         } else {
-            MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo", certWithKey.getX509Certificate(),
-                                               certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId);
+            com.hellblazer.nut.comms.MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo", certWithKey.getX509Certificate(),
+                                                                        certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId);
             return client.getChannel();
         }
     }
@@ -309,7 +305,7 @@ public class SkyApplication {
             joinChannel = forApproaches(approaches);
             try {
                 Admissions admissions = new AdmissionsClient(sanctorum.member(), joinChannel, null);
-                var client = new GorgoneionClient(sanctorum.member(), sn -> attest(sn), clock, admissions);
+                var client = new GorgoneionClient(sanctorum.member(), this::attest, clock, admissions);
 
                 final var invitation = client.apply(Duration.ofSeconds(120));
                 assert invitation != null : "NULL invitation";

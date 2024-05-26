@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.nut;
+package com.hellblazer.nut.support;
 
 import com.salesforce.apollo.delphinius.Oracle;
 

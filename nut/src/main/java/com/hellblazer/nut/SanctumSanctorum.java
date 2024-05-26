@@ -17,6 +17,7 @@
 
 package com.hellblazer.nut;
 
+import com.hellblazer.nut.support.TokenGenerator;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
@@ -45,6 +46,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
+
 /**
  * encapsulation of ye olde thyme secrets n' associated sensitives
  *
@@ -54,17 +57,13 @@ public class SanctumSanctorum {
     private static final Logger log = LoggerFactory.getLogger(SanctumSanctorum.class);
 
     private final    Digest                     id;
+    private final    TokenGenerator             generator;
+    private final    SecureRandom               entropy;
     private volatile char[]                     root;
-    private volatile TokenGenerator             generator;
-    private volatile SecureRandom               entropy;
     private volatile Key                        master;
     private volatile Stereotomy                 stereotomy;
     private volatile ControlledIdentifierMember member;
     private volatile KERL.AppendKERL            kerl;
-
-    public TokenGenerator getGenerator() {
-        return generator;
-    }
 
     public SanctumSanctorum(byte[] root, DigestAlgorithm algorithm, SecureRandom entropy,
                             SkyConfiguration configuration) {
@@ -78,6 +77,11 @@ public class SanctumSanctorum {
         initializeKerl(configuration);
         initializeIdentifier(configuration, initializeKeyStore(configuration));
         this.id = member.getId();
+        log.info("Sanctum Sanctorum: {}", qb64(id));
+    }
+
+    public TokenGenerator getGenerator() {
+        return generator;
     }
 
     public Digest getId() {

@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.nut;
+package com.hellblazer.nut.comms;
 
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.Sphinx;

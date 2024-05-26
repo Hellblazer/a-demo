@@ -15,31 +15,27 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.nut;
+package com.hellblazer.nut.support;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.grpc.inprocess.InProcessSocketAddress;
+import com.google.protobuf.Message;
+import com.macasaet.fernet.Validator;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
+import java.util.function.Function;
 
 /**
- * A unified endpoint, either InProcess or Socket based
- *
  * @author hal.hildebrand
  **/
-public record Endpoint(@JsonProperty("hostName") String hostName, @JsonProperty("port") int port,
-                       @JsonProperty("name") String name) {
-
-    public SocketAddress socketAddress() {
-        if (name == null) {
-            return new InetSocketAddress(hostName, port);
-        } else {
-            return new InProcessSocketAddress(name);
-        }
+abstract public class MessageValidator<T extends Message> implements Validator<T> {
+    @Override
+    public Function<byte[], T> getTransformer() {
+        return bytes -> {
+            try {
+                return parse(bytes);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Unable to parse message bytes", e);
+            }
+        };
     }
 
-    public String toString() {
-        return socketAddress().toString();
-    }
+    abstract protected T parse(byte[] bytes) throws Exception;
 }

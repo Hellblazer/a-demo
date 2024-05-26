@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.nut;
+package com.hellblazer.nut.support;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -76,7 +76,7 @@ public class TokenGenerator implements Function<Message, Token> {
                               k -> master != null ? k.token().validateAndDecrypt(master, validator) : null);
     }
 
-    void clear() {
+    public void clear() {
         master = null;
     }
 }

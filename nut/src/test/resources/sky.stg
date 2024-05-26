@@ -1,53 +1,40 @@
-
-approaches(approach) ::= <<
-approaches:
-  - hostName: localHost
-    port: <approach>
->>
-
 seeds(seedId, seed) ::= <<
 seeds:
   - identifier: <seedId>
-    endpoint:
-        hostName: localHost
-        port: <seed>
+    endpoint: <seed>
 >>
 
-sky(clusterPort, apiPort, memberId, seedPort, n, k, approachPort, approach, seedId, genesis) ::= <<
+sky(clusterEndpoint, apiEndpoint, approachEndpoint, memberId, seedId, seedEndpoint, approach, n, k, genesis) ::= <<
 
-<if(approach)><approaches(approach = approach)>
+<if(approach)>
+approaches:
+<approach: {apr |  - <apr>} ;wrap>
 <endif>
 
-<if(seedPort)><seeds(seedId = seedId, seed = seedPort)>
+<if(seedEndpoint)><seeds(seedId = seedId, seed = seedEndpoint)>
 <endif>
 
-viewGossipDuration: PT0H0M00.01S
+viewGossipDuration: PT0H0M00.03S
 
 choamParameters:
   generateGenesis: <genesis>
-  checkpointBlockDelta: 50
-  gossipDuration: PT0H0M00.01S
+  checkpointBlockDelta: 7
+  gossipDuration: PT0H0M00.03S
   synchronizationCycles: 10
   regenerationCycles: 10
 
 producerParameters:
   maxBatchByteSize: 10485760
   maxBatchCount: 3000
-  gossipDuration: PT0H0M00.01S
+  gossipDuration: PT0H0M00.03S
   ethereal:
-    epochLength: 20
+    epochLength: 7
 
-clusterEndpoint:
-  hostName: localhost
-  port: <clusterPort>
+clusterEndpoint: <clusterEndpoint>
 
-apiEndpoint:
-  hostName: localhost
-  port: <apiPort>
+apiEndpoint: <apiEndpoint>
 
-approachEndpoint:
-  hostName: localhost
-  port: <approachPort>
+approachEndpoint: <approachEndpoint>
 
 shamir:
     shares: <n>

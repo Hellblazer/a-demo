@@ -75,6 +75,10 @@
   }, {
     "pattern":"\\QMETA-INF/services/org.slf4j.spi.SLF4JServiceProvider\\E"
   }, {
+    "pattern":"\\Qcom/sun/rowset/RowSetResourceBundle_en.properties\\E"
+  }, {
+    "pattern":"\\Qcom/sun/rowset/RowSetResourceBundle_en_GB.properties\\E"
+  }, {
     "pattern":"\\Qdelphinius/delphinius-functions.xml\\E"
   }, {
     "pattern":"\\Qdelphinius/delphinius.xml\\E"
@@ -87,19 +91,25 @@
   }, {
     "pattern":"\\Qinitialize.xml\\E"
   }, {
+    "pattern":"\\Qjava/lang/reflect/AccessibleObject.class\\E"
+  }, {
     "pattern":"\\Qjooq-settings.xml\\E"
   }, {
     "pattern":"\\Qjunit-platform.properties\\E"
   }, {
     "pattern":"\\Qliquibase.build.properties\\E"
   }, {
+    "pattern":"\\Qliquibase/i18n/liquibase-core.properties\\E"
+  }, {
+    "pattern":"\\Qliquibase/i18n/liquibase-core_en.properties\\E"
+  }, {
+    "pattern":"\\Qliquibase/i18n/liquibase-core_en_GB.properties\\E"
+  }, {
     "pattern":"\\Qlogback-test.scmo\\E"
   }, {
     "pattern":"\\Qlogback-test.xml\\E"
   }, {
     "pattern":"\\Qlogback.scmo\\E"
-  }, {
-    "pattern":"\\Qlogback.xml\\E"
   }, {
     "pattern":"\\Qmockito-extensions/org.mockito.plugins.AnnotationEngine\\E"
   }, {
@@ -123,6 +133,8 @@
   }, {
     "pattern":"\\Qorg/h2/util/data.zip\\E"
   }, {
+    "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
     "pattern":"\\Qschema/nut.xml\\E"
   }, {
     "pattern":"\\Qsky-test.yaml\\E"
@@ -139,20 +151,46 @@
   }, {
     "pattern":"\\Qwww.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd\\E"
   }, {
-    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt72b/nfc.nrm\\E"
+    "pattern":"java.base:\\Qjava/lang/reflect/AccessibleObject.class\\E"
   }, {
-    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt72b/nfkc.nrm\\E"
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt74b/nfc.nrm\\E"
+  }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt74b/nfkc.nrm\\E"
+  }, {
+    "pattern":"java.logging:\\Qsun/util/logging/resources/logging_en.properties\\E"
+  }, {
+    "pattern":"java.logging:\\Qsun/util/logging/resources/logging_en_GB.properties\\E"
+  }, {
+    "pattern":"java.sql.rowset:\\Qcom/sun/rowset/RowSetResourceBundle.properties\\E"
+  }, {
+    "pattern":"java.sql.rowset:\\Qcom/sun/rowset/RowSetResourceBundle_en.properties\\E"
+  }, {
+    "pattern":"java.sql.rowset:\\Qcom/sun/rowset/RowSetResourceBundle_en_GB.properties\\E"
   }, {
     "pattern":"java.sql.rowset:\\Qjavax/sql/rowset/rowset.properties\\E"
+  }, {
+    "pattern":"java.xml:\\Qcom/sun/org/apache/xerces/internal/impl/xpath/regex/message.properties\\E"
+  }, {
+    "pattern":"java.xml:\\Qcom/sun/org/apache/xerces/internal/impl/xpath/regex/message_en.properties\\E"
+  }, {
+    "pattern":"java.xml:\\Qcom/sun/org/apache/xerces/internal/impl/xpath/regex/message_en_GB.properties\\E"
+  }, {
+    "pattern":"java.xml:\\Qjdk/xml/internal/jdkcatalog/JDKCatalog.xml\\E"
   }]},
   "bundles":[{
     "name":"com.sun.org.apache.xerces.internal.impl.xpath.regex.message",
-    "locales":["und"]
+    "locales":["en-GB"]
   }, {
     "name":"com.sun.rowset.RowSetResourceBundle",
-    "locales":["und"]
+    "locales":["en-GB"]
   }, {
     "name":"liquibase/i18n/liquibase-core",
+    "locales":["en-GB"]
+  }, {
+    "name":"sun.text.resources.cldr.FormatData",
+    "locales":["en", "en-001", "en-GB", "en-US", "und"]
+  }, {
+    "name":"sun.util.resources.cldr.CalendarData",
     "locales":["und"]
   }]
 }

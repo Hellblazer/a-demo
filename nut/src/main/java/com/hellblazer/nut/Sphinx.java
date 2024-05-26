@@ -20,12 +20,15 @@ package com.hellblazer.nut;
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.hellblazer.nut.comms.SphynxServer;
 import com.hellblazer.nut.proto.*;
+import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.cert.Certificates;
+import com.salesforce.apollo.cryptography.proto.Digeste;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
 import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.fireflies.View;
@@ -79,21 +82,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
  **/
 public class Sphinx {
 
-    public static final  String                  AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
-    public static final  String                  AES                = "AES";
-    public static final  int                     TAG_LENGTH         = 128; // bits
-    public static final  int                     IV_LENGTH          = 16; // bytes
-    private static final Logger                  log                = LoggerFactory.getLogger(Sphinx.class);
-    private final        AtomicBoolean           started            = new AtomicBoolean();
-    private final        SkyConfiguration        configuration;
-    private final        Service                 service            = new Service();
-    private final        SecureRandom            entropy;
-    private final        CompletableFuture<Void> onStart            = new CompletableFuture<>();
-    private volatile     SanctumSanctorum        sanctum;
-    private volatile     SkyApplication          application;
-    private volatile     Runnable                closeApiServer;
-    private              SocketAddress           apiAddress;
-    private              CompletableFuture<Void> onFailure          = new CompletableFuture<>();
+    public static final  String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
+    public static final  String AES                = "AES";
+    public static final  int    TAG_LENGTH         = 128; // bits
+    public static final  int    IV_LENGTH          = 16; // bytes
+    private static final Logger log                = LoggerFactory.getLogger(Sphinx.class);
+
+    private final    AtomicBoolean           started   = new AtomicBoolean();
+    private final    SkyConfiguration        configuration;
+    private final    Service                 service   = new Service();
+    private final    SecureRandom            entropy;
+    private final    CompletableFuture<Void> onStart   = new CompletableFuture<>();
+    private volatile SanctumSanctorum        sanctum;
+    private volatile SkyApplication          application;
+    private volatile Runnable                closeApiServer;
+    private          SocketAddress           apiAddress;
+    private          CompletableFuture<Void> onFailure = new CompletableFuture<>();
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -205,10 +209,6 @@ public class Sphinx {
         return apiAddress;
     }
 
-    public SocketAddress getClusterEndpoint() {
-        return configuration.clusterEndpoint.socketAddress();
-    }
-
     public CompletableFuture<Void> getOnFailure() {
         return onFailure;
     }
@@ -248,7 +248,7 @@ public class Sphinx {
         if (!started.compareAndSet(false, true)) {
             return onStart;
         }
-        var socketAddress = configuration.apiEndpoint.socketAddress();
+        var socketAddress = EndpointProvider.reify(configuration.apiEndpoint);
         var local = socketAddress instanceof InProcessSocketAddress;
         if (local) {
             log.info("Starting in process API server: {}", configuration.apiEndpoint);
@@ -284,16 +284,16 @@ public class Sphinx {
         return application.getSky().getDelphi();
     }
 
-    private ApiServer apiServer() {
-        var address = configuration.apiEndpoint.socketAddress();
+    private Geb.ApiServer apiServer() {
+        var address = EndpointProvider.reify(configuration.apiEndpoint);
         CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) address);
-        return new ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
+        return new Geb.ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
 
             @Override
             public SslContext forServer(ClientAuth clientAuth, String alias, CertificateValidator validator,
                                         Provider provider) {
-                return ApiServer.forServer(clientAuth, alias, apiIdentity.getX509Certificate(),
-                                           apiIdentity.getPrivateKey(), validator);
+                return Geb.ApiServer.forServer(clientAuth, alias, apiIdentity.getX509Certificate(),
+                                               apiIdentity.getPrivateKey(), validator);
             }
 
             @Override
@@ -344,10 +344,17 @@ public class Sphinx {
         sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
         application = new SkyApplication(configuration, sanctum, onFailure);
 
-        var approaches = configuration.approaches.stream().map(Endpoint::socketAddress).toList();
+        List<SocketAddress> approaches = configuration.approaches == null ? Collections.emptyList()
+                                                                          : configuration.approaches.stream()
+                                                                                                    .map(
+                                                                                                    ep -> EndpointProvider.reify(
+                                                                                                    ep))
+                                                                                                    .map(
+                                                                                                    e -> (SocketAddress) e)
+                                                                                                    .toList();
         var seeds = configuration.seeds.stream()
-                                       .map(s -> new View.Seed(new SelfAddressingIdentifier(s.identifier()),
-                                                               (InetSocketAddress) s.endpoint().socketAddress()))
+                                       .map(
+                                       s -> new View.Seed(new SelfAddressingIdentifier(s.identifier()), s.endpoint()))
                                        .toList();
 
         Thread.ofVirtual().start(Utils.wrapped(() -> {
@@ -356,7 +363,7 @@ public class Sphinx {
                 return;
             }
             if (approaches.isEmpty()) {
-                current.bootstrap(viewGossipDuration, onStart, configuration.approachEndpoint.socketAddress());
+                current.bootstrap(viewGossipDuration, onStart, EndpointProvider.reify(configuration.approachEndpoint));
             } else {
                 current.testify(Duration.ofMillis(10), approaches, onStart, seeds);
             }
@@ -452,6 +459,10 @@ public class Sphinx {
             log.info("Unsealing service");
             sessionKeyPair = configuration.identity.encryptionAlgorithm().generateKeyPair();
             return Status.newBuilder().setSuccess(true).setShares(0).build();
+        }
+
+        public Digeste identifier() {
+            return id().toDigeste();
         }
 
         public UnwrapStatus unwrap() {
