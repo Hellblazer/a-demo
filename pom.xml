@@ -10,6 +10,7 @@
     <modules>
         <module>nut</module>
         <module>sky</module>
+        <module>sky-image</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
 
@@ -407,12 +408,6 @@
             <id>native</id>
             <modules>
                 <module>sky-native</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>image</id>
-            <modules>
-                <module>sky-image</module>
             </modules>
         </profile>
     </profiles>
