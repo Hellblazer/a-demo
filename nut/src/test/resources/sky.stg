@@ -14,12 +14,12 @@ approaches:
 <if(seedEndpoint)><seeds(seedId = seedId, seed = seedEndpoint)>
 <endif>
 
-viewGossipDuration: PT0H0M00.03S
+viewGossipDuration: PT0H0M00.05S
 
 choamParameters:
   generateGenesis: <genesis>
   checkpointBlockDelta: 7
-  gossipDuration: PT0H0M00.03S
+  gossipDuration: PT0H0M00.05S
   synchronizationCycles: 10
   regenerationCycles: 10
 
