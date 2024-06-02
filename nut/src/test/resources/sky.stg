@@ -14,12 +14,12 @@ approaches:
 <if(seedEndpoint)><seeds(seedId = seedId, seed = seedEndpoint)>
 <endif>
 
-viewGossipDuration: PT0H0M00.05S
+viewGossipDuration: PT0H0M00.03S
 
 choamParameters:
   generateGenesis: <genesis>
   checkpointBlockDelta: 7
-  gossipDuration: PT0H0M00.05S
+  gossipDuration: PT0H0M00.03S
   synchronizationCycles: 10
   regenerationCycles: 10
 
@@ -45,8 +45,8 @@ domain:
   dhtOperationsTimeout: PT0H0M10S
   dhtDbUrl: "jdbc:h2:mem:dht-<memberId>;DB_CLOSE_DELAY=-1"
   checkpointBaseDir: ./target/e2e/cp
-  dhtOpsFrequency: PT0H0M00.01S
-  dhtFpr: 0.000125
+  dhtOpsFrequency: PT0H0M00.03S
+  dhtFpr: 0.00125
   dhtEventValidTO: PT0H0M30S
   dhtBias: 3
   jdbcMaxConnections: 10

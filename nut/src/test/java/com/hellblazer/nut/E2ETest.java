@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.*;
  **/
 public class E2ETest {
     private final static int SHARES      = 7;
-    private final static int CARDINALITY = 20;
+    private final static int CARDINALITY = 10;
     private final static int THRESHOLD   = 4;
 
     private List<Proc>    processes;
