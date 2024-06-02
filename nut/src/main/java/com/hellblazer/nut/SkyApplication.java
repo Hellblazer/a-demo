@@ -224,8 +224,7 @@ public class SkyApplication {
         }
         clusterComms.start();
         admissionsComms.start();
-//        node.setDhtVerifiers();
-        node.setVerifiersNONE();
+        node.setDhtVerifiers();
         node.start();
         node.getFoundation().start(onStart, viewGossipDuration, seeds);
         log.info("Started Sky: {}", sanctorum.getId());
