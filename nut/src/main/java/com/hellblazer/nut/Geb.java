@@ -20,7 +20,6 @@ package com.hellblazer.nut;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.salesforce.apollo.archipelago.UnsafeExecutors;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
@@ -74,11 +73,11 @@ public class Geb {
     public void delete(KeyVersion key) throws SQLException {
     }
 
-    public String get(KeyVersion key)throws SQLException {
+    public String get(KeyVersion key) throws SQLException {
         return null;
     }
 
-    public int put(PutValue value)throws SQLException {
+    public int put(PutValue value) throws SQLException {
         return 0;
     }
 
@@ -112,12 +111,12 @@ public class Geb {
             NettyServerBuilder builder = NettyServerBuilder.forAddress(address)
                                                            .withOption(ChannelOption.SO_REUSEADDR, true)
                                                            .addService(service)
-                                                           .sslContext(
-                                                           supplier.forServer(clientAuth, alias, validator, PROVIDER_JSSE))
+                                                           .sslContext(supplier.forServer(clientAuth, alias, validator,
+                                                                                          PROVIDER_JSSE))
                                                            .withChildOption(ChannelOption.TCP_NODELAY, true)
                                                            .intercept(interceptor)
                                                            .intercept(EnableCompressionInterceptor.SINGLETON);
-            builder.executor(UnsafeExecutors.newVirtualThreadPerTaskExecutor());
+            builder.executor(Executors.newVirtualThreadPerTaskExecutor());
             server = builder.build();
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
@@ -216,8 +215,8 @@ public class Geb {
         }
 
         /**
-         * Currently grpc-java doesn't return compressed responses, even if the client has sent a compressed payload. This
-         * turns on gzip compression for all responses.
+         * Currently grpc-java doesn't return compressed responses, even if the client has sent a compressed payload.
+         * This turns on gzip compression for all responses.
          */
         public static class EnableCompressionInterceptor implements ServerInterceptor {
             public final static EnableCompressionInterceptor SINGLETON = new EnableCompressionInterceptor();
