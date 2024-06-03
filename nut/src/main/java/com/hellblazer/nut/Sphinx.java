@@ -23,6 +23,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.nut.comms.SphynxServer;
 import com.hellblazer.nut.proto.*;
 import com.salesforce.apollo.archipelago.EndpointProvider;
+import com.salesforce.apollo.archipelago.UnsafeExecutors;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
@@ -254,7 +255,7 @@ public class Sphinx {
             log.info("Starting in process API server: {}", configuration.apiEndpoint);
             var server = InProcessServerBuilder.forAddress(socketAddress)
                                                .addService(new SphynxServer(service))
-                                               .executor(Executors.newVirtualThreadPerTaskExecutor())
+                                               .executor(UnsafeExecutors.newVirtualThreadPerTaskExecutor())
                                                .build();
             apiAddress = socketAddress;
             closeApiServer = Utils.wrapped(() -> {

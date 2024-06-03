@@ -20,6 +20,7 @@ package com.hellblazer.nut;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.salesforce.apollo.archipelago.UnsafeExecutors;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
@@ -116,7 +117,7 @@ public class Geb {
                                                            .withChildOption(ChannelOption.TCP_NODELAY, true)
                                                            .intercept(interceptor)
                                                            .intercept(EnableCompressionInterceptor.SINGLETON);
-            builder.executor(Executors.newVirtualThreadPerTaskExecutor());
+            builder.executor(UnsafeExecutors.newVirtualThreadPerTaskExecutor());
             server = builder.build();
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
