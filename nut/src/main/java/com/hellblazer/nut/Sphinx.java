@@ -23,7 +23,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.nut.comms.SphynxServer;
 import com.hellblazer.nut.proto.*;
 import com.salesforce.apollo.archipelago.EndpointProvider;
-import com.salesforce.apollo.archipelago.UnsafeExecutors;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
@@ -255,7 +254,7 @@ public class Sphinx {
             log.info("Starting in process API server: {}", configuration.apiEndpoint);
             var server = InProcessServerBuilder.forAddress(socketAddress)
                                                .addService(new SphynxServer(service))
-                                               .executor(UnsafeExecutors.newVirtualThreadPerTaskExecutor())
+                                               .executor(Executors.newVirtualThreadPerTaskExecutor())
                                                .build();
             apiAddress = socketAddress;
             closeApiServer = Utils.wrapped(() -> {
@@ -273,7 +272,8 @@ public class Sphinx {
             try {
                 server.start();
             } catch (IOException e) {
-                throw new IllegalStateException("Unable to start local api server on: %s".formatted(sanctum.getId()));
+                throw new IllegalStateException(
+                "Unable to start local api server on: %s".formatted(sanctum == null ? "<null>" : sanctum.getId()));
             }
             apiAddress = server.getAddress();
         }
@@ -421,6 +421,10 @@ public class Sphinx {
             }
         }
 
+        public Digeste identifier() {
+            return id().toDigeste();
+        }
+
         public Status seal() {
             var id = sanctum == null ? null : sanctum.getId();
             final var sanctorum = sanctum;
@@ -460,10 +464,6 @@ public class Sphinx {
             log.info("Unsealing service");
             sessionKeyPair = configuration.identity.encryptionAlgorithm().generateKeyPair();
             return Status.newBuilder().setSuccess(true).setShares(0).build();
-        }
-
-        public Digeste identifier() {
-            return id().toDigeste();
         }
 
         public UnwrapStatus unwrap() {
