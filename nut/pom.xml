@@ -12,6 +12,8 @@
 
     <properties>
         <db.password>foo</db.password>
+        <tron.log>info</tron.log>
+        <choam.log>info</choam.log>
     </properties>
 
 
@@ -135,6 +137,12 @@
     </dependencies>
 
     <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
