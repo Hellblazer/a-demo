@@ -18,7 +18,7 @@ services:
     environment:
       GENESIS: 'true'
       APPROACHES: 'constantine:8124'
-      SEEDS: 'constantine:8125'
+      SEEDS: 'constantine:8125#8123'
 
   kernel2:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
@@ -29,7 +29,7 @@ services:
     environment:
       GENESIS: 'true'
       APPROACHES: 'constantine:8124'
-      SEEDS: 'constantine:8125'
+      SEEDS: 'constantine:8125#8123'
 
   kernel3:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
@@ -40,4 +40,4 @@ services:
     environment:
       GENESIS: 'true'
       APPROACHES: 'constantine:8124'
-      SEEDS: 'constantine:8125'
+      SEEDS: 'constantine:8125#8123'

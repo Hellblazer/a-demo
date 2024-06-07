@@ -2,8 +2,7 @@
 <configuration>
 
     <!-- Stop output INFO at start -->
-<!--    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>-->
-    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -19,11 +18,11 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.chiralbehaviors.tron" level="${tron.log}" additivity="false">
+    <logger name="com.chiralbehaviors.tron" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam" level="${choam.log}" additivity="false">
+    <logger name="com.salesforce.apollo.choam.CHOAM" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 

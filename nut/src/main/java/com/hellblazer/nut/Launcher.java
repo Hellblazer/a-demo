@@ -82,7 +82,7 @@ public class Launcher {
             config.seeds = Arrays.stream(seeds.split(","))
                                  .map(String::trim)
                                  .map(s -> s.split("@"))
-                                 .map(s -> (s.length == 1) ? new SkyConfiguration.Seedling(resolve(s[0]), s[0])
+                                 .map(s -> (s.length == 1) ? resolve(s[0])
                                                            : new SkyConfiguration.Seedling(digest(s[0]), s[1]))
                                  .toList();
             config.approaches = Arrays.stream(approaches.split(",")).map(String::trim).toList();
@@ -106,18 +106,24 @@ public class Launcher {
     }
 
     // Cheesy work around for full bootstrap - do better HSH
-    private static Digest resolve(String server) {
-        var endpoint = HostAndPort.fromString(server);
-        var client = apiClient(new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
+    private static SkyConfiguration.Seedling resolve(String seedSpec) {
+        var split = seedSpec.split("#");
+        if (split.length != 2) {
+            throw new IllegalArgumentException("Invalid seed spec: " + seedSpec);
+        }
+        var endpoint = HostAndPort.fromString(split[0]);
+        var apiPort = Integer.parseInt(split[1]);
+        var client = apiClient(new InetSocketAddress(endpoint.getHost(), apiPort));
         try {
             while (true) {
                 try {
                     log.info("resolving server: {}", endpoint);
                     var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
-                    return Digest.from(sphynxClient.identifier(Empty.getDefaultInstance()));
+                    var identifier = Digest.from(sphynxClient.identifier(Empty.getDefaultInstance()));
+                    return new SkyConfiguration.Seedling(identifier, split[0]);
                 } catch (StatusRuntimeException e) {
                     if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
-                        log.info("server: {} unavailable", endpoint);
+                        log.info("server: {} unavailable", endpoint, e);
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException ex) {

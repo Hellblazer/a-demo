@@ -62,7 +62,12 @@ COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/src/main/resou
 
 # Run the application.
 USER $USER_NAME:$GROUP_NAME
+
+#apiEndpoint
 EXPOSE 8123
+#approachEndpoint
 EXPOSE 8124
+#clusterEndpoint
 EXPOSE 8125
-ENTRYPOINT ["java", "-XX:+UseZGC", "-XX:+ZGenerational", "-Djavax.net.debug=all", "-Djava.net.preferIPv6Addresses", "-Dlogback.configurationFile=logback.xml", "-jar", "./app.jar", "config.yaml", "Give me food or give me slack or kill me"]
+
+ENTRYPOINT ["java", "-XX:+UseZGC", "-XX:+ZGenerational", "-Dlogback.configurationFile=logback.xml", "-jar", "./app.jar", "config.yaml", "Give me food or give me slack or kill me"]
