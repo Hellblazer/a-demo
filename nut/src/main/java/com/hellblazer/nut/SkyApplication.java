@@ -92,9 +92,9 @@ public class SkyApplication {
     private final    SanctumSanctorum              sanctorum;
     private final    Router                        admissionsComms;
     private final    Clock                         clock;
-    private final AtomicBoolean                 started   = new AtomicBoolean();
-    private final DelegatedCertificateValidator certificateValidator;
-    private final Lock                          tokenLock = new ReentrantLock();
+    private final    AtomicBoolean                 started   = new AtomicBoolean();
+    private final    DelegatedCertificateValidator certificateValidator;
+    private final    Lock                          tokenLock = new ReentrantLock();
     private volatile Token                         token;
     private volatile ManagedChannel                joinChannel;
     private          int                           retries   = 5;
@@ -138,13 +138,14 @@ public class SkyApplication {
         clusterComms = clusterServer.router(configuration.connectionCache.setCredentials(credentials),
                                             RouterImpl::defaultServerLimit, null,
                                             Collections.singletonList(new FernetServerInterceptor()), validator);
-        log.info("Cluster communications: {} on: {}", clusterEndpoint, sanctorum.getId());
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setOnFailure(onFailure)
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.setId(configuration.group).build());
         ((DynamicContext<Member>) runtime.getContext()).activate(sanctorum.member());
-        var bind = local ? EndpointProvider.allocatePort() : configuration.clusterEndpoint;
+        var bind = local ? EndpointProvider.allocatePort()
+                         : configuration.advertisedClusterEndpoint != null ? configuration.advertisedClusterEndpoint
+                                                                           : configuration.clusterEndpoint;
         var choamParameters = configuration.choamParameters;
         choamParameters.setProducer(configuration.producerParameters.build());
         choamParameters.setGenesisViewId(configuration.genesisViewId);
@@ -224,7 +225,7 @@ public class SkyApplication {
         }
         clusterComms.start();
         admissionsComms.start();
-//        node.setDhtVerifiers();
+        //        node.setDhtVerifiers();
         node.setVerifiersNONE();
         node.start();
         node.getFoundation().start(onStart, viewGossipDuration, seeds);
@@ -275,8 +276,10 @@ public class SkyApplication {
                                           .usePlaintext()
                                           .build();
         } else {
-            com.hellblazer.nut.comms.MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo", certWithKey.getX509Certificate(),
-                                                                        certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId);
+            com.hellblazer.nut.comms.MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo",
+                                                                        certWithKey.getX509Certificate(),
+                                                                        certWithKey.getPrivateKey(),
+                                                                        CertificateValidator.NONE, contextId);
             return client.getChannel();
         }
     }

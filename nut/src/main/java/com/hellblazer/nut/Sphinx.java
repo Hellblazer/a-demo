@@ -118,7 +118,6 @@ public class Sphinx {
 
         if (devSecret != null) {
             log.warn("Operating in development mode with dev secret");
-            started.set(true);
             unwrap(configuration.viewGossipDuration, devSecret.getBytes(Charset.defaultCharset()));
         } else {
             log.info("Operating in sealed mode: {}", configuration.shamir);
@@ -246,6 +245,7 @@ public class Sphinx {
      */
     public CompletableFuture<Void> start() {
         if (!started.compareAndSet(false, true)) {
+            log.info("Already started: {}", sanctum.getId());
             return onStart;
         }
         var socketAddress = EndpointProvider.reify(configuration.apiEndpoint);
@@ -265,18 +265,17 @@ public class Sphinx {
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to start local api server on: %s".formatted(sanctum.getId()));
             }
-        } else {
-            log.info("Starting in MTLS API server: {}", configuration.apiEndpoint);
-            var server = apiServer();
-            closeApiServer = Utils.wrapped(server::stop, log);
-            try {
-                server.start();
-            } catch (IOException e) {
-                throw new IllegalStateException(
-                "Unable to start local api server on: %s".formatted(sanctum == null ? "<null>" : sanctum.getId()));
-            }
-            apiAddress = server.getAddress();
         }
+        log.info("Starting in MTLS API server: {}", configuration.apiEndpoint);
+        var server = apiServer();
+        closeApiServer = Utils.wrapped(server::stop, log);
+        try {
+            server.start();
+        } catch (IOException e) {
+            throw new IllegalStateException(
+            "Unable to start local api server on: %s".formatted(sanctum == null ? "<null>" : sanctum.getId()));
+        }
+        apiAddress = server.getAddress();
         log.info("Started API server on: {} : {}", configuration.apiEndpoint, apiAddress);
         return onStart;
     }
@@ -422,7 +421,13 @@ public class Sphinx {
         }
 
         public Digeste identifier() {
-            return id().toDigeste();
+            var id = id();
+            if (id == null) {
+                log.warn("No identifier");
+                throw new StatusRuntimeException(io.grpc.Status.FAILED_PRECONDITION);
+            }
+            log.warn("Identifier requested on: {}", sanctum.getId());
+            return id.toDigeste();
         }
 
         public Status seal() {

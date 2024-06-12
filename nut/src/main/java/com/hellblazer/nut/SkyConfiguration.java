@@ -50,6 +50,8 @@ import java.util.List;
 public class SkyConfiguration {
 
     @JsonProperty
+    public String                                              advertisedClusterEndpoint;
+    @JsonProperty
     public Sphinx.UNWRAPPING                                   unwrapping;
     @JsonProperty
     public IdentityConfiguration                               identity;

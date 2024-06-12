@@ -20,6 +20,7 @@ package com.hellblazer.nut.comms;
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.Sphinx;
 import com.hellblazer.nut.proto.*;
+import com.salesforce.apollo.cryptography.proto.Digeste;
 import io.grpc.stub.StreamObserver;
 
 public class SphynxServer extends SphynxGrpc.SphynxImplBase {
@@ -37,10 +38,17 @@ public class SphynxServer extends SphynxGrpc.SphynxImplBase {
     }
 
     @Override
+    public void identifier(Empty request, StreamObserver<Digeste> responseObserver) {
+        var id = service.identifier();
+        responseObserver.onNext(id);
+        responseObserver.onCompleted();
+    }
+
+    @Override
     public void seal(Empty request, StreamObserver<Status> responseObserver) {
-       var status = service.seal();
-       responseObserver.onNext(status);
-       responseObserver.onCompleted();
+        var status = service.seal();
+        responseObserver.onNext(status);
+        responseObserver.onCompleted();
     }
 
     @Override

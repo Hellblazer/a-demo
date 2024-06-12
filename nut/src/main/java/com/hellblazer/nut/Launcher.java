@@ -44,9 +44,13 @@ import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
  * @author hal.hildebrand
  **/
 public class Launcher {
-    public final static String SEEDS_VAR      = "SEEDS";
-    public final static String APPROACHES_VAR = "APPROACHES";
-    public final static String GENESIS        = "GENESIS";
+    public final static String SEEDS_VAR           = "SEEDS";
+    public final static String APPROACHES_VAR      = "APPROACHES";
+    public final static String GENESIS             = "GENESIS";
+    public final static String API_ENDPOINT        = "API_ENDPOINT";
+    public final static String APPROACH_ENDPOINT   = "APPROACH_ENDPOINT";
+    public final static String CLUSTER_ENDPOINT    = "CLUSTER_ENDPOINT";
+    public final static String ADVERTISED_ENDPOINT = "ADVERTISED_ENDPOINT";
 
     private static final Logger log = LoggerFactory.getLogger(Sphinx.class);
 
@@ -87,6 +91,20 @@ public class Launcher {
                                  .toList();
             config.approaches = Arrays.stream(approaches.split(",")).map(String::trim).toList();
         }
+        var apiEndpoint = System.getenv(API_ENDPOINT);
+        var clusterEndpoint = System.getenv(CLUSTER_ENDPOINT);
+        var approachEndpoint = System.getenv(APPROACH_ENDPOINT);
+
+        if (apiEndpoint != null) {
+            config.apiEndpoint = apiEndpoint;
+        }
+        if (clusterEndpoint != null) {
+            config.clusterEndpoint = clusterEndpoint;
+        }
+        if (approachEndpoint != null) {
+            config.approachEndpoint = approachEndpoint;
+        }
+
         config.choamParameters.setGenerateGenesis(genesis);
         Sphinx sphinx = argv.length == 1 ? new Sphinx(config) : new Sphinx(config, argv[1]);
 
@@ -113,17 +131,18 @@ public class Launcher {
         }
         var endpoint = HostAndPort.fromString(split[0]);
         var apiPort = Integer.parseInt(split[1]);
+        var apiEndpoint = HostAndPort.fromParts(endpoint.getHost(), apiPort);
         var client = apiClient(new InetSocketAddress(endpoint.getHost(), apiPort));
         try {
             while (true) {
                 try {
-                    log.info("resolving server: {}", endpoint);
+                    log.info("resolving server: {}", apiEndpoint);
                     var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
                     var identifier = Digest.from(sphynxClient.identifier(Empty.getDefaultInstance()));
                     return new SkyConfiguration.Seedling(identifier, split[0]);
                 } catch (StatusRuntimeException e) {
                     if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
-                        log.info("server: {} unavailable", endpoint, e);
+                        log.info("server: {} unavailable", apiEndpoint, e);
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException ex) {
