@@ -2,8 +2,7 @@
 <configuration>
 
     <!-- Stop output INFO at start -->
-    <!--    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>-->
-    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -35,11 +34,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.fireflies.View" level="debug" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.salesforce.apollo.fireflies.ViewManagement" level="debug" additivity="false">
+    <logger name="com.salesforce.apollo.fireflies" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -75,7 +70,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo" level="trace" additivity="false">
+    <logger name="com.salesforce.apollo" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 

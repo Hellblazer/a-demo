@@ -248,10 +248,10 @@ public class Sphinx {
             log.info("Already started: {}", sanctum.getId());
             return onStart;
         }
-        var socketAddress = EndpointProvider.reify(configuration.apiEndpoint);
+        var socketAddress = configuration.endpoints.apiEndpoint();
         var local = socketAddress instanceof InProcessSocketAddress;
         if (local) {
-            log.info("Starting in process API server: {}", configuration.apiEndpoint);
+            log.info("Starting in process API server: {}", socketAddress);
             var server = InProcessServerBuilder.forAddress(socketAddress)
                                                .addService(new SphynxServer(service))
                                                .executor(Executors.newVirtualThreadPerTaskExecutor())
@@ -266,7 +266,7 @@ public class Sphinx {
                 throw new IllegalStateException("Unable to start local api server on: %s".formatted(sanctum.getId()));
             }
         }
-        log.info("Starting in MTLS API server: {}", configuration.apiEndpoint);
+        log.info("Starting in MTLS API server: {}", configuration.endpoints.apiEndpoint());
         var server = apiServer();
         closeApiServer = Utils.wrapped(server::stop, log);
         try {
@@ -276,7 +276,7 @@ public class Sphinx {
             "Unable to start local api server on: %s".formatted(sanctum == null ? "<null>" : sanctum.getId()));
         }
         apiAddress = server.getAddress();
-        log.info("Started API server on: {} : {}", configuration.apiEndpoint, apiAddress);
+        log.info("Started API server: {}", apiAddress);
         return onStart;
     }
 
@@ -285,7 +285,8 @@ public class Sphinx {
     }
 
     private Geb.ApiServer apiServer() {
-        var address = EndpointProvider.reify(configuration.apiEndpoint);
+        var address = configuration.endpoints.apiEndpoint();
+        log.info("Api server address: {}", address);
         CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) address);
         return new Geb.ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
 
@@ -356,14 +357,13 @@ public class Sphinx {
                                        .map(
                                        s -> new View.Seed(new SelfAddressingIdentifier(s.identifier()), s.endpoint()))
                                        .toList();
-
+        var current = application;
+        if (current == null) {
+            throw new IllegalStateException("application is null");
+        }
         Thread.ofVirtual().start(Utils.wrapped(() -> {
-            var current = application;
-            if (current == null) {
-                return;
-            }
             if (approaches.isEmpty()) {
-                current.bootstrap(viewGossipDuration, onStart, EndpointProvider.reify(configuration.approachEndpoint));
+                current.bootstrap(viewGossipDuration, onStart, configuration.endpoints.approachEndpoint());
             } else {
                 current.testify(Duration.ofMillis(10), approaches, onStart, seeds);
             }

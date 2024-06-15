@@ -4,22 +4,19 @@ services:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
     environment:
       GENESIS: 'true'
-      API_ENDPOINT: '0.0.0.0:8123'
-      APPROACH_ENDPOINT: '0.0.0.0:8124'
-      CLUSTER_ENDPOINT: '0.0.0.0:8125'
-      ADVERTISED_ENDPOINT: '172.17.0.2:8125'
+      BIND_INTERFACE: eth0
+      API: 50000
+      APPROACH: 50001
+      CLUSTER: 50002
     network_mode: bridge
 
   kernel1:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
     environment:
       GENESIS: 'true'
-      APPROACHES: '172.17.0.2:8124'
-      SEEDS: '172.17.0.2:8125#8123'
-      API_ENDPOINT: '0.0.0.0:9123'
-      APPROACH_ENDPOINT: '0.0.0.0:9124'
-      CLUSTER_ENDPOINT: '0.0.0.0:9125'
-      ADVERTISED_ENDPOINT: '172.17.0.2:9125'
+      APPROACHES: '172.17.0.2:50001'
+      SEEDS: '172.17.0.2:50002#50000'
+      BIND_INTERFACE: eth0
     network_mode: bridge
     depends_on:
       bootstrap:
@@ -29,12 +26,9 @@ services:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
     environment:
       GENESIS: 'true'
-      APPROACHES: '172.17.0.2:8124'
-      SEEDS: '172.17.0.2:8125#8123'
-      API_ENDPOINT: '0.0.0.0:10123'
-      APPROACH_ENDPOINT: '0.0.0.0:10124'
-      CLUSTER_ENDPOINT: '0.0.0.0:10125'
-      ADVERTISED_ENDPOINT: '172.17.0.2:10125'
+      APPROACHES: '172.17.0.2:50001'
+      SEEDS: '172.17.0.2:50002#50000'
+      BIND_INTERFACE: eth0
     network_mode: bridge
     depends_on:
       bootstrap:
@@ -44,12 +38,9 @@ services:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
     environment:
       GENESIS: 'true'
-      APPROACHES: '172.17.0.2:8124'
-      SEEDS: '172.17.0.2:8125#8123'
-      API_ENDPOINT: '0.0.0.0:11123'
-      APPROACH_ENDPOINT: '0.0.0.0:11124'
-      CLUSTER_ENDPOINT: '0.0.0.0:11125'
-      ADVERTISED_ENDPOINT: '172.17.0.2:11125'
+      APPROACHES: '172.17.0.2:50001'
+      SEEDS: '172.17.0.2:50002#50000'
+      BIND_INTERFACE: eth0
     network_mode: bridge
     depends_on:
       bootstrap:

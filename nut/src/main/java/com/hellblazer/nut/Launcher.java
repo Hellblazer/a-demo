@@ -44,13 +44,13 @@ import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
  * @author hal.hildebrand
  **/
 public class Launcher {
-    public final static String SEEDS_VAR           = "SEEDS";
-    public final static String APPROACHES_VAR      = "APPROACHES";
-    public final static String GENESIS             = "GENESIS";
-    public final static String API_ENDPOINT        = "API_ENDPOINT";
-    public final static String APPROACH_ENDPOINT   = "APPROACH_ENDPOINT";
-    public final static String CLUSTER_ENDPOINT    = "CLUSTER_ENDPOINT";
-    public final static String ADVERTISED_ENDPOINT = "ADVERTISED_ENDPOINT";
+    public final static String SEEDS_VAR      = "SEEDS";
+    public final static String APPROACHES_VAR = "APPROACHES";
+    public final static String GENESIS        = "GENESIS";
+    public final static String API_PORT       = "API";
+    public final static String APPROACH_PORT  = "APPROACH";
+    public final static String CLUSTER_PORT   = "CLUSTER";
+    public final static String BIND_INTERFACE = "BIND_INTERFACE";
 
     private static final Logger log = LoggerFactory.getLogger(Sphinx.class);
 
@@ -75,14 +75,36 @@ public class Launcher {
 
         var genesis = System.getenv(GENESIS) != null && Boolean.parseBoolean(System.getenv(GENESIS));
         log.info("Generating Genesis: {}", genesis);
+
+        var bindInterface = System.getenv(BIND_INTERFACE);
+        if (bindInterface != null) {
+            var api = System.getenv(API_PORT);
+            var cluster = System.getenv(CLUSTER_PORT);
+            var approach = System.getenv(APPROACH_PORT);
+
+            var endpoints = new SkyConfiguration.InterfaceEndpoints();
+            endpoints.interfaceName = bindInterface;
+
+            if (api != null) {
+                endpoints.apiPort = Integer.parseInt(api);
+            }
+            if (cluster != null) {
+                endpoints.approachPort = Integer.parseInt(approach);
+            }
+            if (approach != null) {
+                endpoints.clusterPort = Integer.parseInt(cluster);
+            }
+            config.endpoints = endpoints;
+        }
         var seeds = System.getenv(SEEDS_VAR);
         var approaches = System.getenv(APPROACHES_VAR);
         if (seeds == null || approaches == null) {
-            log.info("Environment [{}] and [{}}] are empty, bootstrapping", SEEDS_VAR, APPROACHES_VAR);
+            log.info("{} Environment [{}] and [{}}] are empty, bootstrapping", config.endpoints, SEEDS_VAR,
+                     APPROACHES_VAR);
             config.seeds = Collections.emptyList();
             config.approaches = Collections.emptyList();
         } else {
-            log.info("Seeds: [{}] Approaches: [{}}]", seeds, approaches);
+            log.info("{} Seeds: [{}] Approaches: [{}}]", config.endpoints, seeds, approaches);
             config.seeds = Arrays.stream(seeds.split(","))
                                  .map(String::trim)
                                  .map(s -> s.split("@"))
@@ -90,19 +112,6 @@ public class Launcher {
                                                            : new SkyConfiguration.Seedling(digest(s[0]), s[1]))
                                  .toList();
             config.approaches = Arrays.stream(approaches.split(",")).map(String::trim).toList();
-        }
-        var apiEndpoint = System.getenv(API_ENDPOINT);
-        var clusterEndpoint = System.getenv(CLUSTER_ENDPOINT);
-        var approachEndpoint = System.getenv(APPROACH_ENDPOINT);
-
-        if (apiEndpoint != null) {
-            config.apiEndpoint = apiEndpoint;
-        }
-        if (clusterEndpoint != null) {
-            config.clusterEndpoint = clusterEndpoint;
-        }
-        if (approachEndpoint != null) {
-            config.approachEndpoint = approachEndpoint;
         }
 
         config.choamParameters.setGenerateGenesis(genesis);
@@ -142,7 +151,7 @@ public class Launcher {
                     return new SkyConfiguration.Seedling(identifier, split[0]);
                 } catch (StatusRuntimeException e) {
                     if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
-                        log.info("server: {} unavailable", apiEndpoint, e);
+                        log.info("server: {} unavailable", apiEndpoint);
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException ex) {

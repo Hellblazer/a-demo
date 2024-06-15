@@ -1,9 +1,11 @@
 choamParameters:
   generateGenesis: true
 
-clusterEndpoint: localhost:0
-
-apiEndpoint: localhost:0
+endpoints:
+  class: socket
+  cluster: localhost:0
+  api: localhost:0
+  approach: localhost:0
 
 domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"

@@ -17,6 +17,7 @@
 
 package com.hellblazer.nut;
 
+import com.google.common.net.HostAndPort;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.hellblazer.nut.comms.AdmissionsClient;
@@ -61,6 +62,7 @@ import io.netty.handler.ssl.SslContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Provider;
 import java.security.cert.X509Certificate;
@@ -107,7 +109,7 @@ public class SkyApplication {
         certWithKey = sanctorum.member()
                                .getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
                                                              SignatureAlgorithm.DEFAULT);
-        var clusterEndpoint = EndpointProvider.reify(configuration.clusterEndpoint);
+        var clusterEndpoint = configuration.endpoints.clusterEndpoint();
         var local = clusterEndpoint instanceof InProcessSocketAddress;
         certificateValidator = new DelegatedCertificateValidator(CertificateValidator.NONE);
 
@@ -116,7 +118,7 @@ public class SkyApplication {
             clusterServer = new LocalServer(((InProcessSocketAddress) clusterEndpoint).getName(), sanctorum.member());
         } else {
             Function<Member, String> resolver = m -> ((View.Participant) m).endpoint();
-            EndpointProvider ep = new StandardEpProvider(configuration.clusterEndpoint, ClientAuth.REQUIRE,
+            EndpointProvider ep = new StandardEpProvider(configuration.endpoints.clusterEndpoint(), ClientAuth.REQUIRE,
                                                          certificateValidator, resolver);
             clusterServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
                                            serverContextSupplier(certWithKey));
@@ -143,9 +145,7 @@ public class SkyApplication {
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.setId(configuration.group).build());
         ((DynamicContext<Member>) runtime.getContext()).activate(sanctorum.member());
-        var bind = local ? EndpointProvider.allocatePort()
-                         : configuration.advertisedClusterEndpoint != null ? configuration.advertisedClusterEndpoint
-                                                                           : configuration.clusterEndpoint;
+        var bind = local ? EndpointProvider.allocatePort() : encode(configuration.endpoints.clusterEndpoint());
         var choamParameters = configuration.choamParameters;
         choamParameters.setProducer(configuration.producerParameters.build());
         choamParameters.setGenesisViewId(configuration.genesisViewId);
@@ -158,15 +158,15 @@ public class SkyApplication {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 
         var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k);
-        var approachEndpoint = EndpointProvider.reify(configuration.approachEndpoint);
+        var approachEndpoint = configuration.endpoints.approachEndpoint();
 
         RouterSupplier approachServer;
         if (local) {
             approachServer = new LocalServer(((InProcessSocketAddress) approachEndpoint).getName(), sanctorum.member());
         } else {
             Function<Member, String> resolver = m -> ((View.Participant) m).endpoint();
-            EndpointProvider ep = new StandardEpProvider(configuration.approachEndpoint, ClientAuth.OPTIONAL,
-                                                         CertificateValidator.NONE, resolver);
+            EndpointProvider ep = new StandardEpProvider(configuration.endpoints.approachEndpoint(),
+                                                         ClientAuth.OPTIONAL, CertificateValidator.NONE, resolver);
             approachServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
                                             serverContextSupplier(certWithKey));
         }
@@ -263,6 +263,16 @@ public class SkyApplication {
 
     private void enable() {
 
+    }
+
+    private String encode(SocketAddress socketAddress) {
+        if (socketAddress instanceof InProcessSocketAddress addr) {
+            return addr.getName();
+        }
+        if (socketAddress instanceof InetSocketAddress addr) {
+            return HostAndPort.fromParts(addr.getHostName(), addr.getPort()).toString();
+        }
+        return socketAddress.toString();
     }
 
     private ManagedChannel forApproaches(List<SocketAddress> approaches) {

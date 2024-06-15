@@ -17,6 +17,8 @@
 package com.hellblazer.nut;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -34,35 +36,32 @@ import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.membership.Member;
 import com.salesforce.apollo.model.ProcessDomain.ProcessDomainParameters;
+import com.salesforce.apollo.utils.Utils;
+import io.grpc.inprocess.InProcessSocketAddress;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
+import java.net.*;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author hal.hildebrand
  */
 public class SkyConfiguration {
-
     @JsonProperty
-    public String                                              advertisedClusterEndpoint;
+    public Endpoints                                           endpoints;
     @JsonProperty
     public Sphinx.UNWRAPPING                                   unwrapping;
     @JsonProperty
     public IdentityConfiguration                               identity;
     @JsonProperty
     public Shamir                                              shamir;
-    @JsonProperty
-    public String                                              approachEndpoint;
-    @JsonProperty
-    public String                                              clusterEndpoint;
-    @JsonProperty
-    public String                                              apiEndpoint;
     @JsonProperty
     public Digest                                              group;
     @JsonProperty
@@ -99,10 +98,6 @@ public class SkyConfiguration {
         unwrapping = Sphinx.UNWRAPPING.SHAMIR;
         gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
         shamir = new Shamir(3, 2);
-        var localhost = InetAddress.getLoopbackAddress().getHostName();
-        approachEndpoint = EndpointProvider.allocatePort();
-        clusterEndpoint = EndpointProvider.allocatePort();
-        apiEndpoint = EndpointProvider.allocatePort();
         group = DigestAlgorithm.DEFAULT.digest("SLACK");
         connectionCache = ServerConnectionCache.newBuilder().setTarget(30);
         context = DynamicContext.newBuilder();
@@ -134,6 +129,181 @@ public class SkyConfiguration {
             throw new IllegalStateException("Cannot deserialize configuration", e);
         }
         return config;
+    }
+
+    @JsonSubTypes({ @JsonSubTypes.Type(value = LocalEndpoints.class, name = "local"),
+                    @JsonSubTypes.Type(value = NetworkInterface.class, name = "network"),
+                    @JsonSubTypes.Type(value = SocketEndpoints.class, name = "socket") })
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "class")
+    public interface Endpoints {
+        SocketAddress apiEndpoint();
+
+        SocketAddress approachEndpoint();
+
+        SocketAddress clusterEndpoint();
+    }
+
+    public static class InterfaceEndpoints implements Endpoints {
+        @JsonProperty
+        public boolean preferIpV6   = false;
+        @JsonProperty
+        public String  interfaceName;
+        @JsonProperty
+        public int     apiPort      = 0;
+        @JsonProperty
+        public int     approachPort = 0;
+        @JsonProperty
+        public int     clusterPort  = 0;
+
+        private SocketAddress resolvedApiEndpoint;
+        private SocketAddress resolvedApproachEndpoint;
+        private SocketAddress resolvedClusterEndpoint;
+
+        @Override
+        public SocketAddress apiEndpoint() {
+            if (resolvedApiEndpoint != null) {
+                return resolvedApiEndpoint;
+            }
+            var address = getAddress();
+            resolvedApiEndpoint = new InetSocketAddress(address, apiPort == 0 ? Utils.allocatePort(address) : apiPort);
+            return resolvedApiEndpoint;
+        }
+
+        @Override
+        public SocketAddress approachEndpoint() {
+            if (resolvedApproachEndpoint != null) {
+                return resolvedApproachEndpoint;
+            }
+            var address = getAddress();
+            resolvedApproachEndpoint = new InetSocketAddress(address, approachPort == 0 ? Utils.allocatePort(address)
+                                                                                        : approachPort);
+            return resolvedApproachEndpoint;
+        }
+
+        @Override
+        public SocketAddress clusterEndpoint() {
+            if (resolvedClusterEndpoint != null) {
+                return resolvedClusterEndpoint;
+            }
+            var address = getAddress();
+            resolvedClusterEndpoint = new InetSocketAddress(address, clusterPort == 0 ? Utils.allocatePort(address)
+                                                                                      : clusterPort);
+            return resolvedClusterEndpoint;
+        }
+
+        private InetAddress getAddress() {
+            var inf = getNetworkInterface();
+            if (preferIpV6) {
+                var ipv6 = inf.getInterfaceAddresses()
+                              .stream()
+                              .filter(add -> add.getAddress() instanceof Inet6Address)
+                              .map(add -> add.getAddress())
+                              .findFirst();
+                if (ipv6.isPresent()) {
+                    return ipv6.get();
+                }
+            }
+            LoggerFactory.getLogger(SkyConfiguration.class).info("Network interface addresses: {}", inf.getInterfaceAddresses());
+            var address = inf.getInterfaceAddresses()
+                             .stream()
+                             .filter(add -> add.getAddress() instanceof Inet4Address)
+                             .map(add -> add.getAddress())
+                             .findFirst();
+            if (address.isPresent()) {
+                return address.get();
+            }
+            throw new IllegalStateException("unable to resolve address of network interfaces: " + interfaceName);
+        }
+
+        private NetworkInterface getNetworkInterface() {
+            try {
+                return NetworkInterface.getByName(interfaceName);
+            } catch (SocketException e) {
+                throw new IllegalStateException("Cannot retrieve Network Interface: " + interfaceName, e);
+            }
+        }
+    }
+
+    public static class LocalEndpoints implements Endpoints {
+        @JsonProperty
+        public String unique = UUID.randomUUID().toString();
+        @JsonProperty
+        public String api;
+        @JsonProperty
+        public String approach;
+        @JsonProperty
+        public String cluster;
+
+        private SocketAddress resolvedApiEndpoint;
+        private SocketAddress resolvedApproachEndpoint;
+        private SocketAddress resolvedClusterEndpoint;
+
+        @Override
+        public SocketAddress apiEndpoint() {
+            if (resolvedApiEndpoint != null) {
+                return resolvedApiEndpoint;
+            }
+            resolvedApiEndpoint = new InProcessSocketAddress("%s:%s".formatted(unique, api));
+            return resolvedApiEndpoint;
+        }
+
+        @Override
+        public SocketAddress approachEndpoint() {
+            if (resolvedApproachEndpoint != null) {
+                return resolvedApproachEndpoint;
+            }
+            resolvedApproachEndpoint = new InProcessSocketAddress("%s:%s".formatted(unique, approach));
+            return resolvedApproachEndpoint;
+        }
+
+        @Override
+        public SocketAddress clusterEndpoint() {
+            if (resolvedClusterEndpoint != null) {
+                return resolvedClusterEndpoint;
+            }
+            resolvedClusterEndpoint = new InProcessSocketAddress("%s:%s".formatted(unique, cluster));
+            return resolvedClusterEndpoint;
+        }
+    }
+
+    public static class SocketEndpoints implements Endpoints {
+        @JsonProperty
+        public String api;
+        @JsonProperty
+        public String approach;
+        @JsonProperty
+        public String cluster;
+
+        private SocketAddress resolvedApiEndpoint;
+        private SocketAddress resolvedApproachEndpoint;
+        private SocketAddress resolvedClusterEndpoint;
+
+        @Override
+        public SocketAddress apiEndpoint() {
+            if (resolvedApiEndpoint != null) {
+                return resolvedApiEndpoint;
+            }
+            resolvedApiEndpoint = EndpointProvider.reify(api);
+            return resolvedApiEndpoint;
+        }
+
+        @Override
+        public SocketAddress approachEndpoint() {
+            if (resolvedApproachEndpoint != null) {
+                return resolvedApproachEndpoint;
+            }
+            resolvedApproachEndpoint = EndpointProvider.reify(approach);
+            return resolvedApproachEndpoint;
+        }
+
+        @Override
+        public SocketAddress clusterEndpoint() {
+            if (resolvedClusterEndpoint != null) {
+                return resolvedClusterEndpoint;
+            }
+            resolvedClusterEndpoint = EndpointProvider.reify(cluster);
+            return resolvedClusterEndpoint;
+        }
     }
 
     public record IdentityConfiguration(Path keyStore, String keyStoreType, String kerlURL, Path identityFile,

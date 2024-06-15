@@ -30,11 +30,11 @@ producerParameters:
   ethereal:
     epochLength: 7
 
-clusterEndpoint: <clusterEndpoint>
-
-apiEndpoint: <apiEndpoint>
-
-approachEndpoint: <approachEndpoint>
+endpoints:
+    class: socket
+    cluster: <clusterEndpoint>
+    api: <apiEndpoint>
+    approach: <approachEndpoint>
 
 shamir:
     shares: <n>
