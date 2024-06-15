@@ -191,23 +191,30 @@ public class SkyConfiguration {
             return resolvedClusterEndpoint;
         }
 
+        @Override
+        public String toString() {
+            return "Interface {" + "preferIpV6=" + preferIpV6 + ", interface='" + interfaceName + ", api="
+            + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster=" + clusterEndpoint() + '}';
+        }
+
         private InetAddress getAddress() {
             var inf = getNetworkInterface();
             if (preferIpV6) {
                 var ipv6 = inf.getInterfaceAddresses()
                               .stream()
-                              .filter(add -> add.getAddress() instanceof Inet6Address)
-                              .map(add -> add.getAddress())
+                              .map(InterfaceAddress::getAddress)
+                              .filter(address -> address instanceof Inet6Address)
                               .findFirst();
                 if (ipv6.isPresent()) {
                     return ipv6.get();
                 }
             }
-            LoggerFactory.getLogger(SkyConfiguration.class).info("Network interface addresses: {}", inf.getInterfaceAddresses());
+            LoggerFactory.getLogger(SkyConfiguration.class)
+                         .trace("Network interface addresses: {}", inf.getInterfaceAddresses());
             var address = inf.getInterfaceAddresses()
                              .stream()
-                             .filter(add -> add.getAddress() instanceof Inet4Address)
-                             .map(add -> add.getAddress())
+                             .map(InterfaceAddress::getAddress)
+                             .filter(addAddress -> addAddress instanceof Inet4Address)
                              .findFirst();
             if (address.isPresent()) {
                 return address.get();
@@ -264,6 +271,12 @@ public class SkyConfiguration {
             resolvedClusterEndpoint = new InProcessSocketAddress("%s:%s".formatted(unique, cluster));
             return resolvedClusterEndpoint;
         }
+
+        @Override
+        public String toString() {
+            return "Local {api=" + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster=" + clusterEndpoint()
+            + '}';
+        }
     }
 
     public static class SocketEndpoints implements Endpoints {
@@ -303,6 +316,12 @@ public class SkyConfiguration {
             }
             resolvedClusterEndpoint = EndpointProvider.reify(cluster);
             return resolvedClusterEndpoint;
+        }
+
+        @Override
+        public String toString() {
+            return "Socket {api=" + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster="
+            + clusterEndpoint() + '}';
         }
     }
 

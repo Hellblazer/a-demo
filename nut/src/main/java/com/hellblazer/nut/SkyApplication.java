@@ -267,11 +267,15 @@ public class SkyApplication {
 
     private String encode(SocketAddress socketAddress) {
         if (socketAddress instanceof InProcessSocketAddress addr) {
+            log.trace("** Encoding InProc address: {}", socketAddress);
             return addr.getName();
         }
         if (socketAddress instanceof InetSocketAddress addr) {
-            return HostAndPort.fromParts(addr.getHostName(), addr.getPort()).toString();
+            var hostAndPort = HostAndPort.fromParts(addr.getAddress().getHostAddress(), addr.getPort());
+            log.trace("** Encoding socket address: {} translated: {}", socketAddress, hostAndPort);
+            return hostAndPort.toString();
         }
+        log.info("** Encoding ? address: {}", socketAddress);
         return socketAddress.toString();
     }
 

@@ -22,11 +22,15 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
+    <logger name="com.salesforce.apollo.archipelago.ServerConnectionCache" level="warn" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
     <logger name="liquibase" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.archipelago" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.archipelago" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -50,7 +54,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.choam.CHOAM" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
