@@ -47,6 +47,10 @@ public class Launcher {
     public final static String SEEDS_VAR      = "SEEDS";
     public final static String APPROACHES_VAR = "APPROACHES";
     public final static String GENESIS        = "GENESIS";
+    public final static String API_PORT       = "API";
+    public final static String APPROACH_PORT  = "APPROACH";
+    public final static String CLUSTER_PORT   = "CLUSTER";
+    public final static String BIND_INTERFACE = "BIND_INTERFACE";
 
     private static final Logger log = LoggerFactory.getLogger(Sphinx.class);
 
@@ -71,22 +75,45 @@ public class Launcher {
 
         var genesis = System.getenv(GENESIS) != null && Boolean.parseBoolean(System.getenv(GENESIS));
         log.info("Generating Genesis: {}", genesis);
+
+        var bindInterface = System.getenv(BIND_INTERFACE);
+        if (bindInterface != null) {
+            var api = System.getenv(API_PORT);
+            var cluster = System.getenv(CLUSTER_PORT);
+            var approach = System.getenv(APPROACH_PORT);
+
+            var endpoints = new SkyConfiguration.InterfaceEndpoints();
+            endpoints.interfaceName = bindInterface;
+
+            if (api != null) {
+                endpoints.apiPort = Integer.parseInt(api);
+            }
+            if (cluster != null) {
+                endpoints.approachPort = Integer.parseInt(approach);
+            }
+            if (approach != null) {
+                endpoints.clusterPort = Integer.parseInt(cluster);
+            }
+            config.endpoints = endpoints;
+        }
         var seeds = System.getenv(SEEDS_VAR);
         var approaches = System.getenv(APPROACHES_VAR);
         if (seeds == null || approaches == null) {
-            log.info("Environment [{}] and [{}}] are empty, bootstrapping", SEEDS_VAR, APPROACHES_VAR);
+            log.info("{} Environment [{}] and [{}}] are empty, bootstrapping", config.endpoints, SEEDS_VAR,
+                     APPROACHES_VAR);
             config.seeds = Collections.emptyList();
             config.approaches = Collections.emptyList();
         } else {
-            log.info("Seeds: [{}] Approaches: [{}}]", seeds, approaches);
+            log.info("{} Seeds: [{}] Approaches: [{}}]", config.endpoints, seeds, approaches);
             config.seeds = Arrays.stream(seeds.split(","))
                                  .map(String::trim)
                                  .map(s -> s.split("@"))
-                                 .map(s -> (s.length == 1) ? new SkyConfiguration.Seedling(resolve(s[0]), s[0])
+                                 .map(s -> (s.length == 1) ? resolve(s[0])
                                                            : new SkyConfiguration.Seedling(digest(s[0]), s[1]))
                                  .toList();
             config.approaches = Arrays.stream(approaches.split(",")).map(String::trim).toList();
         }
+
         config.choamParameters.setGenerateGenesis(genesis);
         Sphinx sphinx = argv.length == 1 ? new Sphinx(config) : new Sphinx(config, argv[1]);
 
@@ -106,18 +133,25 @@ public class Launcher {
     }
 
     // Cheesy work around for full bootstrap - do better HSH
-    private static Digest resolve(String server) {
-        var endpoint = HostAndPort.fromString(server);
-        var client = apiClient(new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
+    private static SkyConfiguration.Seedling resolve(String seedSpec) {
+        var split = seedSpec.split("#");
+        if (split.length != 2) {
+            throw new IllegalArgumentException("Invalid seed spec: " + seedSpec);
+        }
+        var endpoint = HostAndPort.fromString(split[0]);
+        var apiPort = Integer.parseInt(split[1]);
+        var apiEndpoint = HostAndPort.fromParts(endpoint.getHost(), apiPort);
+        var client = apiClient(new InetSocketAddress(endpoint.getHost(), apiPort));
         try {
             while (true) {
                 try {
-                    log.info("resolving server: {}", endpoint);
+                    log.info("resolving server: {}", apiEndpoint);
                     var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
-                    return Digest.from(sphynxClient.identifier(Empty.getDefaultInstance()));
+                    var identifier = Digest.from(sphynxClient.identifier(Empty.getDefaultInstance()));
+                    return new SkyConfiguration.Seedling(identifier, split[0]);
                 } catch (StatusRuntimeException e) {
                     if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
-                        log.info("server: {} unavailable", endpoint);
+                        log.info("server: {} unavailable", apiEndpoint);
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException ex) {

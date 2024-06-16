@@ -1,0 +1,11 @@
+# Bootstrap member
+services:
+  bootstrap:
+    image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
+    environment:
+      GENESIS: 'true'
+      BIND_INTERFACE: eth0
+      API: 50000
+      APPROACH: 50001
+      CLUSTER: 50002
+    network_mode: bridge

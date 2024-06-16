@@ -17,6 +17,7 @@
 
 package com.hellblazer.nut;
 
+import com.google.common.net.HostAndPort;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.hellblazer.nut.comms.AdmissionsClient;
@@ -61,6 +62,7 @@ import io.netty.handler.ssl.SslContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Provider;
 import java.security.cert.X509Certificate;
@@ -92,9 +94,9 @@ public class SkyApplication {
     private final    SanctumSanctorum              sanctorum;
     private final    Router                        admissionsComms;
     private final    Clock                         clock;
-    private final AtomicBoolean                 started   = new AtomicBoolean();
-    private final DelegatedCertificateValidator certificateValidator;
-    private final Lock                          tokenLock = new ReentrantLock();
+    private final    AtomicBoolean                 started   = new AtomicBoolean();
+    private final    DelegatedCertificateValidator certificateValidator;
+    private final    Lock                          tokenLock = new ReentrantLock();
     private volatile Token                         token;
     private volatile ManagedChannel                joinChannel;
     private          int                           retries   = 5;
@@ -107,7 +109,7 @@ public class SkyApplication {
         certWithKey = sanctorum.member()
                                .getCertificateWithPrivateKey(Instant.now(), Duration.ofHours(1),
                                                              SignatureAlgorithm.DEFAULT);
-        var clusterEndpoint = EndpointProvider.reify(configuration.clusterEndpoint);
+        var clusterEndpoint = configuration.endpoints.clusterEndpoint();
         var local = clusterEndpoint instanceof InProcessSocketAddress;
         certificateValidator = new DelegatedCertificateValidator(CertificateValidator.NONE);
 
@@ -116,7 +118,7 @@ public class SkyApplication {
             clusterServer = new LocalServer(((InProcessSocketAddress) clusterEndpoint).getName(), sanctorum.member());
         } else {
             Function<Member, String> resolver = m -> ((View.Participant) m).endpoint();
-            EndpointProvider ep = new StandardEpProvider(configuration.clusterEndpoint, ClientAuth.REQUIRE,
+            EndpointProvider ep = new StandardEpProvider(configuration.endpoints.clusterEndpoint(), ClientAuth.REQUIRE,
                                                          certificateValidator, resolver);
             clusterServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
                                            serverContextSupplier(certWithKey));
@@ -138,13 +140,12 @@ public class SkyApplication {
         clusterComms = clusterServer.router(configuration.connectionCache.setCredentials(credentials),
                                             RouterImpl::defaultServerLimit, null,
                                             Collections.singletonList(new FernetServerInterceptor()), validator);
-        log.info("Cluster communications: {} on: {}", clusterEndpoint, sanctorum.getId());
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setOnFailure(onFailure)
                                                   .setCommunications(clusterComms)
                                                   .setContext(configuration.context.setId(configuration.group).build());
         ((DynamicContext<Member>) runtime.getContext()).activate(sanctorum.member());
-        var bind = local ? EndpointProvider.allocatePort() : configuration.clusterEndpoint;
+        var bind = local ? EndpointProvider.allocatePort() : encode(configuration.endpoints.clusterEndpoint());
         var choamParameters = configuration.choamParameters;
         choamParameters.setProducer(configuration.producerParameters.build());
         choamParameters.setGenesisViewId(configuration.genesisViewId);
@@ -157,15 +158,15 @@ public class SkyApplication {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 
         var gorgoneionParameters = configuration.gorgoneionParameters.setKerl(k);
-        var approachEndpoint = EndpointProvider.reify(configuration.approachEndpoint);
+        var approachEndpoint = configuration.endpoints.approachEndpoint();
 
         RouterSupplier approachServer;
         if (local) {
             approachServer = new LocalServer(((InProcessSocketAddress) approachEndpoint).getName(), sanctorum.member());
         } else {
             Function<Member, String> resolver = m -> ((View.Participant) m).endpoint();
-            EndpointProvider ep = new StandardEpProvider(configuration.approachEndpoint, ClientAuth.OPTIONAL,
-                                                         CertificateValidator.NONE, resolver);
+            EndpointProvider ep = new StandardEpProvider(configuration.endpoints.approachEndpoint(),
+                                                         ClientAuth.OPTIONAL, CertificateValidator.NONE, resolver);
             approachServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
                                             serverContextSupplier(certWithKey));
         }
@@ -224,7 +225,8 @@ public class SkyApplication {
         }
         clusterComms.start();
         admissionsComms.start();
-        node.setDhtVerifiers();
+        //        node.setDhtVerifiers();
+        node.setVerifiersNONE();
         node.start();
         node.getFoundation().start(onStart, viewGossipDuration, seeds);
         log.info("Started Sky: {}", sanctorum.getId());
@@ -263,6 +265,20 @@ public class SkyApplication {
 
     }
 
+    private String encode(SocketAddress socketAddress) {
+        if (socketAddress instanceof InProcessSocketAddress addr) {
+            log.trace("** Encoding InProc address: {}", socketAddress);
+            return addr.getName();
+        }
+        if (socketAddress instanceof InetSocketAddress addr) {
+            var hostAndPort = HostAndPort.fromParts(addr.getAddress().getHostAddress(), addr.getPort());
+            log.trace("** Encoding socket address: {} translated: {}", socketAddress, hostAndPort);
+            return hostAndPort.toString();
+        }
+        log.info("** Encoding ? address: {}", socketAddress);
+        return socketAddress.toString();
+    }
+
     private ManagedChannel forApproaches(List<SocketAddress> approaches) {
         var local = !approaches.isEmpty() && approaches.getFirst() instanceof InProcessSocketAddress;
         NameResolver.Factory factory = new SimpleNameResolverFactory(approaches);
@@ -274,8 +290,10 @@ public class SkyApplication {
                                           .usePlaintext()
                                           .build();
         } else {
-            com.hellblazer.nut.comms.MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo", certWithKey.getX509Certificate(),
-                                                                        certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId);
+            com.hellblazer.nut.comms.MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo",
+                                                                        certWithKey.getX509Certificate(),
+                                                                        certWithKey.getPrivateKey(),
+                                                                        CertificateValidator.NONE, contextId);
             return client.getChannel();
         }
     }

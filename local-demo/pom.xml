@@ -8,110 +8,9 @@
         <artifactId>sky.app</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>nut</artifactId>
-
-    <properties>
-        <db.password>foo</db.password>
-        <tron.log>info</tron.log>
-        <choam.log>info</choam.log>
-    </properties>
-
-
-    <profiles>
-        <profile>
-            <id>native-agent</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <argLine>
-                                -agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image,access-filter-file=src/test/resources/filter.json,caller-filter-file=src/test/resources/filter.json
-                            </argLine>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+    <artifactId>local-demo</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>com.salesforce.apollo</groupId>
-            <artifactId>gorgoneion</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.salesforce.apollo</groupId>
-            <artifactId>gorgoneion-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.salesforce.apollo</groupId>
-            <artifactId>model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.salesforce.apollo</groupId>
-            <artifactId>grpc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.mattbertolini</groupId>
-            <artifactId>liquibase-slf4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-        </dependency>
-        <dependency>
-            <!-- necessary for Java 9+ -->
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>annotations-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.protobuf</groupId>
-                    <artifactId>protobuf-java</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jdk8</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.macasaet.fernet</groupId>
-            <artifactId>fernet-java8</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.codahale</groupId>
-            <artifactId>shamir</artifactId>
-        </dependency>
 
         <!-- Test only dependencies below this line -->
         <dependency>
@@ -129,11 +28,6 @@
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>ST4</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -147,10 +41,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -197,89 +87,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.liquibase</groupId>
-                <artifactId>liquibase-maven-plugin</artifactId>
-                <configuration>
-                    <driver>org.h2.Driver</driver>
-                    <url>jdbc:h2:file:${project.build.directory}/data/jooq;IGNORECASE=true;DB_CLOSE_ON_EXIT=FALSE</url>
-                    <username>bootstrap</username>
-                    <password>${db.password}</password>
-                    <verbose>true</verbose>
-                    <changeLogFile>generate.xml</changeLogFile>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>initialize database</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>update</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.h2database</groupId>
-                        <artifactId>h2</artifactId>
-                        <version>${h2.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>com.salesforce.apollo</groupId>
-                        <artifactId>schemas</artifactId>
-                        <version>${apollo.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>org.jooq</groupId>
-                <artifactId>jooq-codegen-maven</artifactId>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.h2database</groupId>
-                        <artifactId>h2</artifactId>
-                        <version>${h2.version}</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <jdbc>
-                        <driver>org.h2.Driver</driver>
-                        <url>
-                            jdbc:h2:file:${project.build.directory}/data/jooq;IGNORECASE=true;DB_CLOSE_ON_EXIT=FALSE
-                        </url>
-                        <user>bootstrap</user>
-                        <password>${db.password}</password>
-                    </jdbc>
-                    <generator>
-                        <database>
-                            <name>org.jooq.meta.h2.H2Database</name>
-                            <includes>.*</includes>
-                            <excludes></excludes>
-                            <schemata>
-                                <schema>
-                                    <inputSchema>NUT</inputSchema>
-                                </schema>
-                            </schemata>
-                        </database>
-                        <generate></generate>
-                        <target>
-                            <packageName>com.hellblazer.nut.schema</packageName>
-                            <directory>target/generated-sources/jooq</directory>
-                        </target>
-                    </generator>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
             </plugin>
         </plugins>
         <pluginManagement>

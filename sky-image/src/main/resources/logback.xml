@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+    <!-- Stop output INFO at start -->
     <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -21,51 +22,39 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
+    <logger name="com.salesforce.apollo.archipelago.ServerConnectionCache" level="warn" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
     <logger name="liquibase" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.chiralbehaviors.tron" level="warn" additivity="false">
+    <logger name="com.salesforce.apollo.archipelago" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.CHOAM" level="WARN" additivity="false">
+    <logger name="com.salesforce.apollo.ring" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.support.TxDataSource" level="warn" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.salesforce.apollo.choam.support.OneShot" level="warn" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.salesforce.apollo.choam.support.BatchingQueue" level="warn" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.salesforce.apollo.archipelago" level="trace" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.salesforce.apollo.ring" level="warn" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.salesforce.apollo.membership" level="info" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.salesforce.apollo.fireflies" level="warn" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.salesforce.apollo.gorgoneion" level="trace" additivity="false">
+    <logger name="com.salesforce.apollo.fireflies" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
     <logger name="com.salesforce.apollo.stereotomy" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.cryptography" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.ethereal" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.choam.CHOAM" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -77,7 +66,23 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <root level="trace">
+    <logger name="com.salesforce.apollo.membership" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.context" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.chiralbehaviors" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <root level="info">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
