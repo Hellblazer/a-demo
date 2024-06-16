@@ -1,12 +1,27 @@
 
+viewGossipDuration: PT0H0M00.5S
+
+choamParameters:
+  checkpointBlockDelta: 100
+  gossipDuration: PT0H0M00.5S
+  synchronizationCycles: 10
+  regenerationCycles: 10
+
+producerParameters:
+  maxBatchByteSize: 10485760
+  maxBatchCount: 3000
+  gossipDuration: PT0H0M00.5S
+  ethereal:
+    epochLength: 97
+
 domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"
   dhtOperationsTimeout: PT0H0M10S
   dhtDbUrl: "jdbc:h2:mem:dht;DB_CLOSE_DELAY=-1"
   checkpointBaseDir: ./check-points
-  dhtOpsFrequency: PT0H0M00001S
+  dhtOpsFrequency: PT0H0M00.001S
   dhtFpr: 0.000125
-  dhtEventValidTO: PT0H0M30S
+  dhtEventValidTO: PT0H0M10S
   dhtBias: 3
   jdbcMaxConnections: 10
   dhtPbyz: 0.01
