@@ -1,18 +1,18 @@
 
-viewGossipDuration: PT0H0M00.5S
+viewGossipDuration: PT0H0M00.03S
 
 choamParameters:
-  checkpointBlockDelta: 100
-  gossipDuration: PT0H0M00.5S
+  checkpointBlockDelta: 7
+  gossipDuration: PT0H0M00.03S
   synchronizationCycles: 10
   regenerationCycles: 10
 
 producerParameters:
   maxBatchByteSize: 10485760
   maxBatchCount: 3000
-  gossipDuration: PT0H0M00.5S
+  gossipDuration: PT0H0M00.03S
   ethereal:
-    epochLength: 97
+    epochLength: 7
 
 domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"
