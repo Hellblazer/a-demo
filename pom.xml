@@ -11,6 +11,7 @@
         <module>nut</module>
         <module>sky</module>
         <module>sky-image</module>
+        <module>local-demo</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
 

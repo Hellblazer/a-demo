@@ -1,0 +1,10 @@
+# Generic Node after kernel has been bootstrapped
+services:
+  node:
+    image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
+    environment:
+      GENESIS: 'false'
+      APPROACHES: '172.17.0.2:50001'
+      SEEDS: '172.17.0.2:50002#50000'
+      BIND_INTERFACE: eth0
+    network_mode: bridge

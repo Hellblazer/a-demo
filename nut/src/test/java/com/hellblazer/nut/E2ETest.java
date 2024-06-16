@@ -121,24 +121,24 @@ public class E2ETest {
             });
             unwrap(mi, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
             System.out.println();
-            System.out.format("** Member: %s has been started\n", (mi + 1));
+            System.out.format("** Member: %s started\n", (mi + 1));
             System.out.println();
         });
 
         System.out.println();
-        System.out.println("** Minimal quorum has started their views");
+        System.out.println("** Minimal quorum have started their views");
         System.out.println();
 
         var domains = sphinxes.subList(0, 4);
         Utils.waitForCondition(120_000, 1_000,
-                               () -> failures.get() ? true : domains.stream().allMatch(s -> s.active()));
-        assertTrue(domains.stream().allMatch(s -> s.active()),
+                               () -> failures.get() || domains.stream().allMatch(Sphinx::active));
+        assertTrue(domains.stream().allMatch(Sphinx::active),
                    "** Minimal quorum did not become active : " + (domains.stream()
                                                                           .filter(c -> !c.active())
-                                                                          .map(d -> d.logState())
+                                                                          .map(Sphinx::logState)
                                                                           .toList()));
         System.out.println();
-        System.out.println("** Minimal quorum is active: " + domains.stream().map(s -> s.id()).toList());
+        System.out.println("** Minimal quorum is active: " + domains.stream().map(Sphinx::id).toList());
         System.out.println();
 
         // Bring up the rest of the nodes.
@@ -159,7 +159,7 @@ public class E2ETest {
         });
 
         Utils.waitForCondition(300_000, 1_000,
-                               () -> failures.get() ? true : sphinxes.stream().allMatch(Sphinx::active));
+                               () -> failures.get() || sphinxes.stream().allMatch(Sphinx::active));
         if (!sphinxes.stream().allMatch(Sphinx::active)) {
             System.out.println();
             fail("\n\nNodes did not fully activate: \n" + (sphinxes.stream()
