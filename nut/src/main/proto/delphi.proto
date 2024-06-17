@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.hellblazer.delphi.proto";
+option java_outer_classname = "DelphiProto";
+option objc_class_prefix = "Delphi";
+import "google/protobuf/empty.proto";
+
+package com.hellblazer.delphi;
+
+service Oracle_ {
+  rpc addAssertion(Assertion_) returns (google.protobuf.Empty){}
+  rpc addNamespace(Namespace_) returns (google.protobuf.Empty){}
+  rpc addObject(Object_) returns (google.protobuf.Empty){}
+  rpc addRelation(Relation_) returns (google.protobuf.Empty){}
+
+  rpc check(Assertion_) returns(AssertionCheck) {}
+
+  rpc deleteAssertion(Assertion_) returns (google.protobuf.Empty){}
+  rpc deleteNamespace(Namespace_) returns (google.protobuf.Empty){}
+  rpc deleteObject(Object_) returns (google.protobuf.Empty){}
+  rpc deleteRelation(Relation_) returns (google.protobuf.Empty){}
+
+  rpc expandSubject(Object_) returns (Subjects) {}
+  rpc expandObject(Subject_) returns (Objects) {}
+  rpc expandSubjects(ObjectPredicate) returns (Subjects) {}
+  rpc expandObjects(SubjectPredicate) returns (Objects) {}
+
+  rpc mapObject(ObjectMap) returns (google.protobuf.Empty) {}
+  rpc mapSubject(SubjectMap) returns (google.protobuf.Empty) {}
+  rpc mapRelation(RelationMap) returns (google.protobuf.Empty) {}
+
+  rpc readSubjects(Objects) returns (Subjects) {}
+  rpc readObjects(Subjects) returns (Objects) {}
+  rpc readSubjectsMatching(ObjectPredicates) returns (Subjects) {}
+  rpc readObjectsMatching(SubjectPredicates) returns (Objects) {}
+
+  rpc unmapObject(ObjectMap) returns (google.protobuf.Empty) {}
+  rpc unmapSubject(SubjectMap) returns (google.protobuf.Empty) {}
+  rpc unmapRelation(RelationMap) returns (google.protobuf.Empty) {}
+
+  rpc subjects(ObjectPredicate) returns (Subjects) {}
+}
+
+message Assertion_ {
+  Object_ object = 1;
+  Subject_ subject = 2;
+}
+
+message Namespace_ {
+  string name = 1;
+}
+
+message Object_ {
+  Namespace_ namespace = 1;
+  string name = 2;
+  Relation_ relation = 3;
+}
+
+message Relation_ {
+  Namespace_ namespace = 1;
+  string name = 2;
+}
+
+message Subject_ {
+  Namespace_ namespace = 1;
+  string name = 2;
+  Relation_ relation = 3;
+}
+
+message AssertionCheck {
+  bool result = 1;
+}
+
+message ObjectMap {
+  Object_ parent = 1;
+  Object_ child = 2;
+}
+
+message SubjectMap {
+  Subject_ parent = 1;
+  Subject_ child = 2;
+}
+
+message RelationMap {
+  Relation_ parent = 1;
+  Relation_ child = 2;
+}
+
+message SubjectPredicate {
+  Relation_ predicate = 1;
+  Subject_ subject = 2;
+}
+
+message SubjectPredicates {
+  Relation_ predicate = 1;
+  repeated Subject_ subjects = 2;
+}
+
+message ObjectPredicate {
+  Relation_ predicate = 1;
+  Object_ object = 2;
+}
+
+message ObjectPredicates {
+  Relation_ predicate = 1;
+  repeated Object_ objects = 2;
+}
+
+message Subjects {
+  repeated Subject_ subjects = 1;
+}
+
+message Objects {
+  repeated Object_ objects = 1;
+}
