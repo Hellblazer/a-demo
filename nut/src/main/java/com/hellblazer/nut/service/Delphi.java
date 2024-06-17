@@ -16,124 +16,355 @@
  */
 package com.hellblazer.nut.service;
 
+import com.google.protobuf.Empty;
+import com.hellblazer.delphi.proto.*;
 import com.salesforce.apollo.delphinius.Oracle;
+import io.grpc.stub.StreamObserver;
 
 import java.sql.SQLException;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 /**
  * @author hal.hildebrand
  **/
-public class Delphi {
+public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
     private final Oracle oracle;
 
     public Delphi(Oracle oracle) {
         this.oracle = oracle;
     }
 
-    public CompletableFuture<Void> add(Oracle.Assertion assertion) {
-        return oracle.add(assertion);
+    public static Oracle.Assertion assertion(Assertion_ assertion) {
+        return new Oracle.Assertion(subject(assertion.getSubject()), object(assertion.getObject()));
     }
 
-    public CompletableFuture<Void> add(Oracle.Namespace namespace) {
-        return oracle.add(namespace);
+    public static Oracle.Object object(Object_ object) {
+        return new Oracle.Object(namespace(object.getNamespace()), object.getName(), relation(object.getRelation()));
     }
 
-    public CompletableFuture<Void> add(Oracle.Object object) {
-        return oracle.add(object);
+    private static Oracle.Namespace namespace(Namespace_ namespace) {
+        return new Oracle.Namespace(namespace.getName());
     }
 
-    public CompletableFuture<Void> add(Oracle.Relation relation) {
-        return oracle.add(relation);
+    public static Oracle.Subject subject(Subject_ subject) {
+        return new Oracle.Subject(namespace(subject.getNamespace()), subject.getName(),
+                                  relation(subject.getRelation()));
     }
 
-    public CompletableFuture<Void> add(Oracle.Subject subject) {
-        return oracle.add(subject);
+    public static Oracle.Relation relation(Relation_ relation) {
+        return new Oracle.Relation(namespace(relation.getNamespace()), relation.getName());
     }
 
-    public boolean check(Oracle.Assertion assertion) throws SQLException {
-        return oracle.check(assertion);
+    public static Object_.Builder object_(Oracle.Object o) {
+        return Object_.newBuilder().setNamespace(namespace_(o.namespace()));
     }
 
-    public CompletableFuture<Void> delete(Oracle.Assertion assertion) {
-        return oracle.delete(assertion);
+    public static Subject_.Builder subject_(Oracle.Subject o) {
+        return Subject_.newBuilder()
+                       .setNamespace(namespace_(o.namespace()))
+                       .setName(o.name())
+                       .setRelation(relation_(o.relation()));
     }
 
-    public CompletableFuture<Void> delete(Oracle.Namespace namespace) {
-        return oracle.delete(namespace);
+    public static Relation_.Builder relation_(Oracle.Relation o) {
+        return Relation_.newBuilder().setNamespace(namespace_(o.namespace())).setName(o.name());
     }
 
-    public CompletableFuture<Void> delete(Oracle.Object object) {
-        return oracle.delete(object);
+    public static Namespace_.Builder namespace_(Oracle.Namespace o) {
+        return Namespace_.newBuilder().setName(o.name());
     }
 
-    public CompletableFuture<Void> delete(Oracle.Relation relation) {
-        return oracle.delete(relation);
+    @Override
+    public void addAssertion(Assertion_ request, StreamObserver<Empty> responseObserver) {
+        oracle.add(assertion(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
     }
 
-    public CompletableFuture<Void> delete(Oracle.Subject subject) {
-        return oracle.delete(subject);
+    @Override
+    public void addNamespace(Namespace_ request, StreamObserver<Empty> responseObserver) {
+        oracle.add(namespace(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
     }
 
-    public List<Oracle.Subject> expand(Oracle.Object object) throws SQLException {
-        return oracle.expand(object);
+    @Override
+    public void addObject(Object_ request, StreamObserver<Empty> responseObserver) {
+        oracle.add(object(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
     }
 
-    public List<Oracle.Subject> expand(Oracle.Relation predicate, Oracle.Object object) throws SQLException {
-        return oracle.expand(predicate, object);
+    @Override
+    public void addRelation(Relation_ request, StreamObserver<Empty> responseObserver) {
+        oracle.add(relation(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
     }
 
-    public List<Oracle.Object> expand(Oracle.Relation predicate, Oracle.Subject subject) throws SQLException {
-        return oracle.expand(predicate, subject);
+    @Override
+    public void check(Assertion_ request, StreamObserver<AssertionCheck> responseObserver) {
+        try {
+            responseObserver.onNext(AssertionCheck.newBuilder().setResult(oracle.check(assertion(request))).build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            responseObserver.onError(e);
+        }
     }
 
-    public List<Oracle.Object> expand(Oracle.Subject subject) throws SQLException {
-        return oracle.expand(subject);
+    @Override
+    public void deleteAssertion(Assertion_ request, StreamObserver<Empty> responseObserver) {
+        oracle.delete(assertion(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
     }
 
-    public CompletableFuture<Void> map(Oracle.Object parent, Oracle.Object child) {
-        return oracle.map(parent, child);
+    @Override
+    public void deleteNamespace(Namespace_ request, StreamObserver<Empty> responseObserver) {
+        oracle.delete(namespace(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
     }
 
-    public CompletableFuture<Void> map(Oracle.Relation parent, Oracle.Relation child) {
-        return oracle.map(parent, child);
+    @Override
+    public void deleteObject(Object_ request, StreamObserver<Empty> responseObserver) {
+        oracle.delete(object(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
     }
 
-    public CompletableFuture<Void> map(Oracle.Subject parent, Oracle.Subject child) {
-        return oracle.map(parent, child);
+    @Override
+    public void deleteRelation(Relation_ request, StreamObserver<Empty> responseObserver) {
+        oracle.delete(relation(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
     }
 
-    public List<Oracle.Subject> read(Oracle.Object... objects) throws SQLException {
-        return oracle.read(objects);
+    @Override
+    public void expandObject(Subject_ request, StreamObserver<Objects> responseObserver) {
+        try {
+            var result = Objects.newBuilder();
+            oracle.expand(subject(request)).stream().map(Delphi::object_).forEach(result::addObjects);
+            responseObserver.onNext(result.build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            responseObserver.onError(e);
+        }
     }
 
-    public List<Oracle.Subject> read(Oracle.Relation predicate, Oracle.Object... objects) throws SQLException {
-        return oracle.read(predicate, objects);
+    @Override
+    public void expandObjects(SubjectPredicate request, StreamObserver<Objects> responseObserver) {
+        var result = Objects.newBuilder();
+        try {
+            oracle.expand(relation(request.getPredicate()), subject(request.getSubject()))
+                  .stream()
+                  .map(Delphi::object_)
+                  .forEach(result::addObjects);
+            responseObserver.onNext(result.build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            responseObserver.onError(e);
+        }
     }
 
-    public List<Oracle.Object> read(Oracle.Relation predicate, Oracle.Subject... subjects) throws SQLException {
-        return oracle.read(predicate, subjects);
+    @Override
+    public void expandSubject(Object_ request, StreamObserver<Subjects> responseObserver) {
+        try {
+            var result = Subjects.newBuilder();
+            oracle.expand(object(request)).stream().map(Delphi::subject_).forEach(result::addSubjects);
+            responseObserver.onNext(result.build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            responseObserver.onError(e);
+        }
     }
 
-    public List<Oracle.Object> read(Oracle.Subject... subjects) throws SQLException {
-        return oracle.read(subjects);
+    @Override
+    public void expandSubjects(ObjectPredicate request, StreamObserver<Subjects> responseObserver) {
+        var result = Subjects.newBuilder();
+        try {
+            oracle.expand(relation(request.getPredicate()), object(request.getObject()))
+                  .stream()
+                  .map(Delphi::subject_)
+                  .forEach(result::addSubjects);
+            responseObserver.onNext(result.build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            responseObserver.onError(e);
+        }
     }
 
-    public CompletableFuture<Void> remove(Oracle.Object parent, Oracle.Object child) {
-        return oracle.remove(parent, child);
+    @Override
+    public void mapObject(ObjectMap request, StreamObserver<Empty> responseObserver) {
+        oracle.map(object(request.getParent()), object(request.getChild())).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+            }
+        });
     }
 
-    public CompletableFuture<Void> remove(Oracle.Relation parent, Oracle.Relation child) {
-        return oracle.remove(parent, child);
+    @Override
+    public void mapRelation(RelationMap request, StreamObserver<Empty> responseObserver) {
+        oracle.map(relation(request.getParent()), relation(request.getChild())).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+            }
+        });
     }
 
-    public CompletableFuture<Void> remove(Oracle.Subject parent, Oracle.Subject child) {
-        return oracle.remove(parent, child);
+    @Override
+    public void mapSubject(SubjectMap request, StreamObserver<Empty> responseObserver) {
+        oracle.map(subject(request.getParent()), subject(request.getChild())).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+            }
+        });
     }
 
-    public Stream<Oracle.Subject> subjects(Oracle.Relation predicate, Oracle.Object object) throws SQLException {
-        return oracle.subjects(predicate, object);
+    @Override
+    public void readObjects(Subjects request, StreamObserver<Objects> responseObserver) {
+        try {
+            var subjects = request.getSubjectsList().stream().map(Delphi::subject).toArray(Oracle.Subject[]::new);
+            var objects = Objects.newBuilder();
+            oracle.read(subjects).stream().map(Delphi::object_).forEach(objects::addObjects);
+            responseObserver.onNext(objects.build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            responseObserver.onError(e);
+        }
+    }
+
+    @Override
+    public void readObjectsMatching(SubjectPredicates request, StreamObserver<Objects> responseObserver) {
+        var subjects = request.getSubjectsList().stream().map(Delphi::subject).toArray(Oracle.Subject[]::new);
+        try {
+            var objects = Objects.newBuilder();
+            oracle.read(relation(request.getPredicate()), subjects)
+                  .stream()
+                  .map(Delphi::object_)
+                  .forEach(objects::addObjects);
+            responseObserver.onNext(objects.build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void readSubjects(Objects request, StreamObserver<Subjects> responseObserver) {
+        try {
+            var objects = request.getObjectsList().stream().map(Delphi::object).toArray(Oracle.Object[]::new);
+            var subjects = Subjects.newBuilder();
+            oracle.read(objects).stream().map(Delphi::subject_).forEach(subjects::addSubjects);
+            responseObserver.onNext(subjects.build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            responseObserver.onError(e);
+        }
+    }
+
+    @Override
+    public void readSubjectsMatching(ObjectPredicates request, StreamObserver<Subjects> responseObserver) {
+        var objects = request.getObjectsList().stream().map(Delphi::object).toArray(Oracle.Object[]::new);
+        try {
+            var subjects = Subjects.newBuilder();
+            oracle.read(relation(request.getPredicate()), objects);
+            responseObserver.onNext(subjects.build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            responseObserver.onError(e);
+        }
+    }
+
+    @Override
+    public void subjects(ObjectPredicate request, StreamObserver<Subjects> responseObserver) {
+        try {
+            var subjects = Subjects.newBuilder();
+            oracle.subjects(relation(request.getPredicate()), object(request.getObject()))
+                  .map(Delphi::subject_)
+                  .forEach(subjects::addSubjects);
+            responseObserver.onNext(subjects.build());
+            responseObserver.onCompleted();
+        } catch (SQLException e) {
+            responseObserver.onError(e);
+        }
+    }
+
+    @Override
+    public void unmapObject(ObjectMap request, StreamObserver<Empty> responseObserver) {
+        oracle.remove(object(request.getParent()), object(request.getChild())).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+            }
+        });
+    }
+
+    @Override
+    public void unmapRelation(RelationMap request, StreamObserver<Empty> responseObserver) {
+        oracle.remove(relation(request.getParent()), relation(request.getChild())).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+            }
+        });
+    }
+
+    @Override
+    public void unmapSubject(SubjectMap request, StreamObserver<Empty> responseObserver) {
+        oracle.remove(subject(request.getParent()), subject(request.getChild())).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+            }
+        });
     }
 }
