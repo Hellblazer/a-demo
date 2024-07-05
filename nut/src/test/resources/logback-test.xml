@@ -10,6 +10,11 @@
         </encoder>
     </appender>
 
+    <!-- SQL execution logging is logged to the LoggerListener logger at DEBUG level -->
+    <Logger name="org.jooq.tools.LoggerListener" level="warn">
+        <AppenderRef ref="STDOUT"/>
+    </Logger>
+
     <logger name="org.jooq.Constants" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
@@ -26,7 +31,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.CHOAM" level="info" additivity="false">
+    <logger name="com.salesforce.apollo.choam" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -35,10 +40,6 @@
     </logger>
 
     <logger name="com.salesforce.apollo.choam.support.TxDataSource" level="warn" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.salesforce.apollo.choam.support.OneShot" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -51,6 +52,18 @@
     </logger>
 
     <logger name="com.salesforce.apollo.thoth.KerlSpace" level="warn" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.ethereal.Ethereal" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.ethereal.EpochProofBuilder" level="info" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.stereotomy" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 

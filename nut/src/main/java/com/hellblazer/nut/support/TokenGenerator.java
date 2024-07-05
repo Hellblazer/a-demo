@@ -21,9 +21,10 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.google.protobuf.Message;
+import com.hellblazer.nut.SkyApplication;
 import com.macasaet.fernet.Key;
 import com.macasaet.fernet.Token;
-import com.macasaet.fernet.Validator;
+import com.macasaet.fernet.TokenValidationException;
 import com.salesforce.apollo.archipelago.server.FernetServerInterceptor;
 import com.salesforce.apollo.cryptography.Digest;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class TokenGenerator implements Function<Message, Token> {
     private static final Logger                                             log = LoggerFactory.getLogger(
     TokenGenerator.class);
     private final        SecureRandom                                       entropy;
-    private final        Cache<FernetServerInterceptor.HashedToken, Object> cached;
+    private final        Cache<FernetServerInterceptor.HashedToken, String> cached;
     private final        Cache<Digest, Boolean>                             invalid;
     private volatile     Key                                                master;
 
@@ -53,14 +54,14 @@ public class TokenGenerator implements Function<Message, Token> {
         this.entropy = entropy;
         cached = Caffeine.newBuilder()
                          .maximumSize(1_000)
-                         .expireAfterWrite(Duration.ofMinutes(10))
+                         .expireAfterWrite(Duration.ofDays(10))
                          .removalListener(
                          (FernetServerInterceptor.HashedToken token, Object credentials, RemovalCause cause) -> log.trace(
                          "Validated Token: {} was removed due to: {}", token.hash(), cause))
                          .build();
         invalid = Caffeine.newBuilder()
                           .maximumSize(1_000)
-                          .expireAfterWrite(Duration.ofMinutes(10))
+                          .expireAfterWrite(Duration.ofSeconds(30))
                           .removalListener((Digest token, Boolean credentials, RemovalCause cause) -> log.trace(
                           "Invalid Token: {} was removed due to: {}", token, cause))
                           .build();
@@ -71,12 +72,27 @@ public class TokenGenerator implements Function<Message, Token> {
         return master != null ? Token.generate(entropy, master, message.toByteArray()) : null;
     }
 
-    public <T> T validate(FernetServerInterceptor.HashedToken hashed, Validator<T> validator) {
-        return (T) cached.get(hashed,
-                              k -> master != null ? k.token().validateAndDecrypt(master, validator) : null);
-    }
-
     public void clear() {
         master = null;
+    }
+
+    public String validate(FernetServerInterceptor.HashedToken hashed, SkyApplication.TokenValidator validator) {
+        if (invalid.getIfPresent(hashed.hash()) != null) {
+            log.info("Cached invalid Token: {}", hashed.hash());
+            return null;
+        }
+        return cached.get(hashed, k -> master != null ? validate(validator, k) : null);
+    }
+
+    private String validate(SkyApplication.TokenValidator validator, FernetServerInterceptor.HashedToken k) {
+        try {
+            var decrypt = k.token().validateAndDecrypt(master, validator);
+            log.info("Decrypted Token: {} was cached: {}", k, decrypt);
+            return decrypt;
+        } catch (TokenValidationException e) {
+            log.info("Invalid Token: {}", k.hash());
+            invalid.put(k.hash(), Boolean.TRUE);
+            return null;
+        }
     }
 }
