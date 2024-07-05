@@ -12,7 +12,7 @@ producerParameters:
   maxBatchCount: 3000
   gossipDuration: PT0H0M00.03S
   ethereal:
-    epochLength: 7
+    epochLength: 20
 
 domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"
