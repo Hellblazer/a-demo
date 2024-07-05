@@ -186,8 +186,7 @@ public class E2ETest {
                               clientCert.getPrivateKey(), CertificateValidator.NONE);
     }
 
-    private InputStream configFor(STGroup g, com.hellblazer.nut.E2ETest.Proc process, int n, int k,
-                                  List<String> approach, String seed, String seedId, boolean genesis) {
+    private InputStream configFor(STGroup g, Proc process, List<String> approach, String seed, String seedId, boolean genesis) {
         var t = g.getInstanceOf("sky");
         t.add("clusterEndpoint", process.clusterEndpoint);
         t.add("apiEndpoint", process.apiEndpoint);
@@ -196,8 +195,8 @@ public class E2ETest {
         t.add("approach", approach);
         t.add("seedEndpoint", seed);
         t.add("seedId", seedId);
-        t.add("n", n);
-        t.add("k", k);
+        t.add("n", SHARES);
+        t.add("k", THRESHOLD);
         t.add("genesis", genesis);
         var rendered = t.render();
         return new ByteArrayInputStream(rendered.getBytes(Charset.defaultCharset()));
@@ -219,7 +218,7 @@ public class E2ETest {
                                                                                 EndpointProvider.allocatePort()))
                              .toList();
         com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
-        var seed = new Sphinx(configFor(g, first, CARDINALITY, THRESHOLD, null, null, null, true));
+        var seed = new Sphinx(configFor(g, first, null, null, null, true));
         sphinxes = new ArrayList<>();
         sphinxes.add(seed);
         return shares;
@@ -231,7 +230,7 @@ public class E2ETest {
         com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
         processes.subList(1, 4)
                  .stream()
-                 .map(p -> configFor(g, p, CARDINALITY, THRESHOLD, Collections.singletonList(first.approachEndpoint),
+                 .map(p -> configFor(g, p, Collections.singletonList(first.approachEndpoint),
                                      first.clusterEndpoint, seedId, true))
                  .map(c -> {
                      var sphinx = new Sphinx(c);
@@ -249,7 +248,7 @@ public class E2ETest {
         com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
         processes.subList(4, CARDINALITY)
                  .stream()
-                 .map(p -> configFor(g, p, CARDINALITY, THRESHOLD, Collections.singletonList(first.approachEndpoint),
+                 .map(p -> configFor(g, p, Collections.singletonList(first.approachEndpoint),
                                      first.clusterEndpoint, seedId, false))
                  .map(c -> {
                      var sphinx = new Sphinx(c);

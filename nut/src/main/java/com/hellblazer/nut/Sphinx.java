@@ -22,6 +22,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.nut.comms.SphynxServer;
 import com.hellblazer.nut.proto.*;
+import com.hellblazer.nut.comms.ApiServer;
 import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
@@ -284,17 +285,17 @@ public class Sphinx {
         return application.getSky().getDelphi();
     }
 
-    private Geb.ApiServer apiServer() {
+    private ApiServer apiServer() {
         var address = configuration.endpoints.apiEndpoint();
         log.info("Api server address: {}", address);
         CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) address);
-        return new Geb.ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
+        return new ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
 
             @Override
             public SslContext forServer(ClientAuth clientAuth, String alias, CertificateValidator validator,
                                         Provider provider) {
-                return Geb.ApiServer.forServer(clientAuth, alias, apiIdentity.getX509Certificate(),
-                                               apiIdentity.getPrivateKey(), validator);
+                return ApiServer.forServer(clientAuth, alias, apiIdentity.getX509Certificate(),
+                                           apiIdentity.getPrivateKey(), validator);
             }
 
             @Override

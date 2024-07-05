@@ -104,7 +104,8 @@ public class SkyConfiguration {
         context.setBias(3).setpByz(0.1);
         domain = new ProcessDomainParameters("jdbc:h2:mem:sql-state;DB_CLOSE_DELAY=-1", Duration.ofMinutes(1),
                                              "jdbc:h2:mem:dht-state;DB_CLOSE_DELAY=-1", checkpointBaseDir,
-                                             Duration.ofMillis(5), 0.00125, Duration.ofMinutes(1), 3, 10, 0.1);
+                                             Duration.ofMillis(5), 0.00125, Duration.ofMinutes(1), 3,
+                                             Duration.ofMillis(100), 10, 0.1);
         choamParameters = Parameters.newBuilder().setGossipDuration(Duration.ofMillis(5)).setCheckpointBlockDelta(200);
         viewParameters = com.salesforce.apollo.fireflies.Parameters.newBuilder()
                                                                    .setFpr(0.000125)

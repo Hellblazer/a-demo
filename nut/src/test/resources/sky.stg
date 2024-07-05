@@ -14,21 +14,21 @@ approaches:
 <if(seedEndpoint)><seeds(seedId = seedId, seed = seedEndpoint)>
 <endif>
 
-viewGossipDuration: PT0H0M00.05S
+viewGossipDuration: PT0H0M00.030S
 
 choamParameters:
   generateGenesis: <genesis>
-  checkpointBlockDelta: 100
-  gossipDuration: PT0H0M00.05S
+  checkpointBlockDelta: 7
+  gossipDuration: PT0H0M00.030S
   synchronizationCycles: 10
   regenerationCycles: 10
 
 producerParameters:
   maxBatchByteSize: 10485760
   maxBatchCount: 3000
-  gossipDuration: PT0H0M00.05S
+  gossipDuration: PT0H0M00.030S
   ethereal:
-    epochLength: 27
+    epochLength: 20
 
 endpoints:
     class: socket
@@ -45,6 +45,7 @@ domain:
   dhtOperationsTimeout: PT0H0M10S
   dhtDbUrl: "jdbc:h2:mem:dht-<memberId>;DB_CLOSE_DELAY=-1"
   checkpointBaseDir: ./target/e2e/cp
+  kerlSpaceDuration: PT0H0M00.5S
   dhtOpsFrequency: PT0H0M00.05S
   dhtFpr: 0.00125
   dhtEventValidTO: PT0H0M30S

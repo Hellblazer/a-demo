@@ -27,6 +27,7 @@ import com.hellblazer.nut.comms.SimpleNameResolverFactory;
 import com.hellblazer.nut.support.TokenGenerator;
 import com.macasaet.fernet.StringValidator;
 import com.macasaet.fernet.Token;
+import com.macasaet.fernet.Validator;
 import com.salesforce.apollo.archipelago.*;
 import com.salesforce.apollo.archipelago.client.FernetCallCredentials;
 import com.salesforce.apollo.archipelago.server.FernetServerInterceptor;
@@ -85,21 +86,20 @@ import java.util.function.Predicate;
  * @author hal.hildebrand
  **/
 public class SkyApplication {
-    private static final Logger log = LoggerFactory.getLogger(SkyApplication.class);
-
-    private final    Digest                        contextId;
-    private final    Sky                           node;
-    private final    Router                        clusterComms;
-    private final    CertificateWithPrivateKey     certWithKey;
-    private final    SanctumSanctorum              sanctorum;
-    private final    Router                        admissionsComms;
-    private final    Clock                         clock;
-    private final    AtomicBoolean                 started   = new AtomicBoolean();
-    private final    DelegatedCertificateValidator certificateValidator;
-    private final    Lock                          tokenLock = new ReentrantLock();
-    private volatile Token                         token;
-    private volatile ManagedChannel                joinChannel;
-    private          int                           retries   = 5;
+    private static final Logger                        log       = LoggerFactory.getLogger(SkyApplication.class);
+    private final        Digest                        contextId;
+    private final        Sky                           node;
+    private final        Router                        clusterComms;
+    private final        CertificateWithPrivateKey     certWithKey;
+    private final        SanctumSanctorum              sanctorum;
+    private final        Router                        admissionsComms;
+    private final        Clock                         clock;
+    private final        AtomicBoolean                 started   = new AtomicBoolean();
+    private final        DelegatedCertificateValidator certificateValidator;
+    private final        Lock                          tokenLock = new ReentrantLock();
+    private volatile     Token                         token;
+    private volatile     ManagedChannel                joinChannel;
+    private              int                           retries   = 5;
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum,
                           CompletableFuture<Void> onFailure) {
@@ -125,12 +125,7 @@ public class SkyApplication {
         }
         Predicate<FernetServerInterceptor.HashedToken> validator = token -> {
             var generator = sanctorum.getGenerator();
-            var result = generator == null ? null : generator.validate(token, new StringValidator() {
-                @Override
-                public TemporalAmount getTimeToLive() {
-                    return Duration.ofDays(60);
-                }
-            });
+            var result = generator == null ? null : generator.validate(token, new TokenValidator());
             return result != null;
         };
         var credentials = FernetCallCredentials.blocking(() -> {
@@ -240,8 +235,8 @@ public class SkyApplication {
 
     void testify(Duration viewGossipDuration, List<SocketAddress> approaches, CompletableFuture<Void> onStart,
                  List<View.Seed> seeds) {
-        start(viewGossipDuration, seeds, onStart);
         join(approaches);
+        start(viewGossipDuration, seeds, onStart);
     }
 
     protected Sky getSky() {
@@ -369,5 +364,17 @@ public class SkyApplication {
                 return ((SelfAddressingIdentifier) decoded.get().identifier()).getDigest();
             }
         };
+    }
+
+    public static class TokenValidator implements StringValidator {
+        @Override
+        public TemporalAmount getTimeToLive() {
+            return Duration.ofDays(60);
+        }
+
+        @Override
+        public Predicate<String> getObjectValidator() {
+            return StringValidator.super.getObjectValidator();
+        }
     }
 }

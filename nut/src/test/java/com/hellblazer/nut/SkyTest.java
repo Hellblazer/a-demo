@@ -265,7 +265,7 @@ public class SkyTest {
             var pdParams = new ProcessDomain.ProcessDomainParameters(
             "jdbc:h2:mem:sql-%s;DB_CLOSE_DELAY=-1".formatted(digest), Duration.ofMinutes(1),
             "jdbc:h2:mem:dht-%s".formatted(digest), checkpointDirBase, Duration.ofMillis(10), 0.00125,
-            Duration.ofMinutes(1), 3, 10, 0.1);
+            Duration.ofMinutes(1), 3, Duration.ofMillis(100), 10, 0.1);
             var node = new Sky(group, member, pdParams, params, Parameters.RuntimeParameters.newBuilder()
                                                                                             .setFoundation(sealed)
                                                                                             .setContext(context)

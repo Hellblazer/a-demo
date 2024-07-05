@@ -12,6 +12,7 @@ domain:
   dhtOperationsTimeout: PT0H0M10S
   dhtDbUrl: "jdbc:h2:mem:dht;DB_CLOSE_DELAY=-1"
   checkpointBaseDir: ./target/cp
+  kerlSpaceDuration: PT0H0M00.5S
   dhtOpsFrequency: PT0H0M00001S
   dhtFpr: 0.000125
   dhtEventValidTO: PT0H0M30S
