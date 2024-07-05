@@ -25,6 +25,7 @@ domain:
   dhtBias: 3
   jdbcMaxConnections: 10
   dhtPbyz: 0.01
+  kerlSpaceDuration: PT0H0M00.5S
 
 identity:
   keyStore: ".id"
