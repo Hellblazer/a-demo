@@ -38,17 +38,19 @@ public class ApiServer implements ClientIdentity {
     private final Context.Key<SSLSession> sslSessionContext = Context.key("SSLSession");
 
     public ApiServer(SocketAddress address, ClientAuth clientAuth, String alias, ServerContextSupplier supplier,
-                     CertificateValidator validator, BindableService service) {
+                     CertificateValidator validator, BindableService... services) {
         var interceptor = new TlsInterceptor(sslSessionContext);
         this.supplier = supplier;
         NettyServerBuilder builder = NettyServerBuilder.forAddress(address)
                                                        .withOption(ChannelOption.SO_REUSEADDR, true)
-                                                       .addService(service)
                                                        .sslContext(
                                                        supplier.forServer(clientAuth, alias, validator, PROVIDER_JSSE))
                                                        .withChildOption(ChannelOption.TCP_NODELAY, true)
                                                        .intercept(interceptor)
                                                        .intercept(EnableCompressionInterceptor.SINGLETON);
+        for (BindableService service : services) {
+            builder.addService(service);
+        }
         builder.executor(Executors.newVirtualThreadPerTaskExecutor());
         server = builder.build();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
