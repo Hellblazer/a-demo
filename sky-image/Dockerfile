@@ -69,5 +69,7 @@ EXPOSE 8123
 EXPOSE 8124
 #clusterEndpoint
 EXPOSE 8125
+#serviceEndpoint
+EXPOSE 8126
 
 ENTRYPOINT ["java", "-XX:+UseZGC", "-XX:+ZGenerational", "-Dlogback.configurationFile=logback.xml", "-jar", "./app.jar", "config.yaml", "Give me food or give me slack or kill me"]

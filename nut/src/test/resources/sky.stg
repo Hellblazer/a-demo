@@ -4,7 +4,7 @@ seeds:
     endpoint: <seed>
 >>
 
-sky(clusterEndpoint, apiEndpoint, approachEndpoint, memberId, seedId, seedEndpoint, approach, n, k, genesis) ::= <<
+sky(clusterEndpoint, apiEndpoint, approachEndpoint, serviceEndpoint, memberId, seedId, seedEndpoint, approach, n, k, genesis) ::= <<
 
 <if(approach)>
 approaches:
@@ -35,6 +35,7 @@ endpoints:
     cluster: <clusterEndpoint>
     api: <apiEndpoint>
     approach: <approachEndpoint>
+    service: <serviceEndpoint>
 
 shamir:
     shares: <n>

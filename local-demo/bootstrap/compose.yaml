@@ -8,4 +8,5 @@ services:
       API: 50000
       APPROACH: 50001
       CLUSTER: 50002
+      SERVICE: 50003
     network_mode: bridge

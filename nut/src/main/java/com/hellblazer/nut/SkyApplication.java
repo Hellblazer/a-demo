@@ -27,7 +27,6 @@ import com.hellblazer.nut.comms.SimpleNameResolverFactory;
 import com.hellblazer.nut.support.TokenGenerator;
 import com.macasaet.fernet.StringValidator;
 import com.macasaet.fernet.Token;
-import com.macasaet.fernet.Validator;
 import com.salesforce.apollo.archipelago.*;
 import com.salesforce.apollo.archipelago.client.FernetCallCredentials;
 import com.salesforce.apollo.archipelago.server.FernetServerInterceptor;
@@ -93,6 +92,7 @@ public class SkyApplication {
     private final        CertificateWithPrivateKey     certWithKey;
     private final        SanctumSanctorum              sanctorum;
     private final        Router                        admissionsComms;
+    private final        Router                        serviceComms;
     private final        Clock                         clock;
     private final        AtomicBoolean                 started   = new AtomicBoolean();
     private final        DelegatedCertificateValidator certificateValidator;
@@ -112,6 +112,7 @@ public class SkyApplication {
         var clusterEndpoint = configuration.endpoints.clusterEndpoint();
         var local = clusterEndpoint instanceof InProcessSocketAddress;
         certificateValidator = new DelegatedCertificateValidator(CertificateValidator.NONE);
+        log.info("Cluster communications: {} on: {}", clusterEndpoint, sanctorum.getId());
 
         final RouterSupplier clusterServer;
         if (local) {
@@ -135,6 +136,7 @@ public class SkyApplication {
         clusterComms = clusterServer.router(configuration.connectionCache.setCredentials(credentials),
                                             RouterImpl::defaultServerLimit, null,
                                             Collections.singletonList(new FernetServerInterceptor()), validator);
+
         var runtime = Parameters.RuntimeParameters.newBuilder()
                                                   .setOnFailure(onFailure)
                                                   .setCommunications(clusterComms)
@@ -173,6 +175,23 @@ public class SkyApplication {
                        new DirectPublisher(sanctorum.member().getId(), new ProtoKERLAdapter(k)), admissionsComms, null,
                        clusterComms);
         contextId = runtime.getContext().getId();
+
+        var serviceEndpoint = configuration.endpoints.serviceEndpoint();
+        final RouterSupplier serviceServer;
+        if (serviceEndpoint instanceof InProcessSocketAddress) {
+            serviceServer = new LocalServer(((InProcessSocketAddress) serviceEndpoint).getName(), sanctorum.member());
+        } else {
+            Function<Member, String> resolver = m -> ((View.Participant) m).endpoint();
+            EndpointProvider ep = new StandardEpProvider(serviceEndpoint, ClientAuth.REQUIRE, certificateValidator,
+                                                         resolver);
+            serviceServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
+                                           serverContextSupplier(certWithKey));
+        }
+        log.info("Service communications: {} on: {}", serviceEndpoint, sanctorum.getId());
+
+        serviceComms = serviceServer.router(configuration.connectionCache.setCredentials(credentials),
+                                            RouterImpl::defaultServerLimit, null,
+                                            Collections.singletonList(new FernetServerInterceptor()), validator);
     }
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctum) {
@@ -212,6 +231,9 @@ public class SkyApplication {
         if (admissionsComms != null) {
             admissionsComms.close(Duration.ofMinutes(1));
         }
+        if (serviceComms != null) {
+            serviceComms.close(Duration.ofMinutes(1));
+        }
     }
 
     public void start(Duration viewGossipDuration, List<View.Seed> seeds, CompletableFuture<Void> onStart) {
@@ -220,6 +242,7 @@ public class SkyApplication {
         }
         clusterComms.start();
         admissionsComms.start();
+        serviceComms.start();
         //        node.setDhtVerifiers();
         node.setVerifiersNONE();
         node.start();
@@ -252,12 +275,10 @@ public class SkyApplication {
     }
 
     private Function<Member, ClientContextSupplier> clientContextSupplier() {
-        return m -> (ClientContextSupplier) (clientAuth, alias, validator, tlsVersion) -> MtlsServer.forClient(
-        clientAuth, alias, certWithKey.getX509Certificate(), certWithKey.getPrivateKey(), validator);
-    }
-
-    private void enable() {
-
+        return m -> (ClientContextSupplier) (clientAuth, alias, validator, _) -> MtlsServer.forClient(clientAuth, alias,
+                                                                                                      certWithKey.getX509Certificate(),
+                                                                                                      certWithKey.getPrivateKey(),
+                                                                                                      validator);
     }
 
     private String encode(SocketAddress socketAddress) {
@@ -285,10 +306,8 @@ public class SkyApplication {
                                           .usePlaintext()
                                           .build();
         } else {
-            com.hellblazer.nut.comms.MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo",
-                                                                        certWithKey.getX509Certificate(),
-                                                                        certWithKey.getPrivateKey(),
-                                                                        CertificateValidator.NONE, contextId);
+            MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo", certWithKey.getX509Certificate(),
+                                               certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId);
             return client.getChannel();
         }
     }
@@ -368,13 +387,13 @@ public class SkyApplication {
 
     public static class TokenValidator implements StringValidator {
         @Override
-        public TemporalAmount getTimeToLive() {
-            return Duration.ofDays(60);
+        public Predicate<String> getObjectValidator() {
+            return StringValidator.super.getObjectValidator();
         }
 
         @Override
-        public Predicate<String> getObjectValidator() {
-            return StringValidator.super.getObjectValidator();
+        public TemporalAmount getTimeToLive() {
+            return Duration.ofDays(60);
         }
     }
 }
