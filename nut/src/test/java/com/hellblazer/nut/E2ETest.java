@@ -20,6 +20,7 @@ package com.hellblazer.nut;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.hellblazer.nut.service.OracleAdapter;
 import com.hellblazer.nut.comms.MtlsClient;
 import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.Share;
@@ -45,6 +46,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.SecureRandom;
@@ -147,7 +149,7 @@ public class E2ETest {
             retryNesting(() -> oracle.map(jale, abcTechMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
                                                                                       exec);
 
-            countDown.await(120, TimeUnit.SECONDS);
+            countDown.await(30, TimeUnit.SECONDS);
         }
 
         // Protected resource namespace
@@ -169,7 +171,7 @@ public class E2ETest {
         // Direct objects that can User member can view
         var viewable = oracle.read(userMembers);
         assertEquals(1, viewable.size());
-        assertTrue(viewable.contains(object123View), "Should contain: " + object123View);
+        assertEquals(viewable.getFirst(), object123View, "Should contain: " + object123View);
 
         // Assert flagged technicians can directly view the document
         Oracle.Assertion grantTechs = flaggedTechnicianMembers.assertion(object123View);
@@ -212,22 +214,22 @@ public class E2ETest {
         assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
 
         // Remove them
-        retryNesting(() -> oracle.remove(abcTechMembers, technicianMembers), 3).get(120, TimeUnit.SECONDS);
+        retryNesting(() -> oracle.remove(abcTechMembers, technicianMembers), 3).get(60, TimeUnit.SECONDS);
 
         assertFalse(oracle.check(object123View.assertion(jale)));
         assertTrue(oracle.check(object123View.assertion(egin)));
         assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
 
         // Remove our assertion
-        retryNesting(() -> oracle.delete(tuple), 3).get(120, TimeUnit.SECONDS);
+        retryNesting(() -> oracle.delete(tuple), 3).get(20, TimeUnit.SECONDS);
 
         assertFalse(oracle.check(object123View.assertion(jale)));
         assertFalse(oracle.check(object123View.assertion(egin)));
         assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
 
         // Some deletes
-        retryNesting(() -> oracle.delete(abcTechMembers), 3).get(120, TimeUnit.SECONDS);
-        retryNesting(() -> oracle.delete(flaggedTechnicianMembers), 3).get(120, TimeUnit.SECONDS);
+        retryNesting(() -> oracle.delete(abcTechMembers), 3).get(20, TimeUnit.SECONDS);
+        retryNesting(() -> oracle.delete(flaggedTechnicianMembers), 3).get(20, TimeUnit.SECONDS);
     }
 
     @AfterEach
@@ -325,8 +327,7 @@ public class E2ETest {
         System.out.println();
 
         Thread.sleep(1000);
-
-        var oracle = sphinxes.getFirst().getDelphi();
+        var oracle = of(sphinxes.getFirst().getServiceEndpoint());
         oracle.add(new Oracle.Namespace("test")).get(120, TimeUnit.SECONDS);
         smoke(oracle);
     }
@@ -411,6 +412,11 @@ public class E2ETest {
                      return sphinx;
                  })
                  .forEach(s -> sphinxes.add(s));
+    }
+
+    private Oracle of(SocketAddress endpoint) {
+        var client = apiClient(0, (InetSocketAddress) endpoint);
+        return new OracleAdapter(client.getChannel());
     }
 
     private Share share(int i, EncryptionAlgorithm algorithm, List<KeyPair> keys,

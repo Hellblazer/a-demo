@@ -55,7 +55,10 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
     }
 
     public static Object_.Builder object_(Oracle.Object o) {
-        return Object_.newBuilder().setNamespace(namespace_(o.namespace()));
+        return Object_.newBuilder()
+                      .setNamespace(namespace_(o.namespace()))
+                      .setName(o.name())
+                      .setRelation(relation_(o.relation()));
     }
 
     public static Subject_.Builder subject_(Oracle.Subject o) {
@@ -122,6 +125,18 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
     }
 
     @Override
+    public void addSubject(Subject_ request, StreamObserver<Empty> responseObserver) {
+        oracle.add(subject(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
+    }
+
+    @Override
     public void check(Assertion_ request, StreamObserver<AssertionCheck> responseObserver) {
         try {
             responseObserver.onNext(AssertionCheck.newBuilder().setResult(oracle.check(assertion(request))).build());
@@ -170,6 +185,18 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
     @Override
     public void deleteRelation(Relation_ request, StreamObserver<Empty> responseObserver) {
         oracle.delete(relation(request)).whenComplete((_, t) -> {
+            if (t != null) {
+                responseObserver.onError(t);
+            } else {
+                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+            }
+        });
+    }
+
+    @Override
+    public void deleteSubject(Subject_ request, StreamObserver<Empty> responseObserver) {
+        oracle.delete(subject(request)).whenComplete((_, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
@@ -240,6 +267,7 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
                 responseObserver.onError(t);
             } else {
                 responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
             }
         });
     }
@@ -251,6 +279,7 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
                 responseObserver.onError(t);
             } else {
                 responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
             }
         });
     }
@@ -262,6 +291,7 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
                 responseObserver.onError(t);
             } else {
                 responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
             }
         });
     }
@@ -313,7 +343,8 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
         var objects = request.getObjectsList().stream().map(Delphi::object).toArray(Oracle.Object[]::new);
         try {
             var subjects = Subjects.newBuilder();
-            oracle.read(relation(request.getPredicate()), objects);
+            subjects.addAllSubjects(
+            oracle.read(relation(request.getPredicate()), objects).stream().map(s -> subject_(s).build()).toList());
             responseObserver.onNext(subjects.build());
             responseObserver.onCompleted();
         } catch (SQLException e) {
@@ -342,6 +373,7 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
                 responseObserver.onError(t);
             } else {
                 responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
             }
         });
     }
@@ -353,6 +385,7 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
                 responseObserver.onError(t);
             } else {
                 responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
             }
         });
     }
@@ -364,6 +397,7 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
                 responseObserver.onError(t);
             } else {
                 responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onCompleted();
             }
         });
     }

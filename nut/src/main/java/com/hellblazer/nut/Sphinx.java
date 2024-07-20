@@ -20,9 +20,9 @@ package com.hellblazer.nut;
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.hellblazer.nut.comms.ApiServer;
 import com.hellblazer.nut.comms.SphynxServer;
 import com.hellblazer.nut.proto.*;
-import com.hellblazer.nut.comms.ApiServer;
 import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
@@ -97,8 +97,8 @@ public class Sphinx {
     private volatile SanctumSanctorum        sanctum;
     private volatile SkyApplication          application;
     private volatile Runnable                closeApiServer;
-    private          SocketAddress           apiAddress;
-    private          CompletableFuture<Void> onFailure = new CompletableFuture<>();
+    private volatile SocketAddress           apiAddress;
+    private volatile CompletableFuture<Void> onFailure = new CompletableFuture<>();
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -217,6 +217,10 @@ public class Sphinx {
         this.onFailure = onFailure;
     }
 
+    public SocketAddress getServiceEndpoint() {
+        return application.getServiceEndpoint();
+    }
+
     public Digest id() {
         var current = sanctum;
         return current != null ? current.getId() : null;
@@ -257,7 +261,7 @@ public class Sphinx {
                                                .addService(new SphynxServer(service))
                                                .executor(Executors.newVirtualThreadPerTaskExecutor())
                                                .build();
-            apiAddress = socketAddress;
+            apiAddress = server.getListenSockets().getFirst();
             closeApiServer = Utils.wrapped(() -> {
                 server.shutdown();
             }, log);

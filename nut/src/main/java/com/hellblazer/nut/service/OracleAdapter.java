@@ -1,4 +1,20 @@
-package com.hellblazer.nut.comms;
+/*
+ * Copyright (c) 2024 Hal Hildebrand. All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ *  more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+package com.hellblazer.nut.service;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -17,11 +33,13 @@ import java.util.stream.Stream;
 /**
  * @author hal.hildebrand
  **/
-public class DelphiAdapter implements Oracle {
+public class OracleAdapter implements Oracle {
     private final Oracle_Grpc.Oracle_FutureStub   asyncDelphi;
     private final Oracle_Grpc.Oracle_BlockingStub syncDelphi;
+    private final ManagedChannel                  channel;
 
-    public DelphiAdapter(ManagedChannel channel) {
+    public OracleAdapter(ManagedChannel channel) {
+        this.channel = channel;
         this.asyncDelphi = Oracle_Grpc.newFutureStub(channel);
         this.syncDelphi = Oracle_Grpc.newBlockingStub(channel);
     }
@@ -131,6 +149,10 @@ public class DelphiAdapter implements Oracle {
         }
     }
 
+    public void close() {
+        channel.shutdown();
+    }
+
     @Override
     public CompletableFuture<Void> delete(Assertion assertion) {
         return fs(asyncDelphi.deleteAssertion(of(assertion))).thenApply(_ -> null);
@@ -159,7 +181,7 @@ public class DelphiAdapter implements Oracle {
     @Override
     public List<Subject> expand(Object object) throws SQLException {
         try {
-            return syncDelphi.expandSubject(of(object)).getSubjectsList().stream().map(DelphiAdapter::of).toList();
+            return syncDelphi.expandSubject(of(object)).getSubjectsList().stream().map(OracleAdapter::of).toList();
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
         }
@@ -172,7 +194,7 @@ public class DelphiAdapter implements Oracle {
                              ObjectPredicate.newBuilder().setPredicate(of(predicate)).setObject(of(object)).build())
                              .getSubjectsList()
                              .stream()
-                             .map(DelphiAdapter::of)
+                             .map(OracleAdapter::of)
                              .toList();
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
@@ -186,7 +208,7 @@ public class DelphiAdapter implements Oracle {
                              SubjectPredicate.newBuilder().setPredicate(of(predicate)).setSubject(of(subject)).build())
                              .getObjectsList()
                              .stream()
-                             .map(DelphiAdapter::of)
+                             .map(OracleAdapter::of)
                              .toList();
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
@@ -196,7 +218,7 @@ public class DelphiAdapter implements Oracle {
     @Override
     public List<Object> expand(Subject subject) throws SQLException {
         try {
-            return syncDelphi.expandObject(of(subject)).getObjectsList().stream().map(DelphiAdapter::of).toList();
+            return syncDelphi.expandObject(of(subject)).getObjectsList().stream().map(OracleAdapter::of).toList();
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
         }
@@ -224,10 +246,10 @@ public class DelphiAdapter implements Oracle {
     public List<Subject> read(Object... objects) throws SQLException {
         try {
             return syncDelphi.readSubjects(
-                             Objects.newBuilder().addAllObjects(Arrays.stream(objects).map(DelphiAdapter::of).toList()).build())
+                             Objects.newBuilder().addAllObjects(Arrays.stream(objects).map(OracleAdapter::of).toList()).build())
                              .getSubjectsList()
                              .stream()
-                             .map(DelphiAdapter::of)
+                             .map(OracleAdapter::of)
                              .toList();
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
@@ -240,12 +262,12 @@ public class DelphiAdapter implements Oracle {
             return syncDelphi.readSubjectsMatching(ObjectPredicates.newBuilder()
                                                                    .setPredicate(of(predicate))
                                                                    .addAllObjects(Arrays.stream(objects)
-                                                                                        .map(DelphiAdapter::of)
+                                                                                        .map(OracleAdapter::of)
                                                                                         .toList())
                                                                    .build())
                              .getSubjectsList()
                              .stream()
-                             .map(DelphiAdapter::of)
+                             .map(OracleAdapter::of)
                              .toList();
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
@@ -258,12 +280,12 @@ public class DelphiAdapter implements Oracle {
             return syncDelphi.readObjectsMatching(SubjectPredicates.newBuilder()
                                                                    .setPredicate(of(predicate))
                                                                    .addAllSubjects(Arrays.stream(subjects)
-                                                                                         .map(DelphiAdapter::of)
+                                                                                         .map(OracleAdapter::of)
                                                                                          .toList())
                                                                    .build())
                              .getObjectsList()
                              .stream()
-                             .map(DelphiAdapter::of)
+                             .map(OracleAdapter::of)
                              .toList();
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
@@ -274,10 +296,10 @@ public class DelphiAdapter implements Oracle {
     public List<Object> read(Subject... subjects) throws SQLException {
         try {
             return syncDelphi.readObjects(
-                             Subjects.newBuilder().addAllSubjects(Arrays.stream(subjects).map(DelphiAdapter::of).toList()).build())
+                             Subjects.newBuilder().addAllSubjects(Arrays.stream(subjects).map(OracleAdapter::of).toList()).build())
                              .getObjectsList()
                              .stream()
-                             .map(DelphiAdapter::of)
+                             .map(OracleAdapter::of)
                              .toList();
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
@@ -310,7 +332,7 @@ public class DelphiAdapter implements Oracle {
                              ObjectPredicate.newBuilder().setPredicate(of(predicate)).setObject(of(object)).build())
                              .getSubjectsList()
                              .stream()
-                             .map(DelphiAdapter::of);
+                             .map(OracleAdapter::of);
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
         }

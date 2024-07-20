@@ -22,6 +22,7 @@ choamParameters:
   gossipDuration: PT0H0M00.030S
   synchronizationCycles: 10
   regenerationCycles: 10
+  submitTimeout: PT0H0M12S
 
 producerParameters:
   maxBatchByteSize: 10485760

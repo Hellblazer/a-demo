@@ -194,6 +194,10 @@ public class SkyApplication {
         return node.active();
     }
 
+    public SocketAddress getServiceEndpoint() {
+        return serviceApi.getAddress();
+    }
+
     public String logState() {
         return node.logState();
     }
