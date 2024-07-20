@@ -90,11 +90,11 @@ public class Launcher {
             if (api != null) {
                 endpoints.apiPort = Integer.parseInt(api);
             }
-            if (cluster != null) {
-                endpoints.approachPort = Integer.parseInt(cluster);
-            }
             if (approach != null) {
-                endpoints.clusterPort = Integer.parseInt(approach);
+                endpoints.approachPort = Integer.parseInt(approach);
+            }
+            if (cluster != null) {
+                endpoints.clusterPort = Integer.parseInt(cluster);
             }
             if (service != null) {
                 endpoints.servicePort = Integer.parseInt(service);

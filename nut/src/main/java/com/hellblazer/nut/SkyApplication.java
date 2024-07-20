@@ -20,10 +20,9 @@ package com.hellblazer.nut;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
-import com.hellblazer.nut.comms.AdmissionsClient;
-import com.hellblazer.nut.comms.DelegatedCertificateValidator;
 import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.comms.SimpleNameResolverFactory;
+import com.hellblazer.nut.comms.*;
+import com.hellblazer.nut.service.Delphi;
 import com.hellblazer.nut.support.TokenGenerator;
 import com.macasaet.fernet.StringValidator;
 import com.macasaet.fernet.Token;
@@ -37,6 +36,7 @@ import com.salesforce.apollo.context.DynamicContext;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
+import com.salesforce.apollo.cryptography.cert.Certificates;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
 import com.salesforce.apollo.fireflies.View;
 import com.salesforce.apollo.gorgoneion.Gorgoneion;
@@ -52,6 +52,7 @@ import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLAdapter;
 import com.salesforce.apollo.test.proto.ByteMessage;
 import com.salesforce.apollo.thoth.DirectPublisher;
+import com.salesforce.apollo.utils.Utils;
 import io.grpc.ManagedChannel;
 import io.grpc.NameResolver;
 import io.grpc.StatusRuntimeException;
@@ -62,8 +63,10 @@ import io.netty.handler.ssl.SslContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.security.KeyPair;
 import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
@@ -92,17 +95,19 @@ public class SkyApplication {
     private final        CertificateWithPrivateKey     certWithKey;
     private final        SanctumSanctorum              sanctorum;
     private final        Router                        admissionsComms;
-    private final        Router                        serviceComms;
+    private final        ApiServer                     serviceApi;
     private final        Clock                         clock;
     private final        AtomicBoolean                 started   = new AtomicBoolean();
     private final        DelegatedCertificateValidator certificateValidator;
     private final        Lock                          tokenLock = new ReentrantLock();
+    private final        SkyConfiguration              configuration;
     private volatile     Token                         token;
     private volatile     ManagedChannel                joinChannel;
     private              int                           retries   = 5;
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum,
                           CompletableFuture<Void> onFailure) {
+        this.configuration = configuration;
         Objects.requireNonNull(configuration, "Configuration must not be null");
         this.clock = Clock.systemUTC();
         this.sanctorum = Objects.requireNonNull(sanctorum, "Sanctorum must not be null");
@@ -177,21 +182,8 @@ public class SkyApplication {
         contextId = runtime.getContext().getId();
 
         var serviceEndpoint = configuration.endpoints.serviceEndpoint();
-        final RouterSupplier serviceServer;
-        if (serviceEndpoint instanceof InProcessSocketAddress) {
-            serviceServer = new LocalServer(((InProcessSocketAddress) serviceEndpoint).getName(), sanctorum.member());
-        } else {
-            Function<Member, String> resolver = m -> ((View.Participant) m).endpoint();
-            EndpointProvider ep = new StandardEpProvider(serviceEndpoint, ClientAuth.REQUIRE, certificateValidator,
-                                                         resolver);
-            serviceServer = new MtlsServer(sanctorum.member(), ep, clientContextSupplier(),
-                                           serverContextSupplier(certWithKey));
-        }
-        log.info("Service communications: {} on: {}", serviceEndpoint, sanctorum.getId());
-
-        serviceComms = serviceServer.router(configuration.connectionCache.setCredentials(credentials),
-                                            RouterImpl::defaultServerLimit, null,
-                                            Collections.singletonList(new FernetServerInterceptor()), validator);
+        serviceApi = apiServer(serviceEndpoint);
+        log.info("Service api: {} on: {}", serviceEndpoint, sanctorum.getId());
     }
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctum) {
@@ -231,8 +223,8 @@ public class SkyApplication {
         if (admissionsComms != null) {
             admissionsComms.close(Duration.ofMinutes(1));
         }
-        if (serviceComms != null) {
-            serviceComms.close(Duration.ofMinutes(1));
+        if (serviceApi != null) {
+            serviceApi.stop();
         }
     }
 
@@ -242,10 +234,20 @@ public class SkyApplication {
         }
         clusterComms.start();
         admissionsComms.start();
-        serviceComms.start();
         //        node.setDhtVerifiers();
         node.setVerifiersNONE();
         node.start();
+        onStart.whenCompleteAsync((v, t) -> {
+            log.info("Starting Sky services on: {}", sanctorum.getId());
+            try {
+                serviceApi.start();
+                log.info("Sky services started: {} on: {}", serviceApi.getAddress(), sanctorum.getId());
+            } catch (IOException e) {
+                log.error("Unable to start services on: {}", sanctorum.getId(), e);
+                shutdown();
+                throw new IllegalStateException("Unable to start services!", e);
+            }
+        });
         node.getFoundation().start(onStart, viewGossipDuration, seeds);
         log.info("Started Sky: {}", sanctorum.getId());
     }
@@ -266,6 +268,29 @@ public class SkyApplication {
         return node;
     }
 
+    private ApiServer apiServer(SocketAddress address) {
+        log.info("Api server address: {}", address);
+        CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) address);
+        return new ApiServer(address, ClientAuth.REQUIRE, "foo", new ServerContextSupplier() {
+
+            @Override
+            public SslContext forServer(ClientAuth clientAuth, String alias, CertificateValidator validator,
+                                        Provider provider) {
+                return ApiServer.forServer(clientAuth, alias, apiIdentity.getX509Certificate(),
+                                           apiIdentity.getPrivateKey(), validator);
+            }
+
+            @Override
+            public Digest getMemberId(X509Certificate key) {
+                var decoded = Stereotomy.decode(key);
+                if (decoded.isEmpty()) {
+                    throw new NoSuchElementException("Cannot decode certificate: %s".formatted(key));
+                }
+                return ((SelfAddressingIdentifier) decoded.get().identifier()).getDigest();
+            }
+        }, validator(), new Delphi(getSky().getDelphi()));
+    }
+
     private Any attest(SignedNonce signedNonce) {
         return Any.getDefaultInstance();
     }
@@ -279,6 +304,16 @@ public class SkyApplication {
                                                                                                       certWithKey.getX509Certificate(),
                                                                                                       certWithKey.getPrivateKey(),
                                                                                                       validator);
+    }
+
+    private CertificateWithPrivateKey createIdentity(InetSocketAddress address) {
+        KeyPair keyPair = configuration.identity.signatureAlgorithm().generateKeyPair();
+        var notBefore = Instant.now();
+        var notAfter = Instant.now().plusSeconds(10_000);
+        X509Certificate generated = Certificates.selfSign(false, Utils.encode(
+        configuration.identity.digestAlgorithm().getOrigin(), address.getHostName(), address.getPort(),
+        keyPair.getPublic()), keyPair, notBefore, notAfter, Collections.emptyList());
+        return new CertificateWithPrivateKey(generated, keyPair.getPrivate());
     }
 
     private String encode(SocketAddress socketAddress) {
@@ -381,6 +416,18 @@ public class SkyApplication {
                     "Cannot decode certificate: %s on: %s".formatted(key, node.getMember().getId()));
                 }
                 return ((SelfAddressingIdentifier) decoded.get().identifier()).getDigest();
+            }
+        };
+    }
+
+    private CertificateValidator validator() {
+        return new CertificateValidator() {
+            @Override
+            public void validateClient(X509Certificate[] chain) {
+            }
+
+            @Override
+            public void validateServer(X509Certificate[] chain) {
             }
         };
     }
