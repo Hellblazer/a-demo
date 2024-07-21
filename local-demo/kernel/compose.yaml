@@ -4,25 +4,28 @@ services:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
     environment:
       GENESIS: 'true'
-      APPROACHES: '172.17.0.2:50001'
-      SEEDS: '172.17.0.2:50002#50000'
+      APPROACHES: '172.18.0.2:50001'
+      SEEDS: '172.18.0.2:50002#50000'
       BIND_INTERFACE: eth0
+      HEALTH: 50005
     network_mode: bridge
 
   kernel2:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
     environment:
       GENESIS: 'true'
-      APPROACHES: '172.17.0.2:50001'
-      SEEDS: '172.17.0.2:50002#50000'
+      APPROACHES: '172.18.0.2:50001'
+      SEEDS: '172.18.0.2:50002#50000'
       BIND_INTERFACE: eth0
+      HEALTH: 50006
     network_mode: bridge
 
   kernel3:
     image: com.hellblazer.sky/sky-image:0.0.1-SNAPSHOT
     environment:
       GENESIS: 'true'
-      APPROACHES: '172.17.0.2:50001'
-      SEEDS: '172.17.0.2:50002#50000'
+      APPROACHES: '172.18.0.2:50001'
+      SEEDS: '172.18.0.2:50002#50000'
       BIND_INTERFACE: eth0
+      HEALTH: 50007
     network_mode: bridge

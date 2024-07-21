@@ -65,6 +65,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.security.KeyPair;
 import java.security.Provider;
@@ -103,7 +104,8 @@ public class SkyApplication {
     private final        SkyConfiguration              configuration;
     private volatile     Token                         token;
     private volatile     ManagedChannel                joinChannel;
-    private              int                           retries   = 5;
+    private volatile     int                           retries   = 5;
+    private volatile     ServerSocket                  health;
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum,
                           CompletableFuture<Void> onFailure) {
@@ -216,6 +218,13 @@ public class SkyApplication {
             return;
         }
         log.info("Shutting down on: {}", node.getMember().getId());
+        if (health != null) {
+            try {
+                health.close();
+            } catch (IOException e) {
+                log.info("Error closing health", e);
+            }
+        }
         token = null;
         if (joinChannel != null) {
             joinChannel.shutdown();
@@ -241,6 +250,16 @@ public class SkyApplication {
         //        node.setDhtVerifiers();
         node.setVerifiersNONE();
         node.start();
+        try {
+            var healthEndpoint = configuration.endpoints.healthEndpoint();
+            log.info("Health check endpoint: {} on: {}", healthEndpoint, sanctorum.getId());
+            health = new ServerSocket();
+            health.bind(healthEndpoint);
+        } catch (UnsupportedOperationException e) {
+            log.info("Health endpoint not supported ");
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to start  health on: %s".formatted(sanctorum.getId()), e);
+        }
         onStart.whenCompleteAsync((v, t) -> {
             log.info("Starting Sky services on: {}", sanctorum.getId());
             try {

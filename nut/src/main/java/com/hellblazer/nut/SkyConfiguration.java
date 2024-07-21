@@ -143,6 +143,8 @@ public class SkyConfiguration {
 
         SocketAddress clusterEndpoint();
 
+        SocketAddress healthEndpoint();
+
         SocketAddress serviceEndpoint();
     }
 
@@ -159,11 +161,14 @@ public class SkyConfiguration {
         public int     clusterPort  = 0;
         @JsonProperty
         public int     servicePort  = 0;
+        @JsonProperty
+        public int     healthPort   = 0;
 
         private SocketAddress resolvedApiEndpoint;
         private SocketAddress resolvedApproachEndpoint;
         private SocketAddress resolvedClusterEndpoint;
         private SocketAddress resolvedServiceEndpoint;
+        private SocketAddress resolvedHealthEndpoint;
 
         @Override
         public SocketAddress apiEndpoint() {
@@ -195,6 +200,17 @@ public class SkyConfiguration {
             resolvedClusterEndpoint = new InetSocketAddress(address, clusterPort == 0 ? Utils.allocatePort(address)
                                                                                       : clusterPort);
             return resolvedClusterEndpoint;
+        }
+
+        @Override
+        public SocketAddress healthEndpoint() {
+            if (resolvedHealthEndpoint != null) {
+                return resolvedHealthEndpoint;
+            }
+            var address = getAddress();
+            resolvedHealthEndpoint = new InetSocketAddress(address,
+                                                           healthPort == 0 ? Utils.allocatePort(address) : healthPort);
+            return resolvedHealthEndpoint;
         }
 
         @Override
@@ -294,6 +310,11 @@ public class SkyConfiguration {
         }
 
         @Override
+        public SocketAddress healthEndpoint() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public SocketAddress serviceEndpoint() {
             if (resolvedServiceEndpoint != null) {
                 return resolvedServiceEndpoint;
@@ -311,14 +332,13 @@ public class SkyConfiguration {
 
     public static class SocketEndpoints implements Endpoints {
         @JsonProperty
-        public String api;
+        public  String        api;
         @JsonProperty
-        public String approach;
+        public  String        approach;
         @JsonProperty
-        public String cluster;
+        public  String        cluster;
         @JsonProperty
-        public String service;
-
+        public  String        service;
         private SocketAddress resolvedApiEndpoint;
         private SocketAddress resolvedApproachEndpoint;
         private SocketAddress resolvedClusterEndpoint;
@@ -352,6 +372,11 @@ public class SkyConfiguration {
         }
 
         @Override
+        public SocketAddress healthEndpoint() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public SocketAddress serviceEndpoint() {
             if (resolvedServiceEndpoint != null) {
                 return resolvedServiceEndpoint;
@@ -362,8 +387,14 @@ public class SkyConfiguration {
 
         @Override
         public String toString() {
+            String health = "";
+            try {
+                health = ", health=" + healthEndpoint();
+            } catch (Throwable e) {
+                // ignore
+            }
             return "Socket {api=" + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster="
-            + clusterEndpoint() + '}';
+            + clusterEndpoint() + health + '}';
         }
     }
 

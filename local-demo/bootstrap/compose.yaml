@@ -9,4 +9,4 @@ services:
       APPROACH: 50001
       CLUSTER: 50002
       SERVICE: 50003
-    network_mode: bridge
+      HEALTH: 50004
