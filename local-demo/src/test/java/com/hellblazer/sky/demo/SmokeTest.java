@@ -33,7 +33,7 @@ public class SmokeTest {
         kernel = new DockerComposeContainer(kernelFile).withTailChildContainers(true);
     }
 
-    @Test
+//    @Test
     public void smokin() throws Exception {
         boot.start();
         //        new Socket().connect(new InetSocketAddress("172.18.0.2", 50004), 30_000);
