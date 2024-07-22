@@ -55,7 +55,7 @@ import java.util.UUID;
  */
 public class SkyConfiguration {
     @JsonProperty
-    public Endpoints                                           endpoints;
+    public Endpoints                                           endpoints          = new InterfaceEndpoints();
     @JsonProperty
     public Sphinx.UNWRAPPING                                   unwrapping;
     @JsonProperty
@@ -133,7 +133,7 @@ public class SkyConfiguration {
     }
 
     @JsonSubTypes({ @JsonSubTypes.Type(value = LocalEndpoints.class, name = "local"),
-                    @JsonSubTypes.Type(value = NetworkInterface.class, name = "network"),
+                    @JsonSubTypes.Type(value = InterfaceEndpoints.class, name = "network"),
                     @JsonSubTypes.Type(value = SocketEndpoints.class, name = "socket") })
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "class")
     public interface Endpoints {
@@ -150,19 +150,19 @@ public class SkyConfiguration {
 
     public static class InterfaceEndpoints implements Endpoints {
         @JsonProperty
-        public boolean preferIpV6   = false;
+        public boolean preferIpV6    = false;
         @JsonProperty
-        public String  interfaceName;
+        public String  interfaceName = "eth0";
         @JsonProperty
-        public int     apiPort      = 0;
+        public int     apiPort       = 8123;
         @JsonProperty
-        public int     approachPort = 0;
+        public int     approachPort  = 8124;
         @JsonProperty
-        public int     clusterPort  = 0;
+        public int     clusterPort   = 8125;
         @JsonProperty
-        public int     servicePort  = 0;
+        public int     servicePort   = 8126;
         @JsonProperty
-        public int     healthPort   = 0;
+        public int     healthPort    = 8127;
 
         private SocketAddress resolvedApiEndpoint;
         private SocketAddress resolvedApproachEndpoint;

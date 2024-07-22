@@ -1,12 +1,4 @@
 
-endpoints:
-  class: socket
-  api: 8123
-  approach: 8124
-  cluster: 8125
-  service: 8126
-  health: 8127
-
 viewGossipDuration: PT0H0M00.03S
 
 choamParameters:

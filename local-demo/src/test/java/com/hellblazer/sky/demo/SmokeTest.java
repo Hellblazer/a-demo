@@ -240,12 +240,6 @@ public class SmokeTest {
     private Map<String, String> boostrap() {
         Map<String, String> env = new HashMap<>();
         env.put("GENESIS", "true");
-        env.put("BIND_INTERFACE", "eth0");
-        env.put("API", "8123");
-        env.put("APPROACH", "8124");
-        env.put("CLUSTER", "8125");
-        env.put("SERVICE", "8126");
-        env.put("HEALTH", "8127");
         return env;
     }
 
