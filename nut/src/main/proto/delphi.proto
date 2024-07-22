@@ -13,6 +13,7 @@ service Oracle_ {
   rpc addNamespace(Namespace_) returns (google.protobuf.Empty){}
   rpc addObject(Object_) returns (google.protobuf.Empty){}
   rpc addRelation(Relation_) returns (google.protobuf.Empty){}
+  rpc addSubject(Subject_) returns (google.protobuf.Empty){}
 
   rpc check(Assertion_) returns(AssertionCheck) {}
 
@@ -20,6 +21,7 @@ service Oracle_ {
   rpc deleteNamespace(Namespace_) returns (google.protobuf.Empty){}
   rpc deleteObject(Object_) returns (google.protobuf.Empty){}
   rpc deleteRelation(Relation_) returns (google.protobuf.Empty){}
+  rpc deleteSubject(Subject_) returns (google.protobuf.Empty){}
 
   rpc expandSubject(Object_) returns (Subjects) {}
   rpc expandObject(Subject_) returns (Objects) {}

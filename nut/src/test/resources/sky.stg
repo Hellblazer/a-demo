@@ -4,7 +4,7 @@ seeds:
     endpoint: <seed>
 >>
 
-sky(clusterEndpoint, apiEndpoint, approachEndpoint, memberId, seedId, seedEndpoint, approach, n, k, genesis) ::= <<
+sky(clusterEndpoint, apiEndpoint, approachEndpoint, serviceEndpoint, memberId, seedId, seedEndpoint, approach, n, k, genesis) ::= <<
 
 <if(approach)>
 approaches:
@@ -22,6 +22,7 @@ choamParameters:
   gossipDuration: PT0H0M00.030S
   synchronizationCycles: 10
   regenerationCycles: 10
+  submitTimeout: PT0H0M12S
 
 producerParameters:
   maxBatchByteSize: 10485760
@@ -35,6 +36,7 @@ endpoints:
     cluster: <clusterEndpoint>
     api: <apiEndpoint>
     approach: <approachEndpoint>
+    service: <serviceEndpoint>
 
 shamir:
     shares: <n>

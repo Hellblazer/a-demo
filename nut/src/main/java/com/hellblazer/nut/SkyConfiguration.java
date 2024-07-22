@@ -142,6 +142,10 @@ public class SkyConfiguration {
         SocketAddress approachEndpoint();
 
         SocketAddress clusterEndpoint();
+
+        SocketAddress healthEndpoint();
+
+        SocketAddress serviceEndpoint();
     }
 
     public static class InterfaceEndpoints implements Endpoints {
@@ -155,10 +159,16 @@ public class SkyConfiguration {
         public int     approachPort = 0;
         @JsonProperty
         public int     clusterPort  = 0;
+        @JsonProperty
+        public int     servicePort  = 0;
+        @JsonProperty
+        public int     healthPort   = 0;
 
         private SocketAddress resolvedApiEndpoint;
         private SocketAddress resolvedApproachEndpoint;
         private SocketAddress resolvedClusterEndpoint;
+        private SocketAddress resolvedServiceEndpoint;
+        private SocketAddress resolvedHealthEndpoint;
 
         @Override
         public SocketAddress apiEndpoint() {
@@ -193,9 +203,32 @@ public class SkyConfiguration {
         }
 
         @Override
+        public SocketAddress healthEndpoint() {
+            if (resolvedHealthEndpoint != null) {
+                return resolvedHealthEndpoint;
+            }
+            var address = getAddress();
+            resolvedHealthEndpoint = new InetSocketAddress(address,
+                                                           healthPort == 0 ? Utils.allocatePort(address) : healthPort);
+            return resolvedHealthEndpoint;
+        }
+
+        @Override
+        public SocketAddress serviceEndpoint() {
+            if (resolvedServiceEndpoint != null) {
+                return resolvedServiceEndpoint;
+            }
+            var address = getAddress();
+            resolvedServiceEndpoint = new InetSocketAddress(address,
+                                                            apiPort == 0 ? Utils.allocatePort(address) : servicePort);
+            return resolvedServiceEndpoint;
+        }
+
+        @Override
         public String toString() {
             return "Interface {" + "preferIpV6=" + preferIpV6 + ", interface='" + interfaceName + ", api="
-            + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster=" + clusterEndpoint() + '}';
+            + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster=" + clusterEndpoint() + ", service="
+            + serviceEndpoint() + '}';
         }
 
         private InetAddress getAddress() {
@@ -241,10 +274,13 @@ public class SkyConfiguration {
         public String approach;
         @JsonProperty
         public String cluster;
+        @JsonProperty
+        public String service;
 
         private SocketAddress resolvedApiEndpoint;
         private SocketAddress resolvedApproachEndpoint;
         private SocketAddress resolvedClusterEndpoint;
+        private SocketAddress resolvedServiceEndpoint;
 
         @Override
         public SocketAddress apiEndpoint() {
@@ -274,6 +310,20 @@ public class SkyConfiguration {
         }
 
         @Override
+        public SocketAddress healthEndpoint() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SocketAddress serviceEndpoint() {
+            if (resolvedServiceEndpoint != null) {
+                return resolvedServiceEndpoint;
+            }
+            resolvedServiceEndpoint = new InProcessSocketAddress("%s:%s".formatted(unique, service));
+            return resolvedServiceEndpoint;
+        }
+
+        @Override
         public String toString() {
             return "Local {api=" + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster=" + clusterEndpoint()
             + '}';
@@ -287,10 +337,16 @@ public class SkyConfiguration {
         public String approach;
         @JsonProperty
         public String cluster;
+        @JsonProperty
+        public String service;
+        @JsonProperty
+        public String health;
 
         private SocketAddress resolvedApiEndpoint;
         private SocketAddress resolvedApproachEndpoint;
         private SocketAddress resolvedClusterEndpoint;
+        private SocketAddress resolvedServiceEndpoint;
+        private SocketAddress resolvedHealthEndpoint;
 
         @Override
         public SocketAddress apiEndpoint() {
@@ -320,9 +376,33 @@ public class SkyConfiguration {
         }
 
         @Override
+        public SocketAddress healthEndpoint() {
+            if (resolvedHealthEndpoint != null) {
+                return resolvedHealthEndpoint;
+            }
+            resolvedHealthEndpoint = EndpointProvider.reify(health);
+            return resolvedHealthEndpoint;
+        }
+
+        @Override
+        public SocketAddress serviceEndpoint() {
+            if (resolvedServiceEndpoint != null) {
+                return resolvedServiceEndpoint;
+            }
+            resolvedServiceEndpoint = EndpointProvider.reify(service);
+            return resolvedServiceEndpoint;
+        }
+
+        @Override
         public String toString() {
+            String health = "";
+            try {
+                health = ", health=" + healthEndpoint();
+            } catch (Throwable e) {
+                // ignore
+            }
             return "Socket {api=" + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster="
-            + clusterEndpoint() + '}';
+            + clusterEndpoint() + health + '}';
         }
     }
 

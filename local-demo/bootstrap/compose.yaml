@@ -8,4 +8,5 @@ services:
       API: 50000
       APPROACH: 50001
       CLUSTER: 50002
-    network_mode: bridge
+      SERVICE: 50003
+      HEALTH: 50004

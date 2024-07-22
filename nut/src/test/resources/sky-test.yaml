@@ -6,6 +6,7 @@ endpoints:
   cluster: localhost:0
   api: localhost:0
   approach: localhost:0
+  service: localhost:0
 
 domain:
   dbURL: "jdbc:h2:mem:sql;DB_CLOSE_DELAY=-1"

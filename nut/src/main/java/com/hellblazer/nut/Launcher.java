@@ -51,6 +51,8 @@ public class Launcher {
     public final static String APPROACH_PORT  = "APPROACH";
     public final static String CLUSTER_PORT   = "CLUSTER";
     public final static String BIND_INTERFACE = "BIND_INTERFACE";
+    public final static String SERVICE_PORT   = "SERVICE";
+    public final static String HEALTH_PORT    = "HEALTH";
 
     private static final Logger log = LoggerFactory.getLogger(Sphinx.class);
 
@@ -81,6 +83,8 @@ public class Launcher {
             var api = System.getenv(API_PORT);
             var cluster = System.getenv(CLUSTER_PORT);
             var approach = System.getenv(APPROACH_PORT);
+            var service = System.getenv(SERVICE_PORT);
+            var health = System.getenv(HEALTH_PORT);
 
             var endpoints = new SkyConfiguration.InterfaceEndpoints();
             endpoints.interfaceName = bindInterface;
@@ -88,11 +92,17 @@ public class Launcher {
             if (api != null) {
                 endpoints.apiPort = Integer.parseInt(api);
             }
-            if (cluster != null) {
+            if (approach != null) {
                 endpoints.approachPort = Integer.parseInt(approach);
             }
-            if (approach != null) {
+            if (cluster != null) {
                 endpoints.clusterPort = Integer.parseInt(cluster);
+            }
+            if (service != null) {
+                endpoints.servicePort = Integer.parseInt(service);
+            }
+            if (health != null) {
+                endpoints.healthPort = Integer.parseInt(health);
             }
             config.endpoints = endpoints;
         }

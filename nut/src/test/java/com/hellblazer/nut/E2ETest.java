@@ -20,6 +20,7 @@ package com.hellblazer.nut;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.hellblazer.nut.service.OracleAdapter;
 import com.hellblazer.nut.comms.MtlsClient;
 import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.Share;
@@ -45,18 +46,23 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import static com.salesforce.apollo.choam.Session.retryNesting;
 import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -71,6 +77,160 @@ public class E2ETest {
     private List<Proc>    processes;
     private List<Sphinx>  sphinxes;
     private AtomicBoolean failures;
+
+    public static void smoke(Oracle oracle) throws Exception {
+        // Namespace
+        var ns = Oracle.namespace("my-org");
+
+        // relations
+        var member = ns.relation("member");
+        var flag = ns.relation("flag");
+
+        // Group membership
+        var userMembers = ns.subject("Users", member);
+        var adminMembers = ns.subject("Admins", member);
+        var helpDeskMembers = ns.subject("HelpDesk", member);
+        var managerMembers = ns.subject("Managers", member);
+        var technicianMembers = ns.subject("Technicians", member);
+        var abcTechMembers = ns.subject("ABCTechnicians", member);
+        var flaggedTechnicianMembers = ns.subject(abcTechMembers.name(), flag);
+
+        // Flagged subjects for testing
+        var egin = ns.subject("Egin", flag);
+        var ali = ns.subject("Ali", flag);
+        var gl = ns.subject("G l", flag);
+        var fuat = ns.subject("Fuat", flag);
+
+        // Subjects
+        var jale = ns.subject("Jale");
+        var irmak = ns.subject("Irmak");
+        var hakan = ns.subject("Hakan");
+        var demet = ns.subject("Demet");
+        var can = ns.subject("Can");
+        var burcu = ns.subject("Burcu");
+
+        // Map direct edges. Transitive edges added as a side effect
+
+        var countDown = new CountDownLatch(17);
+        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
+
+            retryNesting(() -> oracle.map(helpDeskMembers, adminMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(ali, adminMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                   exec);
+            retryNesting(() -> oracle.map(ali, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                  exec);
+            retryNesting(() -> oracle.map(burcu, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                    exec);
+            retryNesting(() -> oracle.map(can, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                  exec);
+            retryNesting(() -> oracle.map(managerMembers, userMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(technicianMembers, userMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(demet, helpDeskMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                        exec);
+            retryNesting(() -> oracle.map(egin, helpDeskMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                       exec);
+            retryNesting(() -> oracle.map(egin, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                   exec);
+            retryNesting(() -> oracle.map(fuat, managerMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                      exec);
+            retryNesting(() -> oracle.map(gl, managerMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                    exec);
+            retryNesting(() -> oracle.map(hakan, technicianMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(irmak, technicianMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(abcTechMembers, technicianMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(flaggedTechnicianMembers, technicianMembers), 3).whenCompleteAsync(
+            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(jale, abcTechMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
+                                                                                      exec);
+
+            countDown.await(30, TimeUnit.SECONDS);
+        }
+
+        // Protected resource namespace
+        var docNs = Oracle.namespace("Document");
+        // Permission
+        var view = docNs.relation("View");
+        // Protected Object
+        var object123View = docNs.object("123", view);
+
+        // Users can View Document 123
+        Oracle.Assertion tuple = userMembers.assertion(object123View);
+        retryNesting(() -> oracle.add(tuple), 3).get(120, TimeUnit.SECONDS);
+
+        // Direct subjects that can View the document
+        var viewers = oracle.read(object123View);
+        assertEquals(1, viewers.size());
+        assertTrue(viewers.contains(userMembers), "Should contain: " + userMembers);
+
+        // Direct objects that can User member can view
+        var viewable = oracle.read(userMembers);
+        assertEquals(1, viewable.size());
+        assertEquals(viewable.getFirst(), object123View, "Should contain: " + object123View);
+
+        // Assert flagged technicians can directly view the document
+        Oracle.Assertion grantTechs = flaggedTechnicianMembers.assertion(object123View);
+        retryNesting(() -> oracle.add(grantTechs), 3).get(120, TimeUnit.SECONDS);
+
+        // Now have 2 direct subjects that can view the doc
+        viewers = oracle.read(object123View);
+        assertEquals(2, viewers.size());
+        assertTrue(viewers.contains(userMembers), "Should contain: " + userMembers);
+        assertTrue(viewers.contains(flaggedTechnicianMembers), "Should contain: " + flaggedTechnicianMembers);
+
+        // flagged has direct view
+        viewable = oracle.read(flaggedTechnicianMembers);
+        assertEquals(1, viewable.size());
+        assertTrue(viewable.contains(object123View), "Should contain: " + object123View);
+
+        // Filter direct on flagged relation
+        var flaggedViewers = oracle.read(flag, object123View);
+        assertEquals(1, flaggedViewers.size());
+        assertTrue(flaggedViewers.contains(flaggedTechnicianMembers), "Should contain: " + flaggedTechnicianMembers);
+
+        // Transitive subjects that can view the document
+        var inferredViewers = oracle.expand(object123View);
+        assertEquals(14, inferredViewers.size());
+        for (var s : Arrays.asList(ali, jale, egin, irmak, hakan, gl, fuat, can, burcu, managerMembers,
+                                   technicianMembers, abcTechMembers, userMembers, flaggedTechnicianMembers)) {
+            assertTrue(inferredViewers.contains(s), "Should contain: " + s);
+        }
+
+        // Transitive subjects filtered by flag predicate
+        var inferredFlaggedViewers = oracle.expand(flag, object123View);
+        assertEquals(5, inferredFlaggedViewers.size());
+        for (var s : Arrays.asList(egin, ali, gl, fuat, flaggedTechnicianMembers)) {
+            assertTrue(inferredFlaggedViewers.contains(s), "Should contain: " + s);
+        }
+
+        // Check some assertions
+        assertTrue(oracle.check(object123View.assertion(jale)));
+        assertTrue(oracle.check(object123View.assertion(egin)));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
+
+        // Remove them
+        retryNesting(() -> oracle.remove(abcTechMembers, technicianMembers), 3).get(60, TimeUnit.SECONDS);
+
+        assertFalse(oracle.check(object123View.assertion(jale)));
+        assertTrue(oracle.check(object123View.assertion(egin)));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
+
+        // Remove our assertion
+        retryNesting(() -> oracle.delete(tuple), 3).get(20, TimeUnit.SECONDS);
+
+        assertFalse(oracle.check(object123View.assertion(jale)));
+        assertFalse(oracle.check(object123View.assertion(egin)));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
+
+        // Some deletes
+        retryNesting(() -> oracle.delete(abcTechMembers), 3).get(20, TimeUnit.SECONDS);
+        retryNesting(() -> oracle.delete(flaggedTechnicianMembers), 3).get(20, TimeUnit.SECONDS);
+    }
 
     @AfterEach
     public void after() {
@@ -116,9 +276,7 @@ public class E2ETest {
             System.out.println("** Starting m " + (mi + 1));
             System.out.println();
             var start = s.start();
-            start.whenComplete((v, t) -> {
-                System.out.format("** Member %s has joined the view\n", (mi + 1));
-            });
+            start.whenComplete((v, t) -> System.out.format("** Member %s has joined the view\n", (mi + 1)));
             unwrap(mi, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
             System.out.println();
             System.out.format("** Member: %s started\n", (mi + 1));
@@ -130,8 +288,7 @@ public class E2ETest {
         System.out.println();
 
         var domains = sphinxes.subList(0, 4);
-        Utils.waitForCondition(120_000, 1_000,
-                               () -> failures.get() || domains.stream().allMatch(Sphinx::active));
+        Utils.waitForCondition(120_000, 1_000, () -> failures.get() || domains.stream().allMatch(Sphinx::active));
         assertTrue(domains.stream().allMatch(Sphinx::active),
                    "** Minimal quorum did not become active : " + (domains.stream()
                                                                           .filter(c -> !c.active())
@@ -149,17 +306,14 @@ public class E2ETest {
             System.out.println("** Starting m " + (mi + 1));
             System.out.println();
             var start = s.start();
-            start.whenComplete((v, t) -> {
-                System.out.format("** %s has joined the view\n", (mi + 1));
-            });
+            start.whenComplete((v, t) -> System.out.format("** %s has joined the view\n", (mi + 1)));
             unwrap(mi, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
             System.out.println();
             System.out.format("** Member: %s has been started\n", (mi + 1));
             System.out.println();
         });
 
-        Utils.waitForCondition(300_000, 1_000,
-                               () -> failures.get() || sphinxes.stream().allMatch(Sphinx::active));
+        Utils.waitForCondition(300_000, 1_000, () -> failures.get() || sphinxes.stream().allMatch(Sphinx::active));
         if (!sphinxes.stream().allMatch(Sphinx::active)) {
             System.out.println();
             fail("\n\nNodes did not fully activate: \n" + (sphinxes.stream()
@@ -173,10 +327,9 @@ public class E2ETest {
         System.out.println();
 
         Thread.sleep(1000);
-
-        var oracle = sphinxes.get(0).getDelphi();
+        var oracle = of(sphinxes.getFirst().getServiceEndpoint());
         oracle.add(new Oracle.Namespace("test")).get(120, TimeUnit.SECONDS);
-        SkyTest.smoke(oracle);
+        smoke(oracle);
     }
 
     private MtlsClient apiClient(int i, InetSocketAddress serverAddress) {
@@ -186,11 +339,13 @@ public class E2ETest {
                               clientCert.getPrivateKey(), CertificateValidator.NONE);
     }
 
-    private InputStream configFor(STGroup g, Proc process, List<String> approach, String seed, String seedId, boolean genesis) {
+    private InputStream configFor(STGroup g, Proc process, List<String> approach, String seed, String seedId,
+                                  boolean genesis) {
         var t = g.getInstanceOf("sky");
         t.add("clusterEndpoint", process.clusterEndpoint);
         t.add("apiEndpoint", process.apiEndpoint);
         t.add("approachEndpoint", process.approachEndpoint);
+        t.add("serviceEndpoint", process.serviceEndpoint);
         t.add("memberId", process.memberId);
         t.add("approach", approach);
         t.add("seedEndpoint", seed);
@@ -215,6 +370,7 @@ public class E2ETest {
         processes = IntStream.range(0, CARDINALITY)
                              .mapToObj(i -> new com.hellblazer.nut.E2ETest.Proc(EndpointProvider.allocatePort(), i,
                                                                                 EndpointProvider.allocatePort(),
+                                                                                EndpointProvider.allocatePort(),
                                                                                 EndpointProvider.allocatePort()))
                              .toList();
         com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
@@ -227,16 +383,15 @@ public class E2ETest {
     private void initializeKernel(String seedId) {
         STGroup g = new STGroupFile("src/test/resources/sky.stg");
 
-        com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
+        var first = processes.getFirst();
         processes.subList(1, 4)
                  .stream()
-                 .map(p -> configFor(g, p, Collections.singletonList(first.approachEndpoint),
-                                     first.clusterEndpoint, seedId, true))
+                 .map(
+                 p -> configFor(g, p, Collections.singletonList(first.approachEndpoint), first.clusterEndpoint, seedId,
+                                true))
                  .map(c -> {
                      var sphinx = new Sphinx(c);
-                     sphinx.setOnFailure(new CompletableFuture<Void>().whenComplete((v, t) -> {
-                         failures.set(true);
-                     }));
+                     sphinx.setOnFailure(new CompletableFuture<Void>().whenComplete((v, t) -> failures.set(true)));
                      return sphinx;
                  })
                  .forEach(s -> sphinxes.add(s));
@@ -248,16 +403,20 @@ public class E2ETest {
         com.hellblazer.nut.E2ETest.Proc first = processes.getFirst();
         processes.subList(4, CARDINALITY)
                  .stream()
-                 .map(p -> configFor(g, p, Collections.singletonList(first.approachEndpoint),
-                                     first.clusterEndpoint, seedId, false))
+                 .map(
+                 p -> configFor(g, p, Collections.singletonList(first.approachEndpoint), first.clusterEndpoint, seedId,
+                                false))
                  .map(c -> {
                      var sphinx = new Sphinx(c);
-                     sphinx.setOnFailure(new CompletableFuture<Void>().whenComplete((v, t) -> {
-                         failures.set(true);
-                     }));
+                     sphinx.setOnFailure(new CompletableFuture<Void>().whenComplete((v, t) -> failures.set(true)));
                      return sphinx;
                  })
                  .forEach(s -> sphinxes.add(s));
+    }
+
+    private Oracle of(SocketAddress endpoint) {
+        var client = apiClient(0, (InetSocketAddress) endpoint);
+        return new OracleAdapter(client.getChannel());
     }
 
     private Share share(int i, EncryptionAlgorithm algorithm, List<KeyPair> keys,
@@ -325,6 +484,7 @@ public class E2ETest {
         }
     }
 
-    public record Proc(String clusterEndpoint, int memberId, String apiEndpoint, String approachEndpoint) {
+    public record Proc(String clusterEndpoint, int memberId, String apiEndpoint, String approachEndpoint,
+                       String serviceEndpoint) {
     }
 }
