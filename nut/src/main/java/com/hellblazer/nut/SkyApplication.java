@@ -250,16 +250,6 @@ public class SkyApplication {
         //        node.setDhtVerifiers();
         node.setVerifiersNONE();
         node.start();
-        try {
-            var healthEndpoint = configuration.endpoints.healthEndpoint();
-            log.info("Health check endpoint: {} on: {}", healthEndpoint, sanctorum.getId());
-            health = new ServerSocket();
-            health.bind(healthEndpoint);
-        } catch (UnsupportedOperationException e) {
-            log.info("Health endpoint not supported ");
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to start  health on: %s".formatted(sanctorum.getId()), e);
-        }
         onStart.whenCompleteAsync((v, t) -> {
             log.info("Starting Sky services on: {}", sanctorum.getId());
             try {
@@ -269,6 +259,16 @@ public class SkyApplication {
                 log.error("Unable to start services on: {}", sanctorum.getId(), e);
                 shutdown();
                 throw new IllegalStateException("Unable to start services!", e);
+            }
+            try {
+                var healthEndpoint = configuration.endpoints.healthEndpoint();
+                health = new ServerSocket();
+                health.bind(healthEndpoint);
+                log.info("Health check bound to: {} on: {}", healthEndpoint, sanctorum.getId());
+            } catch (UnsupportedOperationException e) {
+                log.info("Health endpoint not supported on: {}", sanctorum.getId());
+            } catch (IOException e) {
+                log.error("Health endpoint error on: {}", sanctorum.getId(), e);
             }
         });
         node.getFoundation().start(onStart, viewGossipDuration, seeds);

@@ -332,17 +332,21 @@ public class SkyConfiguration {
 
     public static class SocketEndpoints implements Endpoints {
         @JsonProperty
-        public  String        api;
+        public String api;
         @JsonProperty
-        public  String        approach;
+        public String approach;
         @JsonProperty
-        public  String        cluster;
+        public String cluster;
         @JsonProperty
-        public  String        service;
+        public String service;
+        @JsonProperty
+        public String health;
+
         private SocketAddress resolvedApiEndpoint;
         private SocketAddress resolvedApproachEndpoint;
         private SocketAddress resolvedClusterEndpoint;
         private SocketAddress resolvedServiceEndpoint;
+        private SocketAddress resolvedHealthEndpoint;
 
         @Override
         public SocketAddress apiEndpoint() {
@@ -373,7 +377,11 @@ public class SkyConfiguration {
 
         @Override
         public SocketAddress healthEndpoint() {
-            throw new UnsupportedOperationException();
+            if (resolvedHealthEndpoint != null) {
+                return resolvedHealthEndpoint;
+            }
+            resolvedHealthEndpoint = EndpointProvider.reify(health);
+            return resolvedHealthEndpoint;
         }
 
         @Override
