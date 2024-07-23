@@ -199,7 +199,7 @@ public class SmokeTest {
         try (GenericContainer<?> boot = new GenericContainer<>(skyImage).withNetwork(network)
                                                                         .withNetworkAliases("bootstrap")
                                                                         .withNetworkMode("bridge")
-                                                                        .withEnv(boostrap())
+                                                                        .withEnv(bootstrap())
                                                                         .withExposedPorts(8126, 8127)) {
             boot.start();
             boot.followOutput(logConsumer);
@@ -237,14 +237,14 @@ public class SmokeTest {
                               clientCert.getPrivateKey(), CertificateValidator.NONE);
     }
 
-    private Map<String, String> boostrap() {
+    private Map<String, String> bootstrap() {
         Map<String, String> env = new HashMap<>();
         env.put("GENESIS", "true");
         return env;
     }
 
     private Map<String, String> kernel() {
-        Map<String, String> env = boostrap();
+        Map<String, String> env = bootstrap();
         env.put("APPROACHES", "bootstrap:8124");
         env.put("SEEDS", "bootstrap:8125#8123");
         return env;
