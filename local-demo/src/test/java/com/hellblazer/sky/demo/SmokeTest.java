@@ -133,7 +133,7 @@ public class SmokeTest {
 
         // Assert flagged technicians can directly view the document
         Oracle.Assertion grantTechs = flaggedTechnicianMembers.assertion(object123View);
-        retryNesting(() -> oracle.add(grantTechs), 3).get(120, TimeUnit.SECONDS);
+        var ts = retryNesting(() -> oracle.add(grantTechs), 3).get(120, TimeUnit.SECONDS);
 
         // Now have 2 direct subjects that can view the doc
         viewers = oracle.read(object123View);
@@ -167,23 +167,23 @@ public class SmokeTest {
         }
 
         // Check some assertions
-        assertTrue(oracle.check(object123View.assertion(jale)));
-        assertTrue(oracle.check(object123View.assertion(egin)));
-        assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
+        assertTrue(oracle.check(object123View.assertion(jale), ts));
+        assertTrue(oracle.check(object123View.assertion(egin), ts));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers), ts));
 
         // Remove them
         retryNesting(() -> oracle.remove(abcTechMembers, technicianMembers), 3).get(60, TimeUnit.SECONDS);
 
-        assertFalse(oracle.check(object123View.assertion(jale)));
-        assertTrue(oracle.check(object123View.assertion(egin)));
-        assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
+        assertFalse(oracle.check(object123View.assertion(jale), ts));
+        assertTrue(oracle.check(object123View.assertion(egin), ts));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers), ts));
 
         // Remove our assertion
         retryNesting(() -> oracle.delete(tuple), 3).get(20, TimeUnit.SECONDS);
 
-        assertFalse(oracle.check(object123View.assertion(jale)));
-        assertFalse(oracle.check(object123View.assertion(egin)));
-        assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
+        assertFalse(oracle.check(object123View.assertion(jale), ts));
+        assertFalse(oracle.check(object123View.assertion(egin), ts));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers), ts));
 
         // Some deletes
         retryNesting(() -> oracle.delete(abcTechMembers), 3).get(20, TimeUnit.SECONDS);

@@ -20,11 +20,11 @@ package com.hellblazer.nut;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.hellblazer.nut.service.OracleAdapter;
 import com.hellblazer.nut.comms.MtlsClient;
 import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.proto.SphynxGrpc;
+import com.hellblazer.nut.service.OracleAdapter;
 import com.hellblazer.nut.support.ShareService;
 import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.cryptography.Digest;
@@ -38,6 +38,8 @@ import io.netty.handler.ssl.ClientAuth;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 
@@ -70,9 +72,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author hal.hildebrand
  **/
 public class E2ETest {
-    private final static int SHARES      = 7;
-    private final static int CARDINALITY = 7;
-    private final static int THRESHOLD   = 4;
+    private static final Logger log         = LoggerFactory.getLogger(E2ETest.class);
+    private final static int    SHARES      = 7;
+    private final static int    CARDINALITY = 7;
+    private final static int    THRESHOLD   = 4;
 
     private List<Proc>    processes;
     private List<Sphinx>  sphinxes;
@@ -113,9 +116,10 @@ public class E2ETest {
 
         var countDown = new CountDownLatch(17);
         try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
-
-            retryNesting(() -> oracle.map(helpDeskMembers, adminMembers), 3).whenCompleteAsync(
-            (_, _) -> countDown.countDown(), exec);
+            retryNesting(() -> oracle.map(helpDeskMembers, adminMembers), 3).whenCompleteAsync((h, _) -> {
+                log.info("mapping helpdesk members to admin members @ {}", h.longValue());
+                countDown.countDown();
+            }, exec);
             retryNesting(() -> oracle.map(ali, adminMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
                                                                                    exec);
             retryNesting(() -> oracle.map(ali, userMembers), 3).whenCompleteAsync((_, _) -> countDown.countDown(),
@@ -161,7 +165,7 @@ public class E2ETest {
 
         // Users can View Document 123
         Oracle.Assertion tuple = userMembers.assertion(object123View);
-        retryNesting(() -> oracle.add(tuple), 3).get(120, TimeUnit.SECONDS);
+        var t1 = retryNesting(() -> oracle.add(tuple), 3).get(120, TimeUnit.SECONDS);
 
         // Direct subjects that can View the document
         var viewers = oracle.read(object123View);
@@ -175,7 +179,7 @@ public class E2ETest {
 
         // Assert flagged technicians can directly view the document
         Oracle.Assertion grantTechs = flaggedTechnicianMembers.assertion(object123View);
-        retryNesting(() -> oracle.add(grantTechs), 3).get(120, TimeUnit.SECONDS);
+        var t2 = retryNesting(() -> oracle.add(grantTechs), 3).get(120, TimeUnit.SECONDS);
 
         // Now have 2 direct subjects that can view the doc
         viewers = oracle.read(object123View);
@@ -209,23 +213,23 @@ public class E2ETest {
         }
 
         // Check some assertions
-        assertTrue(oracle.check(object123View.assertion(jale)));
-        assertTrue(oracle.check(object123View.assertion(egin)));
-        assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
+        assertTrue(oracle.check(object123View.assertion(jale), t2));
+        assertTrue(oracle.check(object123View.assertion(egin), t2));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers), t2));
 
         // Remove them
-        retryNesting(() -> oracle.remove(abcTechMembers, technicianMembers), 3).get(60, TimeUnit.SECONDS);
+        var t3 = retryNesting(() -> oracle.remove(abcTechMembers, technicianMembers), 3).get(60, TimeUnit.SECONDS);
 
-        assertFalse(oracle.check(object123View.assertion(jale)));
-        assertTrue(oracle.check(object123View.assertion(egin)));
-        assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
+        assertFalse(oracle.check(object123View.assertion(jale), t3));
+        assertTrue(oracle.check(object123View.assertion(egin), t3));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers), t3));
 
         // Remove our assertion
         retryNesting(() -> oracle.delete(tuple), 3).get(20, TimeUnit.SECONDS);
 
-        assertFalse(oracle.check(object123View.assertion(jale)));
-        assertFalse(oracle.check(object123View.assertion(egin)));
-        assertFalse(oracle.check(object123View.assertion(helpDeskMembers)));
+        assertFalse(oracle.check(object123View.assertion(jale), t3));
+        assertFalse(oracle.check(object123View.assertion(egin), t3));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers), t3));
 
         // Some deletes
         retryNesting(() -> oracle.delete(abcTechMembers), 3).get(20, TimeUnit.SECONDS);

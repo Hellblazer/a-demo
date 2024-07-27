@@ -23,6 +23,7 @@ import com.hellblazer.delphi.proto.*;
 import com.salesforce.apollo.delphinius.Oracle;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
+import org.joou.ULong;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -116,34 +117,40 @@ public class OracleAdapter implements Oracle {
     }
 
     @Override
-    public CompletableFuture<Void> add(Assertion assertion) {
-        return fs(asyncDelphi.addAssertion(of(assertion))).thenApply(_ -> null);
+    public CompletableFuture<ULong> add(Assertion assertion) {
+        return fs(asyncDelphi.addAssertion(of(assertion))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> add(Namespace namespace) {
-        return fs(asyncDelphi.addNamespace(of(namespace))).thenApply(_ -> null);
+    public CompletableFuture<ULong> add(Namespace namespace) {
+        return fs(asyncDelphi.addNamespace(of(namespace))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> add(Object object) {
-        return fs(asyncDelphi.addObject(of(object))).thenApply(_ -> null);
+    public CompletableFuture<ULong> add(Object object) {
+        return fs(asyncDelphi.addObject(of(object))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> add(Relation relation) {
-        return fs(asyncDelphi.addRelation(of(relation))).thenApply(_ -> null);
+    public CompletableFuture<ULong> add(Relation relation) {
+        return fs(asyncDelphi.addRelation(of(relation))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> add(Subject subject) {
-        return fs(asyncDelphi.addSubject(of(subject))).thenApply(_ -> null);
+    public CompletableFuture<ULong> add(Subject subject) {
+        return fs(asyncDelphi.addSubject(of(subject))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
     public boolean check(Assertion assertion) throws SQLException {
+        throw new SQLException(new UnsupportedOperationException("Must provide time stamp"));
+    }
+
+    @Override
+    public boolean check(Assertion assertion, ULong valid) throws SQLException {
         try {
-            return syncDelphi.check(of(assertion)).getResult();
+            var assertionAt = AssertionAt.newBuilder().setAssertion(of(assertion)).setTs(valid.longValue()).build();
+            return syncDelphi.check(assertionAt).getResult();
         } catch (StatusRuntimeException e) {
             throw new SQLException(e);
         }
@@ -154,28 +161,28 @@ public class OracleAdapter implements Oracle {
     }
 
     @Override
-    public CompletableFuture<Void> delete(Assertion assertion) {
-        return fs(asyncDelphi.deleteAssertion(of(assertion))).thenApply(_ -> null);
+    public CompletableFuture<ULong> delete(Assertion assertion) {
+        return fs(asyncDelphi.deleteAssertion(of(assertion))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> delete(Namespace namespace) {
-        return fs(asyncDelphi.deleteNamespace(of(namespace))).thenApply(_ -> null);
+    public CompletableFuture<ULong> delete(Namespace namespace) {
+        return fs(asyncDelphi.deleteNamespace(of(namespace))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> delete(Object object) {
-        return fs(asyncDelphi.deleteObject(of(object))).thenApply(_ -> null);
+    public CompletableFuture<ULong> delete(Object object) {
+        return fs(asyncDelphi.deleteObject(of(object))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> delete(Relation relation) {
-        return fs(asyncDelphi.deleteRelation(of(relation))).thenApply(_ -> null);
+    public CompletableFuture<ULong> delete(Relation relation) {
+        return fs(asyncDelphi.deleteRelation(of(relation))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> delete(Subject subject) {
-        return fs(asyncDelphi.deleteSubject(of(subject))).thenApply(_ -> null);
+    public CompletableFuture<ULong> delete(Subject subject) {
+        return fs(asyncDelphi.deleteSubject(of(subject))).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
@@ -225,21 +232,21 @@ public class OracleAdapter implements Oracle {
     }
 
     @Override
-    public CompletableFuture<Void> map(Object parent, Object child) {
+    public CompletableFuture<ULong> map(Object parent, Object child) {
         var m = asyncDelphi.mapObject(ObjectMap.newBuilder().setParent(of(parent)).setChild(of(child)).build());
-        return fs(m).thenApply(_ -> null);
+        return fs(m).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> map(Relation parent, Relation child) {
+    public CompletableFuture<ULong> map(Relation parent, Relation child) {
         var m = asyncDelphi.mapRelation(RelationMap.newBuilder().setParent(of(parent)).setChild(of(child)).build());
-        return fs(m).thenApply(_ -> null);
+        return fs(m).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> map(Subject parent, Subject child) {
+    public CompletableFuture<ULong> map(Subject parent, Subject child) {
         var m = asyncDelphi.mapSubject(SubjectMap.newBuilder().setParent(of(parent)).setChild(of(child)).build());
-        return fs(m).thenApply(_ -> null);
+        return fs(m).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
@@ -307,22 +314,22 @@ public class OracleAdapter implements Oracle {
     }
 
     @Override
-    public CompletableFuture<Void> remove(Object parent, Object child) {
+    public CompletableFuture<ULong> remove(Object parent, Object child) {
         var unMap = asyncDelphi.unmapObject(ObjectMap.newBuilder().setParent(of(parent)).setChild(of(child)).build());
-        return fs(unMap).thenApply(_ -> null);
+        return fs(unMap).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> remove(Relation parent, Relation child) {
+    public CompletableFuture<ULong> remove(Relation parent, Relation child) {
         var unMap = asyncDelphi.unmapRelation(
         RelationMap.newBuilder().setParent(of(parent)).setChild(of(child)).build());
-        return fs(unMap).thenApply(_ -> null);
+        return fs(unMap).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
-    public CompletableFuture<Void> remove(Subject parent, Subject child) {
+    public CompletableFuture<ULong> remove(Subject parent, Subject child) {
         var unMap = asyncDelphi.unmapSubject(SubjectMap.newBuilder().setParent(of(parent)).setChild(of(child)).build());
-        return fs(unMap).thenApply(_ -> null);
+        return fs(unMap).thenApply(ts -> ULong.valueOf(ts.getTs()));
     }
 
     @Override
