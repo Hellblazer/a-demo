@@ -16,10 +16,10 @@
  */
 package com.hellblazer.nut.service;
 
-import com.google.protobuf.Empty;
 import com.hellblazer.delphi.proto.*;
 import com.salesforce.apollo.delphinius.Oracle;
 import io.grpc.stub.StreamObserver;
+import org.joou.ULong;
 
 import java.sql.SQLException;
 
@@ -77,69 +77,71 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
     }
 
     @Override
-    public void addAssertion(Assertion_ request, StreamObserver<Empty> responseObserver) {
-        oracle.add(assertion(request)).whenComplete((_, t) -> {
+    public void addAssertion(Assertion_ request, StreamObserver<Ts> responseObserver) {
+        oracle.add(assertion(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void addNamespace(Namespace_ request, StreamObserver<Empty> responseObserver) {
-        oracle.add(namespace(request)).whenComplete((_, t) -> {
+    public void addNamespace(Namespace_ request, StreamObserver<Ts> responseObserver) {
+        oracle.add(namespace(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void addObject(Object_ request, StreamObserver<Empty> responseObserver) {
-        oracle.add(object(request)).whenComplete((_, t) -> {
+    public void addObject(Object_ request, StreamObserver<Ts> responseObserver) {
+        oracle.add(object(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void addRelation(Relation_ request, StreamObserver<Empty> responseObserver) {
-        oracle.add(relation(request)).whenComplete((_, t) -> {
+    public void addRelation(Relation_ request, StreamObserver<Ts> responseObserver) {
+        oracle.add(relation(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void addSubject(Subject_ request, StreamObserver<Empty> responseObserver) {
-        oracle.add(subject(request)).whenComplete((_, t) -> {
+    public void addSubject(Subject_ request, StreamObserver<Ts> responseObserver) {
+        oracle.add(subject(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void check(Assertion_ request, StreamObserver<AssertionCheck> responseObserver) {
+    public void check(AssertionAt request, StreamObserver<AssertionCheck> responseObserver) {
         try {
-            responseObserver.onNext(AssertionCheck.newBuilder().setResult(oracle.check(assertion(request))).build());
+            var ts = ULong.valueOf(request.getTs());
+            responseObserver.onNext(
+            AssertionCheck.newBuilder().setResult(oracle.check(assertion(request.getAssertion()), ts)).build());
             responseObserver.onCompleted();
         } catch (SQLException e) {
             responseObserver.onError(e);
@@ -147,60 +149,60 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
     }
 
     @Override
-    public void deleteAssertion(Assertion_ request, StreamObserver<Empty> responseObserver) {
-        oracle.delete(assertion(request)).whenComplete((_, t) -> {
+    public void deleteAssertion(Assertion_ request, StreamObserver<Ts> responseObserver) {
+        oracle.delete(assertion(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void deleteNamespace(Namespace_ request, StreamObserver<Empty> responseObserver) {
-        oracle.delete(namespace(request)).whenComplete((_, t) -> {
+    public void deleteNamespace(Namespace_ request, StreamObserver<Ts> responseObserver) {
+        oracle.delete(namespace(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void deleteObject(Object_ request, StreamObserver<Empty> responseObserver) {
-        oracle.delete(object(request)).whenComplete((_, t) -> {
+    public void deleteObject(Object_ request, StreamObserver<Ts> responseObserver) {
+        oracle.delete(object(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void deleteRelation(Relation_ request, StreamObserver<Empty> responseObserver) {
-        oracle.delete(relation(request)).whenComplete((_, t) -> {
+    public void deleteRelation(Relation_ request, StreamObserver<Ts> responseObserver) {
+        oracle.delete(relation(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void deleteSubject(Subject_ request, StreamObserver<Empty> responseObserver) {
-        oracle.delete(subject(request)).whenComplete((_, t) -> {
+    public void deleteSubject(Subject_ request, StreamObserver<Ts> responseObserver) {
+        oracle.delete(subject(request)).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
@@ -261,36 +263,36 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
     }
 
     @Override
-    public void mapObject(ObjectMap request, StreamObserver<Empty> responseObserver) {
-        oracle.map(object(request.getParent()), object(request.getChild())).whenComplete((_, t) -> {
+    public void mapObject(ObjectMap request, StreamObserver<Ts> responseObserver) {
+        oracle.map(object(request.getParent()), object(request.getChild())).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void mapRelation(RelationMap request, StreamObserver<Empty> responseObserver) {
-        oracle.map(relation(request.getParent()), relation(request.getChild())).whenComplete((_, t) -> {
+    public void mapRelation(RelationMap request, StreamObserver<Ts> responseObserver) {
+        oracle.map(relation(request.getParent()), relation(request.getChild())).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void mapSubject(SubjectMap request, StreamObserver<Empty> responseObserver) {
-        oracle.map(subject(request.getParent()), subject(request.getChild())).whenComplete((_, t) -> {
+    public void mapSubject(SubjectMap request, StreamObserver<Ts> responseObserver) {
+        oracle.map(subject(request.getParent()), subject(request.getChild())).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
@@ -367,36 +369,36 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
     }
 
     @Override
-    public void unmapObject(ObjectMap request, StreamObserver<Empty> responseObserver) {
-        oracle.remove(object(request.getParent()), object(request.getChild())).whenComplete((_, t) -> {
+    public void unmapObject(ObjectMap request, StreamObserver<Ts> responseObserver) {
+        oracle.remove(object(request.getParent()), object(request.getChild())).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void unmapRelation(RelationMap request, StreamObserver<Empty> responseObserver) {
-        oracle.remove(relation(request.getParent()), relation(request.getChild())).whenComplete((_, t) -> {
+    public void unmapRelation(RelationMap request, StreamObserver<Ts> responseObserver) {
+        oracle.remove(relation(request.getParent()), relation(request.getChild())).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });
     }
 
     @Override
-    public void unmapSubject(SubjectMap request, StreamObserver<Empty> responseObserver) {
-        oracle.remove(subject(request.getParent()), subject(request.getChild())).whenComplete((_, t) -> {
+    public void unmapSubject(SubjectMap request, StreamObserver<Ts> responseObserver) {
+        oracle.remove(subject(request.getParent()), subject(request.getChild())).whenComplete((ts, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Empty.getDefaultInstance());
+                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
                 responseObserver.onCompleted();
             }
         });

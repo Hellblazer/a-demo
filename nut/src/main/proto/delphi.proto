@@ -9,39 +9,48 @@ import "google/protobuf/empty.proto";
 package com.hellblazer.delphi;
 
 service Oracle_ {
-  rpc addAssertion(Assertion_) returns (google.protobuf.Empty){}
-  rpc addNamespace(Namespace_) returns (google.protobuf.Empty){}
-  rpc addObject(Object_) returns (google.protobuf.Empty){}
-  rpc addRelation(Relation_) returns (google.protobuf.Empty){}
-  rpc addSubject(Subject_) returns (google.protobuf.Empty){}
+  rpc addAssertion(Assertion_) returns (Ts){}
+  rpc addNamespace(Namespace_) returns (Ts){}
+  rpc addObject(Object_) returns (Ts){}
+  rpc addRelation(Relation_) returns (Ts){}
+  rpc addSubject(Subject_) returns (Ts){}
 
-  rpc check(Assertion_) returns(AssertionCheck) {}
+  rpc check(AssertionAt) returns(AssertionCheck) {}
 
-  rpc deleteAssertion(Assertion_) returns (google.protobuf.Empty){}
-  rpc deleteNamespace(Namespace_) returns (google.protobuf.Empty){}
-  rpc deleteObject(Object_) returns (google.protobuf.Empty){}
-  rpc deleteRelation(Relation_) returns (google.protobuf.Empty){}
-  rpc deleteSubject(Subject_) returns (google.protobuf.Empty){}
+  rpc deleteAssertion(Assertion_) returns (Ts){}
+  rpc deleteNamespace(Namespace_) returns (Ts){}
+  rpc deleteObject(Object_) returns (Ts){}
+  rpc deleteRelation(Relation_) returns (Ts){}
+  rpc deleteSubject(Subject_) returns (Ts){}
 
   rpc expandSubject(Object_) returns (Subjects) {}
   rpc expandObject(Subject_) returns (Objects) {}
   rpc expandSubjects(ObjectPredicate) returns (Subjects) {}
   rpc expandObjects(SubjectPredicate) returns (Objects) {}
 
-  rpc mapObject(ObjectMap) returns (google.protobuf.Empty) {}
-  rpc mapSubject(SubjectMap) returns (google.protobuf.Empty) {}
-  rpc mapRelation(RelationMap) returns (google.protobuf.Empty) {}
+  rpc mapObject(ObjectMap) returns (Ts) {}
+  rpc mapSubject(SubjectMap) returns (Ts) {}
+  rpc mapRelation(RelationMap) returns (Ts) {}
 
   rpc readSubjects(Objects) returns (Subjects) {}
   rpc readObjects(Subjects) returns (Objects) {}
   rpc readSubjectsMatching(ObjectPredicates) returns (Subjects) {}
   rpc readObjectsMatching(SubjectPredicates) returns (Objects) {}
 
-  rpc unmapObject(ObjectMap) returns (google.protobuf.Empty) {}
-  rpc unmapSubject(SubjectMap) returns (google.protobuf.Empty) {}
-  rpc unmapRelation(RelationMap) returns (google.protobuf.Empty) {}
+  rpc unmapObject(ObjectMap) returns (Ts) {}
+  rpc unmapSubject(SubjectMap) returns (Ts) {}
+  rpc unmapRelation(RelationMap) returns (Ts) {}
 
   rpc subjects(ObjectPredicate) returns (Subjects) {}
+}
+
+message Ts {
+  uint64 ts = 1;
+}
+
+message AssertionAt {
+  uint64 ts = 1;
+  Assertion_ assertion = 2;
 }
 
 message Assertion_ {
