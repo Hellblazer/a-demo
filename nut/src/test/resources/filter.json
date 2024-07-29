@@ -10,9 +10,6 @@
       "excludeClasses": "net.bytebuddy.**"
     },
     {
-      "excludeClasses": "ch.qos.**"
-    },
-    {
       "excludeClasses": "org.apache.maven.**"
     }
   ]

@@ -157,6 +157,10 @@
   }, {
     "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt74b/nfkc.nrm\\E"
   }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt74b/uprops.icu\\E"
+  }, {
+    "pattern":"java.base:\\Qsun/net/idn/uidna.spp\\E"
+  }, {
     "pattern":"java.logging:\\Qsun/util/logging/resources/logging_en.properties\\E"
   }, {
     "pattern":"java.logging:\\Qsun/util/logging/resources/logging_en_GB.properties\\E"
