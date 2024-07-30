@@ -353,7 +353,9 @@ public class SkyConfiguration {
             if (resolvedApiEndpoint != null) {
                 return resolvedApiEndpoint;
             }
-            resolvedApiEndpoint = EndpointProvider.reify(api);
+            var raw = EndpointProvider.reify(api);
+            resolvedApiEndpoint =
+            raw.getPort() == 0 ? new InetSocketAddress(raw.getAddress(), Utils.allocatePort(raw.getAddress())) : raw;
             return resolvedApiEndpoint;
         }
 
@@ -362,7 +364,9 @@ public class SkyConfiguration {
             if (resolvedApproachEndpoint != null) {
                 return resolvedApproachEndpoint;
             }
-            resolvedApproachEndpoint = EndpointProvider.reify(approach);
+            var raw = EndpointProvider.reify(approach);
+            resolvedApproachEndpoint =
+            raw.getPort() == 0 ? new InetSocketAddress(raw.getAddress(), Utils.allocatePort(raw.getAddress())) : raw;
             return resolvedApproachEndpoint;
         }
 
@@ -371,7 +375,9 @@ public class SkyConfiguration {
             if (resolvedClusterEndpoint != null) {
                 return resolvedClusterEndpoint;
             }
-            resolvedClusterEndpoint = EndpointProvider.reify(cluster);
+            var raw = EndpointProvider.reify(cluster);
+            resolvedClusterEndpoint =
+            raw.getPort() == 0 ? new InetSocketAddress(raw.getAddress(), Utils.allocatePort(raw.getAddress())) : raw;
             return resolvedClusterEndpoint;
         }
 
@@ -380,7 +386,9 @@ public class SkyConfiguration {
             if (resolvedHealthEndpoint != null) {
                 return resolvedHealthEndpoint;
             }
-            resolvedHealthEndpoint = EndpointProvider.reify(health);
+            var raw = EndpointProvider.reify(health);
+            resolvedHealthEndpoint =
+            raw.getPort() == 0 ? new InetSocketAddress(raw.getAddress(), Utils.allocatePort(raw.getAddress())) : raw;
             return resolvedHealthEndpoint;
         }
 
@@ -389,7 +397,9 @@ public class SkyConfiguration {
             if (resolvedServiceEndpoint != null) {
                 return resolvedServiceEndpoint;
             }
-            resolvedServiceEndpoint = EndpointProvider.reify(service);
+            var raw = EndpointProvider.reify(service);
+            resolvedServiceEndpoint =
+            raw.getPort() == 0 ? new InetSocketAddress(raw.getAddress(), Utils.allocatePort(raw.getAddress())) : raw;
             return resolvedServiceEndpoint;
         }
 
@@ -402,7 +412,7 @@ public class SkyConfiguration {
                 // ignore
             }
             return "Socket {api=" + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster="
-            + clusterEndpoint() + health + '}';
+            + clusterEndpoint() + ", health=" + health + '}';
         }
     }
 

@@ -43,6 +43,161 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"ch.qos.logback.classic.AsyncAppender",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true
+},
+{
+  "name":"ch.qos.logback.classic.Logger",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"ch.qos.logback.classic.encoder.PatternLayoutEncoder",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.joran.SerializedModelConfigurator",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.DateConverter",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.LevelConverter",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true
+},
+{
+  "name":"ch.qos.logback.classic.pattern.LineSeparatorConverter",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.LoggerConverter",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.MessageConverter",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.classic.pattern.ThreadConverter",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true
+},
+{
+  "name":"ch.qos.logback.classic.spi.LogbackServiceProvider"
+},
+{
+  "name":"ch.qos.logback.classic.util.DefaultJoranConfigurator",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.core.ConsoleAppender",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"ch.qos.logback.core.FileAppender",
+  "allDeclaredFields":true,
+  "allPublicFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true,
+  "allDeclaredClasses":true,
+  "allPublicClasses":true
+},
+{
+  "name":"ch.qos.logback.core.OutputStreamAppender",
+  "methods":[{"name":"setEncoder","parameterTypes":["ch.qos.logback.core.encoder.Encoder"] }]
+},
+{
+  "name":"ch.qos.logback.core.encoder.Encoder",
+  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"ch.qos.logback.core.encoder.LayoutWrappingEncoder",
+  "methods":[{"name":"setParent","parameterTypes":["ch.qos.logback.core.spi.ContextAware"] }]
+},
+{
+  "name":"ch.qos.logback.core.pattern.PatternLayoutEncoderBase",
+  "methods":[{"name":"setPattern","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"ch.qos.logback.core.spi.ContextAware",
+  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"ch.qos.logback.core.status.NopStatusListener",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"com.chiralbehaviors.tron.FsmExecutor",
   "methods":[{"name":"fsm","parameterTypes":[] }]
 },
@@ -440,6 +595,10 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"com.hellblazer.nut.SkyConfiguration$Endpoints",
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"com.hellblazer.nut.SkyConfiguration$IdentityConfiguration",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -451,7 +610,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["com.salesforce.apollo.cryptography.Digest","com.hellblazer.nut.Endpoint"] }]
+  "methods":[{"name":"<init>","parameterTypes":["com.salesforce.apollo.cryptography.Digest","com.hellblazer.nut.Endpoint"] }, {"name":"<init>","parameterTypes":["com.salesforce.apollo.cryptography.Digest","java.lang.String"] }]
 },
 {
   "name":"com.hellblazer.nut.SkyConfiguration$Shamir",
@@ -459,6 +618,13 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":["int","int"] }]
+},
+{
+  "name":"com.hellblazer.nut.SkyConfiguration$SocketEndpoints",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"com.hellblazer.nut.Sphinx$UNWRAPPING",
@@ -496,7 +662,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setCheckpointBlockDelta","parameterTypes":["int"] }, {"name":"setGenerateGenesis","parameterTypes":["boolean"] }, {"name":"setGossipDuration","parameterTypes":["java.time.Duration"] }, {"name":"setRegenerationCycles","parameterTypes":["int"] }, {"name":"setSynchronizationCycles","parameterTypes":["int"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setCheckpointBlockDelta","parameterTypes":["int"] }, {"name":"setGenerateGenesis","parameterTypes":["boolean"] }, {"name":"setGossipDuration","parameterTypes":["java.time.Duration"] }, {"name":"setRegenerationCycles","parameterTypes":["int"] }, {"name":"setSubmitTimeout","parameterTypes":["java.time.Duration"] }, {"name":"setSynchronizationCycles","parameterTypes":["int"] }]
 },
 {
   "name":"com.salesforce.apollo.choam.Parameters$LimiterBuilder",
@@ -556,7 +722,7 @@
 {
   "name":"com.salesforce.apollo.choam.fsm.Combine$Mercantile$9",
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"synchd","parameterTypes":[] }]
+  "methods":[{"name":"combine","parameterTypes":[] }, {"name":"synchd","parameterTypes":[] }]
 },
 {
   "name":"com.salesforce.apollo.choam.fsm.Driven$Earner$1",
@@ -585,7 +751,7 @@
 },
 {
   "name":"com.salesforce.apollo.choam.fsm.Driven$Transitions",
-  "methods":[{"name":"create","parameterTypes":["java.util.List","boolean"] }]
+  "methods":[{"name":"create","parameterTypes":["java.util.List","boolean"] }, {"name":"newEpoch","parameterTypes":["int","boolean"] }]
 },
 {
   "name":"com.salesforce.apollo.choam.fsm.Genesis$BrickLayer$1",
@@ -595,7 +761,7 @@
 {
   "name":"com.salesforce.apollo.choam.fsm.Genesis$BrickLayer$3",
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"gather","parameterTypes":[] }, {"name":"nextEpoch","parameterTypes":["java.lang.Integer"] }, {"name":"process","parameterTypes":["java.util.List","boolean"] }]
+  "methods":[{"name":"gather","parameterTypes":[] }, {"name":"gathered","parameterTypes":[] }, {"name":"nextEpoch","parameterTypes":["java.lang.Integer"] }, {"name":"process","parameterTypes":["java.util.List","boolean"] }]
 },
 {
   "name":"com.salesforce.apollo.choam.fsm.Genesis$BrickLayer$4",
@@ -610,12 +776,17 @@
 {
   "name":"com.salesforce.apollo.choam.fsm.Reconfiguration$Reconfigure$2",
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"certified","parameterTypes":[] }, {"name":"certify","parameterTypes":[] }]
+  "methods":[{"name":"certified","parameterTypes":[] }, {"name":"certify","parameterTypes":[] }, {"name":"conviene","parameterTypes":[] }, {"name":"proposed","parameterTypes":[] }]
 },
 {
   "name":"com.salesforce.apollo.choam.fsm.Reconfiguration$Reconfigure$3",
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"certified","parameterTypes":[] }, {"name":"gather","parameterTypes":[] }]
+  "methods":[{"name":"certified","parameterTypes":[] }, {"name":"certify","parameterTypes":[] }, {"name":"gather","parameterTypes":[] }]
+},
+{
+  "name":"com.salesforce.apollo.choam.fsm.Reconfiguration$Reconfigure$4",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"certified","parameterTypes":[] }, {"name":"checkAssembly","parameterTypes":[] }, {"name":"gather","parameterTypes":[] }]
 },
 {
   "name":"com.salesforce.apollo.choam.fsm.Reconfiguration$Reconfigure$5",
@@ -624,6 +795,16 @@
 },
 {
   "name":"com.salesforce.apollo.choam.fsm.Reconfiguration$Reconfigure$6",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"viewAcquired","parameterTypes":[] }, {"name":"viewConsensus","parameterTypes":[] }]
+},
+{
+  "name":"com.salesforce.apollo.choam.fsm.Reconfiguration$Reconfigure$7",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"complete","parameterTypes":[] }, {"name":"completion","parameterTypes":[] }]
+},
+{
+  "name":"com.salesforce.apollo.choam.fsm.Reconfiguration$Reconfigure$8",
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"viewAcquired","parameterTypes":[] }, {"name":"viewConsensus","parameterTypes":[] }]
 },
@@ -706,7 +887,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.time.Duration","java.lang.String","java.nio.file.Path","java.time.Duration","double","java.time.Duration","int","int","double"] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.time.Duration","java.lang.String","java.nio.file.Path","java.time.Duration","double","java.time.Duration","int","int","double"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.time.Duration","java.lang.String","java.nio.file.Path","java.time.Duration","double","java.time.Duration","int","java.time.Duration","int","double"] }]
 },
 {
   "name":"com.salesforce.apollo.state.SqlStateMachine",

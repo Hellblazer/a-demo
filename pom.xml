@@ -110,9 +110,20 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>sky-native</artifactId>
+                <classifier>native_${os.arch}</classifier>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.codahale</groupId>
                 <artifactId>shamir</artifactId>
                 <version>0.7.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jul-to-slf4j</artifactId>
+                <version>2.0.13</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -394,6 +405,7 @@
             <id>native</id>
             <modules>
                 <module>sky-native</module>
+                <module>native-test</module>
             </modules>
         </profile>
     </profiles>
