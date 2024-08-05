@@ -262,14 +262,14 @@
                         <database>
                             <name>org.jooq.meta.h2.H2Database</name>
                             <includes>.*</includes>
-                            <excludes></excludes>
+                            <excludes/>
                             <schemata>
                                 <schema>
                                     <inputSchema>NUT</inputSchema>
                                 </schema>
                             </schemata>
                         </database>
-                        <generate></generate>
+                        <generate/>
                         <target>
                             <packageName>com.hellblazer.nut.schema</packageName>
                             <directory>target/generated-sources/jooq</directory>
@@ -368,14 +368,14 @@
                             <database>
                                 <name>org.jooq.meta.h2.H2Database</name>
                                 <includes>.*</includes>
-                                <excludes></excludes>
+                                <excludes/>
                                 <schemata>
                                     <schema>
                                         <inputSchema>NUT</inputSchema>
                                     </schema>
                                 </schemata>
                             </database>
-                            <generate></generate>
+                            <generate/>
                             <target>
                                 <packageName>com.hellblazer.nut.schema</packageName>
                                 <directory>target/generated-sources/jooq</directory>

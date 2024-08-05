@@ -17,6 +17,7 @@
 
 package com.hellblazer.nut;
 
+import com.google.protobuf.Any;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
 import com.salesforce.apollo.stereotomy.StereotomyImpl;
@@ -55,7 +56,7 @@ public class SkyApplicationTest {
         var sanctum = Mockito.mock(SanctumSanctorum.class);
         when(sanctum.member()).thenReturn(member);
         try (var is = getClass().getResourceAsStream("/sky-test.yaml")) {
-            app = new SkyApplication(SkyConfiguration.from(is), sanctum);
+            app = new SkyApplication(SkyConfiguration.from(is), sanctum, signedNonce -> Any.getDefaultInstance());
         }
         CompletableFuture<Void> onStart = new CompletableFuture<>();
         app.start(Duration.ofMillis(5), Collections.emptyList(), onStart);
