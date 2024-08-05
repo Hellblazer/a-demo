@@ -14,28 +14,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+package com.hellblazer.nut;
 
-package com.hellblazer.nut.support;
-
-import com.google.protobuf.Message;
-import com.macasaet.fernet.Validator;
-
-import java.util.function.Function;
+import com.hellblazer.nut.service.Geb;
+import com.salesforce.apollo.cryptography.Digest;
+import com.salesforce.apollo.delphinius.Oracle;
+import com.salesforce.apollo.gorgoneion.proto.Attestation;
+import com.salesforce.apollo.state.Mutator;
 
 /**
+ * Provision and validate an attested member.
+ *
  * @author hal.hildebrand
  **/
-abstract public class MessageValidator implements Validator<Message> {
-    @Override
-    public Function<byte[], Message> getTransformer() {
-        return bytes -> {
-            try {
-                return parse(bytes);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Unable to parse message bytes", e);
-            }
-        };
+abstract public class Provisioner {
+    protected final Digest  id;
+    protected final Oracle  oracle;
+    protected final Geb     geb;
+    protected final Mutator mutator;
+
+    protected Provisioner(Digest id, Oracle oracle, Geb geb, Mutator mutator) {
+        this.id = id;
+        this.oracle = oracle;
+        this.geb = geb;
+        this.mutator = mutator;
     }
 
-    abstract protected Message parse(byte[] bytes) throws Exception;
+    abstract public boolean provision(Attestation attestation);
 }

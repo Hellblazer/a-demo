@@ -45,13 +45,23 @@ public class Sky extends ProcessDomain {
         super(group, member, params, builder, runtime, endpoint, ff, stereotomyMetrics);
     }
 
+    public Mutator getMutator() {
+        return mutator;
+    }
+
+    public void register(FernetProvisioner.TokenValidator validator) {
+        sqlStateMachine.register(FernetProvisioner.TOKEN_VALIDATOR, params -> validator);
+    }
+
     @Override
     protected Transaction migrations() {
         Map<Path, URL> resources = new HashMap<>();
         resources.put(of("/schema/nut.xml"), Sky.class.getResource("/schema/nut.xml"));
+        resources.put(of("/schema/initialize-nut.xml"), Sky.class.getResource("/schema/initialize-nut.xml"));
         return transactionOf(Txn.newBuilder()
                                 .setMigration(Migration.newBuilder()
-                                                       .setUpdate(Mutator.changeLog(resources, "/schema/nut.xml"))
+                                                       .setUpdate(
+                                                       Mutator.changeLog(resources, "/schema/initialize-nut.xml"))
                                                        .build())
                                 .build());
     }

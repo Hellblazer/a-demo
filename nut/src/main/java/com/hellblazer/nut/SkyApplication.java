@@ -20,11 +20,12 @@ package com.hellblazer.nut;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Message;
 import com.hellblazer.nut.comms.MtlsClient;
 import com.hellblazer.nut.comms.*;
 import com.hellblazer.nut.service.Delphi;
+import com.hellblazer.nut.support.MessageValidator;
 import com.hellblazer.nut.support.TokenGenerator;
-import com.macasaet.fernet.StringValidator;
 import com.macasaet.fernet.Token;
 import com.salesforce.apollo.archipelago.*;
 import com.salesforce.apollo.archipelago.client.FernetCallCredentials;
@@ -34,6 +35,7 @@ import com.salesforce.apollo.comm.grpc.ClientContextSupplier;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.context.DynamicContext;
 import com.salesforce.apollo.cryptography.Digest;
+import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.cert.Certificates;
@@ -102,13 +104,16 @@ public class SkyApplication {
     private final        DelegatedCertificateValidator certificateValidator;
     private final        Lock                          tokenLock = new ReentrantLock();
     private final        SkyConfiguration              configuration;
+    private final        Provisioner                   provisioner;
+    private final        Function<SignedNonce, Any>    attestation;
     private volatile     Token                         token;
-    private volatile     ManagedChannel                joinChannel;
-    private volatile     int                           retries   = 5;
-    private volatile     ServerSocket                  health;
+    private volatile ManagedChannel joinChannel;
+    private final    int            retries = 5;
+    private volatile ServerSocket   health;
 
-    public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum,
-                          CompletableFuture<Void> onFailure) {
+    public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum, CompletableFuture<Void> onFailure,
+                          Function<SignedNonce, Any> attestation) {
+        this.attestation = attestation;
         this.configuration = configuration;
         Objects.requireNonNull(configuration, "Configuration must not be null");
         this.clock = Clock.systemUTC();
@@ -133,7 +138,17 @@ public class SkyApplication {
         }
         Predicate<FernetServerInterceptor.HashedToken> validator = token -> {
             var generator = sanctorum.getGenerator();
-            var result = generator == null ? null : generator.validate(token, new TokenValidator());
+            var result = generator == null ? null : generator.validate(token, new MessageValidator() {
+                @Override
+                public TemporalAmount getTimeToLive() {
+                    return Duration.ofDays(60);
+                }
+
+                @Override
+                protected Message parse(byte[] bytes) throws Exception {
+                    return ByteMessage.parseFrom(bytes);
+                }
+            });
             return result != null;
         };
         var credentials = FernetCallCredentials.blocking(() -> {
@@ -177,19 +192,47 @@ public class SkyApplication {
         log.info("Approach communications: {} on: {}", approachEndpoint, sanctorum.getId());
 
         admissionsComms = approachServer.router();
-        new Gorgoneion(configuration.approaches == null || configuration.approaches.isEmpty(), this::attest,
-                       gorgoneionParameters.build(), sanctorum.member(), runtime.getContext(),
-                       new DirectPublisher(sanctorum.member().getId(), new ProtoKERLAdapter(k)), admissionsComms, null,
-                       clusterComms);
         contextId = runtime.getContext().getId();
 
         var serviceEndpoint = configuration.endpoints.serviceEndpoint();
         serviceApi = apiServer(serviceEndpoint);
+
+        // hard-wire Fernet provisioner for now
+        provisioner = new FernetProvisioner(node.getMember().getId(), getSky().getDelphi(), null,
+                                            gorgoneionParameters.getDigestAlgorithm(), sanctorum.getGenerator(),
+                                            getSky().getMutator(), choamParameters.getSubmitTimeout());
+
+        new Gorgoneion(configuration.approaches == null || configuration.approaches.isEmpty(), this::attest,
+                       gorgoneionParameters.build(), sanctorum.member(), runtime.getContext(),
+                       new DirectPublisher(sanctorum.member().getId(), new ProtoKERLAdapter(k)), admissionsComms, null,
+                       clusterComms);
+        getSky().register(getTokenValidator(sanctorum, gorgoneionParameters.getDigestAlgorithm()));
         log.info("Service api: {} on: {}", serviceEndpoint, sanctorum.getId());
     }
 
-    public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctum) {
-        this(configuration, sanctum, new CompletableFuture<>());
+    public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctum,
+                          Function<SignedNonce, Any> attestation) {
+        this(configuration, sanctum, new CompletableFuture<>(), attestation);
+    }
+
+    private static FernetProvisioner.TokenValidator getTokenValidator(SanctumSanctorum sanctorum,
+                                                                      DigestAlgorithm algorithm) {
+        return new FernetProvisioner.TokenValidator() {
+            @Override
+            public FernetProvisioner.ValidatedToken<? extends Message> apply(String encoded) {
+                var generator = sanctorum.getGenerator();
+                var hash = algorithm.digest(encoded);
+                var token = Token.fromString(encoded);
+                var hashed = new FernetServerInterceptor.HashedToken(hash, token);
+                var msg = generator.validate(hashed, new MessageValidator() {
+                    @Override
+                    protected Message parse(byte[] bytes) throws Exception {
+                        return null;
+                    }
+                });
+                return new FernetProvisioner.ValidatedToken<>(hashed, msg);
+            }
+        };
     }
 
     public boolean active() {
@@ -315,11 +358,11 @@ public class SkyApplication {
     }
 
     private Any attest(SignedNonce signedNonce) {
-        return Any.getDefaultInstance();
+        return attestation.apply(signedNonce);
     }
 
     private boolean attest(SignedAttestation signedAttestation) {
-        return true;
+        return provisioner.provision(signedAttestation.getAttestation());
     }
 
     private Function<Member, ClientContextSupplier> clientContextSupplier() {
@@ -453,17 +496,5 @@ public class SkyApplication {
             public void validateServer(X509Certificate[] chain) {
             }
         };
-    }
-
-    public static class TokenValidator implements StringValidator {
-        @Override
-        public Predicate<String> getObjectValidator() {
-            return StringValidator.super.getObjectValidator();
-        }
-
-        @Override
-        public TemporalAmount getTimeToLive() {
-            return Duration.ofDays(60);
-        }
     }
 }

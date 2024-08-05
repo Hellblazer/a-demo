@@ -9,7 +9,7 @@ import "google/protobuf/empty.proto";
 package com.hellblazer.delphi;
 
 service Oracle_ {
-  rpc addAssertion(Assertion_) returns (Ts){}
+  rpc addAssertion(Assertion_) returns (Asserted_){}
   rpc addNamespace(Namespace_) returns (Ts){}
   rpc addObject(Object_) returns (Ts){}
   rpc addRelation(Relation_) returns (Ts){}
@@ -46,6 +46,11 @@ service Oracle_ {
 
 message Ts {
   uint64 ts = 1;
+}
+
+message Asserted_ {
+  uint64 ts = 1;
+  bool added = 2;
 }
 
 message AssertionAt {

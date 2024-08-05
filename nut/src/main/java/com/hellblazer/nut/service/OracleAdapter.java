@@ -117,8 +117,9 @@ public class OracleAdapter implements Oracle {
     }
 
     @Override
-    public CompletableFuture<ULong> add(Assertion assertion) {
-        return fs(asyncDelphi.addAssertion(of(assertion))).thenApply(ts -> ULong.valueOf(ts.getTs()));
+    public CompletableFuture<Asserted> add(Assertion assertion) {
+        return fs(asyncDelphi.addAssertion(of(assertion))).thenApply(
+        asserted -> new Asserted(ULong.valueOf(asserted.getTs()), asserted.getAdded()));
     }
 
     @Override

@@ -77,12 +77,13 @@ public class Delphi extends Oracle_Grpc.Oracle_ImplBase {
     }
 
     @Override
-    public void addAssertion(Assertion_ request, StreamObserver<Ts> responseObserver) {
-        oracle.add(assertion(request)).whenComplete((ts, t) -> {
+    public void addAssertion(Assertion_ request, StreamObserver<Asserted_> responseObserver) {
+        oracle.add(assertion(request)).whenComplete((asserted, t) -> {
             if (t != null) {
                 responseObserver.onError(t);
             } else {
-                responseObserver.onNext(Ts.newBuilder().setTs(ts.longValue()).build());
+                responseObserver.onNext(
+                Asserted_.newBuilder().setAdded(asserted.added()).setTs(asserted.ts().longValue()).build());
                 responseObserver.onCompleted();
             }
         });
