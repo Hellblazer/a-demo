@@ -18,7 +18,7 @@ package com.hellblazer.nut;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.hellblazer.nut.proto.FernetAttestation;
+import com.hellblazer.nut.proto.FernetToken;
 import com.hellblazer.nut.proto.InitialProvisioning;
 import com.hellblazer.nut.service.Geb;
 import com.hellblazer.nut.support.MessageValidator;
@@ -152,9 +152,9 @@ public class FernetProvisioner extends Provisioner {
 
     @Override
     public boolean provision(Attestation attestation) {
-        FernetAttestation fernetAttestation;
+        FernetToken fernetAttestation;
         try {
-            fernetAttestation = attestation.getAttestation().unpack(FernetAttestation.class);
+            fernetAttestation = attestation.getAttestation().unpack(FernetToken.class);
         } catch (InvalidProtocolBufferException e) {
             return false;
         }

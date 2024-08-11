@@ -351,7 +351,7 @@ public class Sphinx {
     private Digest unwrap(Duration viewGossipDuration, byte[] master) {
         sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
         application = new SkyApplication(configuration, sanctum, onFailure, signedNonce -> Any.pack(
-        FernetAttestation.newBuilder().setToken(provisionedToken == null ? "Hello World" : provisionedToken).build()));
+        FernetToken.newBuilder().setToken(provisionedToken == null ? "Hello World" : provisionedToken).build()));
 
         List<SocketAddress> approaches = configuration.approaches == null ? Collections.emptyList()
                                                                           : configuration.approaches.stream()
