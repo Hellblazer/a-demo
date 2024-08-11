@@ -369,7 +369,7 @@ public class Sphinx {
         if (current == null) {
             throw new IllegalStateException("application is null");
         }
-        Thread.ofVirtual().start(Utils.wrapped(() -> {
+        Thread.ofPlatform().start(Utils.wrapped(() -> {
             if (approaches.isEmpty()) {
                 current.bootstrap(viewGossipDuration, onStart, configuration.endpoints.approachEndpoint());
             } else {

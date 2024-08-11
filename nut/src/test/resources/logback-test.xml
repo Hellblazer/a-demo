@@ -23,6 +23,18 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
+    <logger name="com.chiralbehaviors" level="trace" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.choam" level="trace" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <logger name="com.salesforce.apollo.choam.support" level="warn" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
     <logger name="com.hellblazer" level="trace" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>

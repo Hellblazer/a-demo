@@ -365,7 +365,7 @@ public class SkyApplication {
     }
 
     private Any attest(SignedNonce signedNonce) {
-        log.info("Attesting: {} on: {}", signedNonce, node.getMember().getId());
+        log.info("Attesting on: {}", node.getMember().getId());
         try {
             return attestation.apply(signedNonce);
         } catch (Throwable e) {
@@ -375,7 +375,7 @@ public class SkyApplication {
     }
 
     private boolean attest(SignedAttestation signedAttestation) {
-        log.info("Validating attestation: {} on: {}", signedAttestation, node.getMember().getId());
+        log.info("Validating attestation on: {}", node.getMember().getId());
         try {
             return provisioner.provision(signedAttestation.getAttestation());
         } catch (Throwable e) {
@@ -467,7 +467,7 @@ public class SkyApplication {
                 assert establishment != null : "NULL establishment";
                 assert !Validations.getDefaultInstance().equals(establishment.getValidations()) : "Empty establishment";
                 assert establishment.getValidations().getValidationsCount() > 0 : "No validations";
-                log.info("Successful application: {} on: {}", establishment, sanctorum.getId());
+                log.info("Successful application on: {}", sanctorum.getId());
                 break;
             } catch (StatusRuntimeException e) {
                 log.error("Error during application: {} on: {}", e.getMessage(), sanctorum.getId());
