@@ -38,11 +38,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>sanctum-sanctorum</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.salesforce.apollo</groupId>
             <artifactId>gorgoneion</artifactId>
         </dependency>
@@ -367,7 +362,7 @@
                     <configuration>
                         <jdbc>
                             <driver>org.h2.Driver</driver>
-                            <url>${h2.db.url}</url>
+                            <url>${db.password}</url>
                         </jdbc>
                         <generator>
                             <database>
