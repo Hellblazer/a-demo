@@ -26,6 +26,7 @@ import com.hellblazer.sanctorum.proto.EncryptedShare;
 import com.hellblazer.sanctorum.proto.Share;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
+import com.salesforce.apollo.gorgoneion.proto.Credentials;
 import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
 import io.grpc.ServerBuilder;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -58,10 +59,9 @@ public class SanctumSanctorumTest {
         var name = UUID.randomUUID().toString();
         var target = "target";
         var devSecret = "Give me food or give me slack or kill me";
-        var parameters = new SanctumSanctorum.EnclaveParameters("jdbc:h2:mem:id-kerl;DB_CLOSE_DELAY=-1", "JCEKS",
-                                                                Path.of(target, ".id"),
-                                                                new SanctumSanctorum.Shamir(4, 3),
-                                                                Path.of(target, ".digest"), DigestAlgorithm.DEFAULT);
+        var parameters = new SanctumSanctorum.Parameters("jdbc:h2:mem:id-kerl;DB_CLOSE_DELAY=-1", "JCEKS",
+                                                         Path.of(target, ".id"), new SanctumSanctorum.Shamir(4, 3),
+                                                         Path.of(target, ".digest"), DigestAlgorithm.DEFAULT);
         Function<SignedNonce, Any> attestation = null;
         ServerBuilder builder = InProcessServerBuilder.forName(name);
         SanctumSanctorum sanctum = new SanctumSanctorum(EncryptionAlgorithm.DEFAULT, parameters, attestation, builder);
@@ -69,14 +69,14 @@ public class SanctumSanctorumTest {
 
         var client = InProcessChannelBuilder.forName(name).usePlaintext().build();
         try {
-            var sphynxClient = Enclave_Grpc.newBlockingStub(client);
-            var status = sphynxClient.unseal(Empty.getDefaultInstance());
+            var sanctumClient = Enclave_Grpc.newBlockingStub(client);
+            var status = sanctumClient.unseal(Empty.getDefaultInstance());
 
             assertNotNull(status);
             assertTrue(status.getSuccess());
             assertEquals(0, status.getShares());
 
-            var publicKey_ = sphynxClient.sessionKey(Empty.getDefaultInstance());
+            var publicKey_ = sanctumClient.sessionKey(Empty.getDefaultInstance());
             assertNotNull(publicKey_);
 
             var publicKey = EncryptionAlgorithm.lookup(publicKey_.getAlgorithmValue())
@@ -100,7 +100,7 @@ public class SanctumSanctorumTest {
                                    .setKey(share.getKey())
                                    .setShare(ByteString.copyFrom(share.getValue()))
                                    .build();
-                var associatedData = "Hello world    ".getBytes();
+                var associatedData = "Hello world".getBytes();
                 var encrypted = SanctumSanctorum.encrypt(wrapped.toByteArray(), secretKey, associatedData);
                 var encryptedShare = EncryptedShare.newBuilder()
                                                    .setIv(ByteString.copyFrom(encrypted.iv()))
@@ -108,16 +108,22 @@ public class SanctumSanctorumTest {
                                                    .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                                    .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                                    .build();
-                var result = sphynxClient.apply(encryptedShare);
+                var result = sanctumClient.apply(encryptedShare);
                 count++;
                 assertEquals(count, result.getShares());
             }
 
-            var unwrapStatus = sphynxClient.unwrap(Empty.getDefaultInstance());
+            var unwrapStatus = sanctumClient.unwrap(Empty.getDefaultInstance());
             assertTrue(unwrapStatus.getSuccess());
             assertEquals(shares.size(), unwrapStatus.getShares());
 
-            sphynxClient.seal(Empty.getDefaultInstance());
+            var pk = sanctumClient.sessionKey(Empty.getDefaultInstance());
+            var provisioning = sanctumClient.provisioning(
+            Credentials.newBuilder().setSessionKey(pk).setNonce(SignedNonce.getDefaultInstance()).build());
+            assertNotNull(provisioning);
+            assertNotNull(sanctumClient.provision(provisioning));
+
+            sanctumClient.seal(Empty.getDefaultInstance());
         } finally {
             client.shutdown();
             sanctum.shutdown();

@@ -58,12 +58,6 @@ message FernetToken {
   string token = 1;
 }
 
-message NamespacedId_ {
-  uint64 namespace = 1;
-  uint64 id = 2;
-  uint64 relation = 3;
-}
-
 message InitialProvisioning {
   // namespace to use
   uint64 namespace = 1;
@@ -73,21 +67,4 @@ message InitialProvisioning {
   map<uint64, uint64> mappings = 3;
   // relationship assertions to map to objects
   map<uint64, uint64> assertions = 4;
-}
-
-message Namespaced_ {
-  uint64 namespace = 1;
-  string name = 2;
-  uint64 relationship = 3;
-}
-
-message IiAttestation_ {
-  enum signature_type {
-    INVALID = 0;
-    PKCS7 = 1;
-    BASE64 = 2;
-    RSA2048 = 3;
-  }
-  string document = 1;
-  string signature = 2;
 }

@@ -26,6 +26,9 @@ import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import com.salesforce.apollo.cryptography.proto.Digeste;
+import com.salesforce.apollo.cryptography.proto.Sig;
+import com.salesforce.apollo.gorgoneion.proto.Credentials;
+import com.salesforce.apollo.gorgoneion.proto.PublicKey_;
 import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
 import com.salesforce.apollo.stereotomy.*;
 import com.salesforce.apollo.stereotomy.caching.CachingKERL;
@@ -87,13 +90,13 @@ public class SanctumSanctorum {
 
     private static final Logger log = LoggerFactory.getLogger(SanctumSanctorum.class);
 
-    private final    EncryptionAlgorithm                encryptionAlgorithm;
-    private final    SanctumSanctorum.Service           service            = new SanctumSanctorum.Service();
-    private final    Server                             server;
-    private final    SanctumSanctorum.EnclaveParameters parameters;
-    private final    Function<SignedNonce, Any>         attestation;
-    private final    AtomicReference<SignedNonce>       currentAttestation = new AtomicReference<>();
-    private volatile StereotomyKeyStore                 keystore;
+    private final    EncryptionAlgorithm          encryptionAlgorithm;
+    private final    SanctumSanctorum.Service     service            = new SanctumSanctorum.Service();
+    private final    Server                       server;
+    private final    Parameters                   parameters;
+    private final    Function<SignedNonce, Any>   attestation;
+    private final    AtomicReference<SignedNonce> currentAttestation = new AtomicReference<>();
+    private volatile StereotomyKeyStore           keystore;
 
     private volatile Digest                                         id;
     private volatile TokenGenerator                                 generator;
@@ -104,7 +107,7 @@ public class SanctumSanctorum {
     private volatile Stereotomy                                     stereotomy;
     private volatile KeyPair                                        sessionKeyPair;
 
-    public SanctumSanctorum(EncryptionAlgorithm encryptionAlgorithm, EnclaveParameters parameters,
+    public SanctumSanctorum(EncryptionAlgorithm encryptionAlgorithm, Parameters parameters,
                             Function<SignedNonce, Any> attestation, ServerBuilder builder) {
         this.encryptionAlgorithm = encryptionAlgorithm;
         this.parameters = parameters;
@@ -289,7 +292,37 @@ public class SanctumSanctorum {
             log.warn("Cannot decrypt share", t);
             return;
         }
-        unwrap(ByteString.copyFrom(decrypted).toByteArray());
+        provision(ByteString.copyFrom(decrypted).toByteArray());
+    }
+
+    private void provision(byte[] master) {
+        this.master = new SecretKeySpec(master, "AES");
+        generator = new TokenGenerator(this.master, new SecureRandom());
+
+        initializeSchema();
+        initializeKerl();
+
+        keystore = initializeKeyStore(parameters.keyStoreFile, parameters.keyStoreType(), () -> this.root);
+        initializeIdentifier();
+
+        this.id = member.getDigest();
+        log.info("Sanctum Sanctorum: {}", qb64(id));
+    }
+
+    private Provisioning_ provisioning(Credentials request) {
+        if (!currentAttestation.compareAndSet(null, request.getNonce())) {
+            return Provisioning_.getDefaultInstance();
+        }
+        var publicKey = EncryptionAlgorithm.lookup(request.getSessionKey().getAlgorithmValue())
+                                           .publicKey(request.getSessionKey().getPublicKey().toByteArray());
+        var encapsulated = encryptionAlgorithm.encapsulated(publicKey);
+        var secretKey = new SecretKeySpec(encapsulated.key().getEncoded(), AES);
+        var encrypted = SanctumSanctorum.encrypt(master.getEncoded(), secretKey, request.getNonce().toByteArray());
+        return Provisioning_.newBuilder()
+                            .setIv(ByteString.copyFrom(encrypted.iv()))
+                            .setProvisioned(ByteString.copyFrom(encrypted.cipherText()))
+                            .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
+                            .build();
     }
 
     private Status seal() {
@@ -299,6 +332,10 @@ public class SanctumSanctorum {
         service.shares.clear();
         log.info("Service has been sealed on: {}", id);
         return Status.newBuilder().setSuccess(true).build();
+    }
+
+    private Sig sign(Payload_ request) {
+        return Sig.newBuilder().build();
     }
 
     private UnwrapStatus unwrap(Scheme scheme, HashMap<Integer, byte[]> clone, UnwrapStatus.Builder status) {
@@ -323,8 +360,12 @@ public class SanctumSanctorum {
         log.info("Sanctum Sanctorum: {}", qb64(id));
     }
 
-    public record EnclaveParameters(String kerlURL, String keyStoreType, Path keyStoreFile,
-                                    SanctumSanctorum.Shamir shamir, Path identityFile, DigestAlgorithm algorithm) {
+    private Verified_ verify(Payload_ request) {
+        return Verified_.newBuilder().build();
+    }
+
+    public record Parameters(String kerlURL, String keyStoreType, Path keyStoreFile, SanctumSanctorum.Shamir shamir,
+                             Path identityFile, DigestAlgorithm algorithm) {
     }
 
     public record Shamir(int shares, int threshold) {
@@ -374,6 +415,10 @@ public class SanctumSanctorum {
             SanctumSanctorum.this.provision(request);
         }
 
+        public Provisioning_ provisioning(Credentials request) {
+            return SanctumSanctorum.this.provisioning(request);
+        }
+
         public Status seal() {
             return SanctumSanctorum.this.seal();
         }
@@ -389,6 +434,10 @@ public class SanctumSanctorum {
                              .setAlgorithm(PublicKey_.algo.forNumber(alg.getCode()))
                              .setPublicKey(ByteString.copyFrom(alg.encode(sessionKeyPair.getPublic())))
                              .build();
+        }
+
+        public Sig sign(Payload_ request) {
+            return SanctumSanctorum.this.sign(request);
         }
 
         public Status unseal() {
@@ -417,6 +466,10 @@ public class SanctumSanctorum {
             var clone = new HashMap<>(shares);
             shares.clear();
             return SanctumSanctorum.this.unwrap(scheme, clone, status);
+        }
+
+        public Verified_ verify(Payload_ request) {
+            return SanctumSanctorum.this.verify(request);
         }
     }
 }

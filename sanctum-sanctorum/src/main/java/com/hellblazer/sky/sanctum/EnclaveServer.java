@@ -21,6 +21,9 @@ import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
 import com.hellblazer.sanctorum.proto.*;
 import com.salesforce.apollo.cryptography.proto.Digeste;
+import com.salesforce.apollo.cryptography.proto.Sig;
+import com.salesforce.apollo.gorgoneion.proto.Credentials;
+import com.salesforce.apollo.gorgoneion.proto.PublicKey_;
 import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
 import io.grpc.stub.StreamObserver;
 
@@ -65,6 +68,13 @@ public class EnclaveServer extends Enclave_Grpc.Enclave_ImplBase {
     }
 
     @Override
+    public void provisioning(Credentials request, StreamObserver<Provisioning_> responseObserver) {
+        var provisioning = service.provisioning(request);
+        responseObserver.onNext(provisioning);
+        responseObserver.onCompleted();
+    }
+
+    @Override
     public void seal(Empty request, StreamObserver<Status> responseObserver) {
         var status = service.seal();
         responseObserver.onNext(status);
@@ -79,6 +89,13 @@ public class EnclaveServer extends Enclave_Grpc.Enclave_ImplBase {
     }
 
     @Override
+    public void sign(Payload_ request, StreamObserver<Sig> responseObserver) {
+        Sig signature = service.sign(request);
+        responseObserver.onNext(signature);
+        responseObserver.onCompleted();
+    }
+
+    @Override
     public void unseal(Empty request, StreamObserver<Status> responseObserver) {
         var status = service.unseal();
         responseObserver.onNext(status);
@@ -89,6 +106,13 @@ public class EnclaveServer extends Enclave_Grpc.Enclave_ImplBase {
     public void unwrap(Empty request, StreamObserver<UnwrapStatus> responseObserver) {
         var status = service.unwrap();
         responseObserver.onNext(status);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void verify(Payload_ request, StreamObserver<Verified_> responseObserver) {
+        var verified = service.verify(request);
+        responseObserver.onNext(verified);
         responseObserver.onCompleted();
     }
 }
