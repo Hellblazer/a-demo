@@ -54,14 +54,14 @@ message PublicKey_ {
   bytes publicKey = 2;
 }
 
-message FernetAttestation {
+message FernetToken {
   string token = 1;
 }
 
 message NamespacedId_ {
-    uint64 namespace = 1;
-    uint64 id = 2;
-    uint64 relation = 3;
+  uint64 namespace = 1;
+  uint64 id = 2;
+  uint64 relation = 3;
 }
 
 message InitialProvisioning {

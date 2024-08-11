@@ -32,7 +32,6 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -47,7 +46,6 @@ public class SkyApplicationTest {
     public void smokin() throws Exception {
         var entropy = SecureRandom.getInstance("SHA1PRNG");
         entropy.setSeed(new byte[] { 6, 6, 6 });
-        final var prefix = UUID.randomUUID().toString();
         Path checkpointDirBase = Path.of("target", "ct-chkpoints-" + Entropy.nextBitsStreamLong());
         Utils.clean(checkpointDirBase.toFile());
         var stereotomy = new StereotomyImpl(new MemKeyStore(), new MemKERL(DigestAlgorithm.DEFAULT), entropy);
@@ -56,7 +54,7 @@ public class SkyApplicationTest {
         var sanctum = Mockito.mock(SanctumSanctorum.class);
         when(sanctum.member()).thenReturn(member);
         try (var is = getClass().getResourceAsStream("/sky-test.yaml")) {
-            app = new SkyApplication(SkyConfiguration.from(is), sanctum, signedNonce -> Any.getDefaultInstance());
+            app = new SkyApplication(SkyConfiguration.from(is), sanctum, _ -> Any.getDefaultInstance());
         }
         CompletableFuture<Void> onStart = new CompletableFuture<>();
         app.start(Duration.ofMillis(5), Collections.emptyList(), onStart);

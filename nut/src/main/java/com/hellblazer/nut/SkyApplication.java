@@ -44,6 +44,7 @@ import com.salesforce.apollo.fireflies.View;
 import com.salesforce.apollo.gorgoneion.Gorgoneion;
 import com.salesforce.apollo.gorgoneion.client.GorgoneionClient;
 import com.salesforce.apollo.gorgoneion.client.client.comm.Admissions;
+import com.salesforce.apollo.gorgoneion.proto.Credentials;
 import com.salesforce.apollo.gorgoneion.proto.SignedAttestation;
 import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
 import com.salesforce.apollo.membership.Member;
@@ -84,6 +85,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -91,30 +93,34 @@ import java.util.function.Predicate;
  * @author hal.hildebrand
  **/
 public class SkyApplication {
-    private static final Logger                        log       = LoggerFactory.getLogger(SkyApplication.class);
-    private final        Digest                        contextId;
-    private final        Sky                           node;
-    private final        Router                        clusterComms;
-    private final        CertificateWithPrivateKey     certWithKey;
-    private final        SanctumSanctorum              sanctorum;
-    private final        Router                        admissionsComms;
-    private final        ApiServer                     serviceApi;
-    private final        Clock                         clock;
-    private final        AtomicBoolean                 started   = new AtomicBoolean();
-    private final        DelegatedCertificateValidator certificateValidator;
-    private final        Lock                          tokenLock = new ReentrantLock();
-    private final        SkyConfiguration              configuration;
-    private final        Provisioner                   provisioner;
-    private final        Function<SignedNonce, Any>    attestation;
-    private volatile     Token                         token;
-    private volatile ManagedChannel joinChannel;
-    private final    int            retries = 5;
-    private volatile ServerSocket   health;
+    private static final Logger log = LoggerFactory.getLogger(SkyApplication.class);
+
+    private final    Digest                                    contextId;
+    private final    Sky                                       node;
+    private final    Router                                    clusterComms;
+    private final    CertificateWithPrivateKey                 certWithKey;
+    private final    SanctumSanctorum                          sanctorum;
+    private final    Router                                    admissionsComms;
+    private final    ApiServer                                 serviceApi;
+    private final    Clock                                     clock;
+    private final    AtomicBoolean                             started   = new AtomicBoolean();
+    private final    DelegatedCertificateValidator             certificateValidator;
+    private final    Lock                                      tokenLock = new ReentrantLock();
+    private final    SkyConfiguration                          configuration;
+    private final    Provisioner                               provisioner;
+    private final    Function<SignedNonce, Any>                attestation;
+    private final    int                                       retries   = 5;
+    private final    BiFunction<Credentials, Validations, Any> establishment;
+    private volatile Token                                     token;
+    private volatile ManagedChannel                            joinChannel;
+    private volatile ServerSocket                              health;
 
     public SkyApplication(SkyConfiguration configuration, SanctumSanctorum sanctorum, CompletableFuture<Void> onFailure,
                           Function<SignedNonce, Any> attestation) {
         this.attestation = attestation;
         this.configuration = configuration;
+        this.establishment = (_, _) -> Any.pack(
+        ByteMessage.newBuilder().setContents(ByteString.copyFromUtf8(sanctorum.getGenerator().shared())).build());
         Objects.requireNonNull(configuration, "Configuration must not be null");
         this.clock = Clock.systemUTC();
         this.sanctorum = Objects.requireNonNull(sanctorum, "Sanctorum must not be null");
@@ -203,7 +209,7 @@ public class SkyApplication {
                                             getSky().getMutator(), choamParameters.getSubmitTimeout());
 
         new Gorgoneion(configuration.approaches == null || configuration.approaches.isEmpty(), this::attest,
-                       gorgoneionParameters.build(), sanctorum.member(), runtime.getContext(),
+                       this::establish, gorgoneionParameters.build(), sanctorum.member(), runtime.getContext(),
                        new DirectPublisher(sanctorum.member().getId(), new ProtoKERLAdapter(k)), admissionsComms, null,
                        clusterComms);
         getSky().register(getTokenValidator(sanctorum, gorgoneionParameters.getDigestAlgorithm()));
@@ -217,21 +223,18 @@ public class SkyApplication {
 
     private static FernetProvisioner.TokenValidator getTokenValidator(SanctumSanctorum sanctorum,
                                                                       DigestAlgorithm algorithm) {
-        return new FernetProvisioner.TokenValidator() {
-            @Override
-            public FernetProvisioner.ValidatedToken<? extends Message> apply(String encoded) {
-                var generator = sanctorum.getGenerator();
-                var hash = algorithm.digest(encoded);
-                var token = Token.fromString(encoded);
-                var hashed = new FernetServerInterceptor.HashedToken(hash, token);
-                var msg = generator.validate(hashed, new MessageValidator() {
-                    @Override
-                    protected Message parse(byte[] bytes) throws Exception {
-                        return null;
-                    }
-                });
-                return new FernetProvisioner.ValidatedToken<>(hashed, msg);
-            }
+        return encoded -> {
+            var generator = sanctorum.getGenerator();
+            var hash = algorithm.digest(encoded);
+            var token = Token.fromString(encoded);
+            var hashed = new FernetServerInterceptor.HashedToken(hash, token);
+            var msg = generator.validate(hashed, new MessageValidator() {
+                @Override
+                protected Message parse(byte[] bytes) throws Exception {
+                    return null;
+                }
+            });
+            return new FernetProvisioner.ValidatedToken<>(hashed, msg);
         };
     }
 
@@ -396,6 +399,10 @@ public class SkyApplication {
         return socketAddress.toString();
     }
 
+    private Any establish(Credentials credentials, Validations validations) {
+        return establishment.apply(credentials, validations);
+    }
+
     private ManagedChannel forApproaches(List<SocketAddress> approaches) {
         var local = !approaches.isEmpty() && approaches.getFirst() instanceof InProcessSocketAddress;
         NameResolver.Factory factory = new SimpleNameResolverFactory(approaches);
@@ -440,10 +447,10 @@ public class SkyApplication {
                 Admissions admissions = new AdmissionsClient(sanctorum.member(), joinChannel, null);
                 var client = new GorgoneionClient(sanctorum.member(), this::attest, clock, admissions);
 
-                final var invitation = client.apply(Duration.ofSeconds(120));
-                assert invitation != null : "NULL invitation";
-                assert !Validations.getDefaultInstance().equals(invitation) : "Empty invitation";
-                assert invitation.getValidationsCount() > 0 : "No validations";
+                final var establishment = client.apply(Duration.ofSeconds(120));
+                assert establishment != null : "NULL establishment";
+                assert !Validations.getDefaultInstance().equals(establishment) : "Empty establishment";
+                assert establishment.getValidations().getValidationsCount() > 0 : "No validations";
                 log.info("Successful application on: {}", sanctorum.getId());
                 break;
             } catch (StatusRuntimeException e) {

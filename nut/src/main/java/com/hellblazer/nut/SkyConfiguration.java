@@ -85,6 +85,8 @@ public class SkyConfiguration {
     public ProducerParameters.Builder                          producerParameters;
     @JsonProperty
     public Duration                                            viewGossipDuration = Duration.ofMillis(10);
+    @JsonProperty
+    public String                                              provisionedToken   = "Give me food or give me slack or kill me";
 
     {
         // Default configuration
@@ -135,7 +137,7 @@ public class SkyConfiguration {
     @JsonSubTypes({ @JsonSubTypes.Type(value = LocalEndpoints.class, name = "local"),
                     @JsonSubTypes.Type(value = InterfaceEndpoints.class, name = "network"),
                     @JsonSubTypes.Type(value = SocketEndpoints.class, name = "socket") })
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "class")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "class")
     public interface Endpoints {
         SocketAddress apiEndpoint();
 

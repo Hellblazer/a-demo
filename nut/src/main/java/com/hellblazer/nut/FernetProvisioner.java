@@ -193,7 +193,7 @@ public class FernetProvisioner extends Provisioner {
         }
     }
 
-    public static interface TokenValidator extends Function<String, ValidatedToken<? extends Message>> {
+    public interface TokenValidator extends Function<String, ValidatedToken<? extends Message>> {
     }
 
     public record ValidatedToken<T extends Message>(FernetServerInterceptor.HashedToken token, T message) {

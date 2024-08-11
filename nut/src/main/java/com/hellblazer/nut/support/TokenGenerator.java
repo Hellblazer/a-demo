@@ -21,7 +21,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.google.protobuf.Message;
-import com.hellblazer.nut.SkyApplication;
 import com.macasaet.fernet.Key;
 import com.macasaet.fernet.Token;
 import com.macasaet.fernet.TokenValidationException;
@@ -39,12 +38,12 @@ import java.util.function.Function;
  * @author hal.hildebrand
  **/
 public class TokenGenerator implements Function<Message, Token> {
-    private static final Logger                                              log = LoggerFactory.getLogger(
-    TokenGenerator.class);
-    private final        SecureRandom                                        entropy;
-    private final        Cache<FernetServerInterceptor.HashedToken, Message> cached;
-    private final        Cache<Digest, Boolean>                              invalid;
-    private volatile     Key                                                 master;
+    private static final Logger log = LoggerFactory.getLogger(TokenGenerator.class);
+
+    private final    SecureRandom                                        entropy;
+    private final    Cache<FernetServerInterceptor.HashedToken, Message> cached;
+    private final    Cache<Digest, Boolean>                              invalid;
+    private volatile Key                                                 master;
 
     public TokenGenerator(java.security.Key master, SecureRandom entropy) {
         this(new Key(master.getEncoded()), entropy);
@@ -75,6 +74,10 @@ public class TokenGenerator implements Function<Message, Token> {
 
     public void clear() {
         master = null;
+    }
+
+    public String shared() {
+        return master.serialise();
     }
 
     public boolean valid(FernetServerInterceptor.HashedToken hashed) {
