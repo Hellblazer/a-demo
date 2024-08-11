@@ -200,6 +200,11 @@ public class SanctumSanctorum {
 
     public void shutdown() {
         server.shutdown();
+        try {
+            server.awaitTermination();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void start() throws IOException {

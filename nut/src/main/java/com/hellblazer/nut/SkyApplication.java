@@ -287,10 +287,30 @@ public class SkyApplication {
         }
     }
 
-    public void start(Duration viewGossipDuration, List<View.Seed> seeds, CompletableFuture<Void> onStart) {
+    void bootstrap(Duration viewGossipDuration, CompletableFuture<Void> onStart, SocketAddress myApproach) {
         if (!started.compareAndSet(false, true)) {
             return;
         }
+        log.info("Bootstrapping on: {}", sanctorum.getId());
+        start(viewGossipDuration, Collections.emptyList(), onStart);
+        join(Collections.singletonList(myApproach));
+    }
+
+    void testify(Duration viewGossipDuration, List<SocketAddress> approaches, CompletableFuture<Void> onStart,
+                 List<View.Seed> seeds) {
+        if (!started.compareAndSet(false, true)) {
+            return;
+        }
+        log.info("Joining: {} on: {}", approaches, node.getMember().getId());
+        join(approaches);
+        start(viewGossipDuration, seeds, onStart);
+    }
+
+    protected Sky getSky() {
+        return node;
+    }
+
+    protected void start(Duration viewGossipDuration, List<View.Seed> seeds, CompletableFuture<Void> onStart) {
         clusterComms.start();
         admissionsComms.start();
         //        node.setDhtVerifiers();
@@ -321,22 +341,6 @@ public class SkyApplication {
         log.info("Started Sky: {}", sanctorum.getId());
     }
 
-    void bootstrap(Duration viewGossipDuration, CompletableFuture<Void> onStart, SocketAddress myApproach) {
-        log.info("Bootstrapping on: {}", sanctorum.getId());
-        start(viewGossipDuration, Collections.emptyList(), onStart);
-        join(Collections.singletonList(myApproach));
-    }
-
-    void testify(Duration viewGossipDuration, List<SocketAddress> approaches, CompletableFuture<Void> onStart,
-                 List<View.Seed> seeds) {
-        join(approaches);
-        start(viewGossipDuration, seeds, onStart);
-    }
-
-    protected Sky getSky() {
-        return node;
-    }
-
     private ApiServer apiServer(SocketAddress address) {
         log.info("Api server address: {}", address);
         CertificateWithPrivateKey apiIdentity = createIdentity((InetSocketAddress) address);
@@ -361,11 +365,23 @@ public class SkyApplication {
     }
 
     private Any attest(SignedNonce signedNonce) {
-        return attestation.apply(signedNonce);
+        log.info("Attesting: {} on: {}", signedNonce, node.getMember().getId());
+        try {
+            return attestation.apply(signedNonce);
+        } catch (Throwable e) {
+            log.error("Unable to generate attestation for: {} on: {}", signedNonce, node.getMember().getId(), e);
+            return Any.getDefaultInstance();
+        }
     }
 
     private boolean attest(SignedAttestation signedAttestation) {
-        return provisioner.provision(signedAttestation.getAttestation());
+        log.info("Validating attestation: {} on: {}", signedAttestation, node.getMember().getId());
+        try {
+            return provisioner.provision(signedAttestation.getAttestation());
+        } catch (Throwable e) {
+            log.error("Unable to validate attestation: {} on: {}", signedAttestation, node.getMember().getId(), e);
+            return false;
+        }
     }
 
     private Function<Member, ClientContextSupplier> clientContextSupplier() {
@@ -449,9 +465,9 @@ public class SkyApplication {
 
                 final var establishment = client.apply(Duration.ofSeconds(120));
                 assert establishment != null : "NULL establishment";
-                assert !Validations.getDefaultInstance().equals(establishment) : "Empty establishment";
+                assert !Validations.getDefaultInstance().equals(establishment.getValidations()) : "Empty establishment";
                 assert establishment.getValidations().getValidationsCount() > 0 : "No validations";
-                log.info("Successful application on: {}", sanctorum.getId());
+                log.info("Successful application: {} on: {}", establishment, sanctorum.getId());
                 break;
             } catch (StatusRuntimeException e) {
                 log.error("Error during application: {} on: {}", e.getMessage(), sanctorum.getId());
