@@ -54,6 +54,13 @@ public class EnclaveServer extends Enclave_Grpc.Enclave_ImplBase {
     }
 
     @Override
+    public void generateToken(Bytes request, StreamObserver<FernetToken> responseObserver) {
+        var token = service.generateToken(request);
+        responseObserver.onNext(token);
+        responseObserver.onCompleted();
+    }
+
+    @Override
     public void identifier(Empty request, StreamObserver<Digeste> responseObserver) {
         var id = service.identifier();
         responseObserver.onNext(id);
@@ -110,8 +117,22 @@ public class EnclaveServer extends Enclave_Grpc.Enclave_ImplBase {
     }
 
     @Override
+    public void validate(FernetValidate request, StreamObserver<Bytes> responseObserver) {
+        var unwrapped = service.validate(request);
+        responseObserver.onNext(unwrapped);
+        responseObserver.onCompleted();
+    }
+
+    @Override
     public void verify(Payload_ request, StreamObserver<Verified_> responseObserver) {
         var verified = service.verify(request);
+        responseObserver.onNext(verified);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void verifyToken(FernetToken request, StreamObserver<Verified_> responseObserver) {
+        var verified = service.verifyToken(request);
         responseObserver.onNext(verified);
         responseObserver.onCompleted();
     }

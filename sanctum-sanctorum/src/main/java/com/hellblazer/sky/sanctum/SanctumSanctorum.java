@@ -22,6 +22,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.sanctorum.proto.*;
+import com.macasaet.fernet.Token;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
@@ -35,6 +36,7 @@ import com.salesforce.apollo.stereotomy.*;
 import com.salesforce.apollo.stereotomy.caching.CachingKERL;
 import com.salesforce.apollo.stereotomy.db.UniKERLDirect;
 import com.salesforce.apollo.stereotomy.event.proto.Ident;
+import com.salesforce.apollo.stereotomy.event.protobuf.ProtobufEventFactory;
 import com.salesforce.apollo.stereotomy.identifier.Identifier;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.jks.FileKeyStore;
@@ -91,14 +93,14 @@ public class SanctumSanctorum {
 
     private static final Logger log = LoggerFactory.getLogger(SanctumSanctorum.class);
 
-    private final    EncryptionAlgorithm          encryptionAlgorithm;
-    private final    SanctumSanctorum.Service     service            = new SanctumSanctorum.Service();
-    private final    Server                       server;
-    private final    Parameters                   parameters;
-    private final    Function<SignedNonce, Any>   attestation;
-    private final    AtomicReference<SignedNonce> currentAttestation = new AtomicReference<>();
-    private volatile StereotomyKeyStore           keystore;
+    private final EncryptionAlgorithm          encryptionAlgorithm;
+    private final SanctumSanctorum.Service     service            = new SanctumSanctorum.Service();
+    private final Server                       server;
+    private final Parameters                   parameters;
+    private final Function<SignedNonce, Any>   attestation;
+    private final AtomicReference<SignedNonce> currentAttestation = new AtomicReference<>();
 
+    private volatile StereotomyKeyStore                             keystore;
     private volatile Digest                                         id;
     private volatile TokenGenerator                                 generator;
     private volatile KERL.AppendKERL                                kerl;
@@ -212,6 +214,10 @@ public class SanctumSanctorum {
         server.start();
     }
 
+    private FernetToken generateToken(Bytes request) {
+        return FernetToken.newBuilder().setToken(generator.apply(request).serialise()).build();
+    }
+
     private JdbcConnection getConnection() throws SQLException {
         return new JdbcConnection(parameters.kerlURL, new Properties(), "", "", false);
     }
@@ -312,7 +318,7 @@ public class SanctumSanctorum {
         initializeIdentifier();
 
         this.id = member.getDigest();
-        log.info("Sanctum Sanctorum: {}", qb64(id));
+        log.info("Sanctum Sanctorum provisioned: {}", qb64(id));
     }
 
     private Provisioning_ provisioning(Credentials request) {
@@ -363,15 +369,30 @@ public class SanctumSanctorum {
         initializeIdentifier();
 
         this.id = member.getDigest();
-        log.info("Sanctum Sanctorum: {}", qb64(id));
+        log.info("Sanctum Sanctorum unwrapped: {}", qb64(id));
+    }
+
+    private Bytes validate(FernetValidate request) {
+        var hashed = new TokenGenerator.HashedToken(kerl.getDigestAlgorithm().digest(request.getTokenBytes()),
+                                                    Token.fromString(request.getToken()));
+        return generator.validate(() -> b -> Bytes.newBuilder().setB(ByteString.copyFrom(b)).build(), hashed);
     }
 
     private Verified_ verify(Payload_ request) {
         var from = JohnHancock.from(request.getSignature());
         var payload = request.getPayload();
         var verifier = member.getVerifier();
-        var verified = verifier.isPresent() && verifier.get().verify(from, payload);
+        var threshold = ProtobufEventFactory.toSigningThreshold(request.getThreshold());
+        var verified = verifier.isPresent() && verifier.get().verify(threshold, from, payload);
         return Verified_.newBuilder().setVerified(verified).build();
+    }
+
+    private Verified_ verifyToken(FernetToken request) {
+        if (generator.valid(new TokenGenerator.HashedToken(kerl.getDigestAlgorithm().digest(request.getTokenBytes()),
+                                                           Token.fromString(request.getToken())))) {
+            return Verified_.newBuilder().setVerified(true).build();
+        }
+        return Verified_.newBuilder().setVerified(false).build();
     }
 
     public record Parameters(String kerlURL, String keyStoreType, Path keyStoreFile, SanctumSanctorum.Shamir shamir,
@@ -415,6 +436,10 @@ public class SanctumSanctorum {
 
         public Any attestation(SignedNonce request) {
             return attestation.apply(request);
+        }
+
+        public FernetToken generateToken(Bytes request) {
+            return SanctumSanctorum.this.generateToken(request);
         }
 
         public Digeste identifier() {
@@ -478,8 +503,16 @@ public class SanctumSanctorum {
             return SanctumSanctorum.this.unwrap(scheme, clone, status);
         }
 
+        public Bytes validate(FernetValidate request) {
+            return SanctumSanctorum.this.validate(request);
+        }
+
         public Verified_ verify(Payload_ request) {
             return SanctumSanctorum.this.verify(request);
+        }
+
+        public Verified_ verifyToken(FernetToken request) {
+            return SanctumSanctorum.this.verifyToken(request);
         }
     }
 }

@@ -12,6 +12,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.hellblazer.sky</groupId>
+            <artifactId>grpc</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.salesforce.apollo</groupId>
             <artifactId>stereotomy</artifactId>
         </dependency>
@@ -54,56 +58,4 @@
             <artifactId>liquibase-core</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>add-source</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${project.basedir}/src/main/proto</source>
-                                <source>
-                                    ${project.basedir}/target/generated-sources/protobuf/grpc-java
-                                </source>
-                                <source>
-                                    ${project.basedir}/target/generated-sources/protobuf/java
-                                </source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>add-test-source</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>add-test-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${project.basedir}/src/test/proto</source>
-                                <source>
-                                    ${project.basedir}/target/generated-test-sources/protobuf/grpc-java
-                                </source>
-                                <source>
-                                    ${project.basedir}/target/generated-test-sources/protobuf/java
-                                </source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 </project>

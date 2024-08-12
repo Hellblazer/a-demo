@@ -13,6 +13,8 @@
         <module>sky-image</module>
         <module>local-demo</module>
         <module>sanctum-sanctorum</module>
+        <module>sanctum-client</module>
+        <module>grpc</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
 
@@ -119,6 +121,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>sanctum-sanctorum</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>grpc</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

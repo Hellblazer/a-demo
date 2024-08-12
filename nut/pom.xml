@@ -38,8 +38,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.salesforce.apollo</groupId>
-            <artifactId>gorgoneion</artifactId>
+            <groupId>com.hellblazer.sky</groupId>
+            <artifactId>sanctum-sanctorum</artifactId>
         </dependency>
         <dependency>
             <groupId>com.salesforce.apollo</groupId>
@@ -50,39 +50,8 @@
             <artifactId>model</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.salesforce.apollo</groupId>
-            <artifactId>grpc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.mattbertolini</groupId>
-            <artifactId>liquibase-slf4j</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-        </dependency>
-        <dependency>
-            <!-- necessary for Java 9+ -->
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>annotations-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.protobuf</groupId>
-                    <artifactId>protobuf-java</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -103,14 +72,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.macasaet.fernet</groupId>
-            <artifactId>fernet-java8</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.codahale</groupId>
-            <artifactId>shamir</artifactId>
         </dependency>
 
         <!-- Test only dependencies below this line -->
@@ -277,10 +238,6 @@
                     </generator>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -297,13 +254,6 @@
                             </goals>
                             <configuration>
                                 <sources>
-                                    <source>${project.basedir}/src/main/proto</source>
-                                    <source>
-                                        ${project.basedir}/target/generated-sources/protobuf/grpc-java
-                                    </source>
-                                    <source>
-                                        ${project.basedir}/target/generated-sources/protobuf/java
-                                    </source>
                                     <source>
                                         ${project.basedir}/target/generated-sources/jooq
                                     </source>
@@ -318,13 +268,6 @@
                             </goals>
                             <configuration>
                                 <sources>
-                                    <source>${project.basedir}/src/test/proto</source>
-                                    <source>
-                                        ${project.basedir}/target/generated-test-sources/protobuf/grpc-java
-                                    </source>
-                                    <source>
-                                        ${project.basedir}/target/generated-test-sources/protobuf/java
-                                    </source>
                                     <source>
                                         ${project.basedir}/target/generated-test-sources/jooq
                                     </source>

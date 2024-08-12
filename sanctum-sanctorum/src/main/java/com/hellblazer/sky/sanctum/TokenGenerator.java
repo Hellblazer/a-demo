@@ -17,10 +17,7 @@
 
 package com.hellblazer.sky.sanctum;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.google.protobuf.Message;
+import com.hellblazer.sanctorum.proto.Bytes;
 import com.macasaet.fernet.Key;
 import com.macasaet.fernet.Token;
 import com.macasaet.fernet.TokenValidationException;
@@ -30,19 +27,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
-import java.time.Duration;
 import java.util.function.Function;
 
 /**
  * @author hal.hildebrand
  **/
-public class TokenGenerator implements Function<Message, Token> {
+public class TokenGenerator {
     private static final Logger log = LoggerFactory.getLogger(TokenGenerator.class);
 
-    private final    SecureRandom                entropy;
-    private final    Cache<HashedToken, Message> cached;
-    private final    Cache<Digest, Boolean>      invalid;
-    private volatile Key                         master;
+    private final    SecureRandom entropy;
+    private volatile Key          master;
 
     public TokenGenerator(java.security.Key master, SecureRandom entropy) {
         this(new Key(master.getEncoded()), entropy);
@@ -51,23 +45,10 @@ public class TokenGenerator implements Function<Message, Token> {
     public TokenGenerator(Key master, SecureRandom entropy) {
         this.master = master;
         this.entropy = entropy;
-        cached = Caffeine.newBuilder()
-                         .maximumSize(1_000)
-                         .expireAfterWrite(Duration.ofDays(10))
-                         .removalListener((HashedToken token, Object credentials, RemovalCause cause) -> log.trace(
-                         "Validated Token: {} was removed due to: {}", token.hash(), cause))
-                         .build();
-        invalid = Caffeine.newBuilder()
-                          .maximumSize(1_000)
-                          .expireAfterWrite(Duration.ofSeconds(30))
-                          .removalListener((Digest token, Boolean credentials, RemovalCause cause) -> log.trace(
-                          "Invalid Token: {} was removed due to: {}", token, cause))
-                          .build();
     }
 
-    @Override
-    public Token apply(Message message) {
-        return master != null ? Token.generate(entropy, master, message.toByteArray()) : null;
+    public Token apply(Bytes message) {
+        return master != null ? Token.generate(entropy, master, message.getB().toByteArray()) : null;
     }
 
     public void clear() {
@@ -79,36 +60,22 @@ public class TokenGenerator implements Function<Message, Token> {
     }
 
     public boolean valid(HashedToken hashed) {
-        if (invalid.getIfPresent(hashed.hash()) != null) {
-            return false;
-        }
-        if (cached.getIfPresent(hashed) != null) {
-            return true;
-        }
-        if (!hashed.token().isValidSignature(master)) {
-            invalid.put(hashed.hash(), true);
-            return false;
-        }
-        return true;
+        return !validate(new Validator<Bytes>() {
+            @Override
+            public Function<byte[], Bytes> getTransformer() {
+                return null;
+            }
+        }, hashed).equals(Bytes.getDefaultInstance());
     }
 
-    public Message validate(HashedToken hashed, Validator<Message> validator) {
-        if (invalid.getIfPresent(hashed.hash()) != null) {
-            log.info("Cached invalid Token: {}", hashed.hash());
-            return null;
-        }
-        return cached.get(hashed, k -> master != null ? validate(validator, k) : null);
-    }
-
-    private Message validate(Validator<Message> validator, HashedToken k) {
+    public Bytes validate(Validator<Bytes> validator, HashedToken k) {
         try {
             var decrypt = k.token().validateAndDecrypt(master, validator);
             log.info("Decrypted Token: {} was cached: {}", k, decrypt);
             return decrypt;
         } catch (TokenValidationException e) {
             log.info("Invalid Token: {}", k.hash());
-            invalid.put(k.hash(), Boolean.TRUE);
-            return null;
+            return Bytes.getDefaultInstance();
         }
     }
 

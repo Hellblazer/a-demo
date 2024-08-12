@@ -6,11 +6,13 @@ option java_outer_classname = "SanctorumProto";
 option objc_class_prefix = "Sanctorum";
 import "google/protobuf/empty.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
 
 import "crypto.proto";
 import "gorgoneion.proto";
+import "stereotomy.proto";
 
-package com.hellblazer.nut;
+package com.hellblazer.sanctorum;
 
 service Enclave_ {
   rpc apply(EncryptedShare) returns(Status) {}
@@ -24,6 +26,13 @@ service Enclave_ {
   rpc sign(Payload_) returns(crypto.Sig) {}
   rpc verify(Payload_) returns(Verified_) {}
   rpc provisioning(gorgoneion.Credentials) returns (Provisioning_) {}
+  rpc generateToken(Bytes) returns (FernetToken) {}
+  rpc verifyToken(FernetToken) returns (Verified_) {}
+  rpc validate(FernetValidate) returns (Bytes) {}
+}
+
+message Bytes {
+  bytes b = 1;
 }
 
 message Verified_ {
@@ -34,6 +43,7 @@ message Verified_ {
 message Payload_ {
   bytes payload = 1;
   crypto.Sig signature = 2;
+  stereotomy.SigningThreshold threshold = 3;
 }
 
 message EncryptedShare {
@@ -69,6 +79,11 @@ message UnwrapStatus {
 
 message FernetToken {
   string token = 1;
+}
+
+message FernetValidate {
+  string token = 1;
+  google.protobuf.Timestamp duration = 2;
 }
 
 message InitialProvisioning {
