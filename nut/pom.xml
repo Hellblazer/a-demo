@@ -39,7 +39,11 @@
     <dependencies>
         <dependency>
             <groupId>com.hellblazer.sky</groupId>
-            <artifactId>sanctum-sanctorum</artifactId>
+            <artifactId>grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.codahale</groupId>
+            <artifactId>shamir</artifactId>
         </dependency>
         <dependency>
             <groupId>com.salesforce.apollo</groupId>
