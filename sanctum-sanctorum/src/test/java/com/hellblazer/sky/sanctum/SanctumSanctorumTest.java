@@ -23,6 +23,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Payload_;
 import com.hellblazer.sanctorum.proto.Share;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
@@ -62,7 +63,7 @@ public class SanctumSanctorumTest {
         var parameters = new SanctumSanctorum.Parameters("jdbc:h2:mem:id-kerl;DB_CLOSE_DELAY=-1", "JCEKS",
                                                          Path.of(target, ".id"), new SanctumSanctorum.Shamir(4, 3),
                                                          Path.of(target, ".digest"), DigestAlgorithm.DEFAULT);
-        Function<SignedNonce, Any> attestation = null;
+        Function<SignedNonce, Any> attestation = n -> Any.getDefaultInstance();
         ServerBuilder builder = InProcessServerBuilder.forName(name);
         SanctumSanctorum sanctum = new SanctumSanctorum(EncryptionAlgorithm.DEFAULT, parameters, attestation, builder);
         sanctum.start();
@@ -122,6 +123,15 @@ public class SanctumSanctorumTest {
             Credentials.newBuilder().setSessionKey(pk).setNonce(SignedNonce.getDefaultInstance()).build());
             assertNotNull(provisioning);
             assertNotNull(sanctumClient.provision(provisioning));
+
+            var test = Payload_.newBuilder()
+                               .setPayload(ByteString.copyFromUtf8("Give me food or give me slack or kill me"))
+                               .build();
+            var signed = sanctumClient.sign(test);
+            assertNotNull(signed);
+            assertTrue(
+            sanctumClient.verify(Payload_.newBuilder().setPayload(test.getPayload()).setSignature(signed).build())
+                         .getVerified());
 
             sanctumClient.seal(Empty.getDefaultInstance());
         } finally {

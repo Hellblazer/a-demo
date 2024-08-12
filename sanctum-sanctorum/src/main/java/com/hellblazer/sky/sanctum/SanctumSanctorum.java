@@ -25,6 +25,7 @@ import com.hellblazer.sanctorum.proto.*;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
+import com.salesforce.apollo.cryptography.JohnHancock;
 import com.salesforce.apollo.cryptography.proto.Digeste;
 import com.salesforce.apollo.cryptography.proto.Sig;
 import com.salesforce.apollo.gorgoneion.proto.Credentials;
@@ -340,7 +341,7 @@ public class SanctumSanctorum {
     }
 
     private Sig sign(Payload_ request) {
-        return Sig.newBuilder().build();
+        return member.getSigner().sign(request.getPayload()).toSig();
     }
 
     private UnwrapStatus unwrap(Scheme scheme, HashMap<Integer, byte[]> clone, UnwrapStatus.Builder status) {
@@ -366,7 +367,11 @@ public class SanctumSanctorum {
     }
 
     private Verified_ verify(Payload_ request) {
-        return Verified_.newBuilder().build();
+        var from = JohnHancock.from(request.getSignature());
+        var payload = request.getPayload();
+        var verifier = member.getVerifier();
+        var verified = verifier.isPresent() && verifier.get().verify(from, payload);
+        return Verified_.newBuilder().setVerified(verified).build();
     }
 
     public record Parameters(String kerlURL, String keyStoreType, Path keyStoreFile, SanctumSanctorum.Shamir shamir,
