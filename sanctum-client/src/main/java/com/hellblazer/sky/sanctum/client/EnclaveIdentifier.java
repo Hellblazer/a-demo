@@ -66,11 +66,11 @@ public class EnclaveIdentifier implements ControlledIdentifier<SelfAddressingIde
     private final    KERL                              kerl;
     private volatile KeyState                          state;
 
-    public EnclaveIdentifier(SignatureAlgorithm algorithm, Signer signer, Channel channel) {
+    public EnclaveIdentifier(SignatureAlgorithm algorithm, Channel channel) {
         this.client = Enclave_Grpc.newBlockingStub(channel);
         this.algorithm = algorithm;
         identifier = new SelfAddressingIdentifier(Digest.from(client.identifier(Empty.getDefaultInstance())));
-        this.signer = signer;
+        this.signer = new EnclaveSigner(channel, algorithm);
         var stub = KERLServiceGrpc.newBlockingStub(channel);
         kerl = new KERLAdapter(new CommonKERLClient(stub, null), DigestAlgorithm.DEFAULT);
     }

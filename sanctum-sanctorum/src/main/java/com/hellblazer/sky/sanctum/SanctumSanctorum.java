@@ -44,7 +44,6 @@ import com.salesforce.apollo.utils.BbBackedInputStream;
 import com.salesforce.apollo.utils.Entropy;
 import com.salesforce.apollo.utils.Hex;
 import com.salesforce.apollo.utils.Utils;
-import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.StatusRuntimeException;
@@ -115,12 +114,9 @@ public class SanctumSanctorum {
         this.encryptionAlgorithm = encryptionAlgorithm;
         this.parameters = parameters;
         this.attestation = attestation;
-
-        BindableService[] services = new BindableService[] { new EnclaveServer(service) };
-        for (io.grpc.BindableService service : services) {
-            builder.addService(service);
-        }
-        server = builder.build();
+        server = builder.addService(new EnclaveServer(service))
+                        .addService(new EnclaveKERLServer(new ProtoKERLReadAdapter(() -> kerl), null))
+                        .build();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
     }
 
@@ -197,6 +193,10 @@ public class SanctumSanctorum {
         return id;
     }
 
+    public KERL getKERL() {
+        return kerl;
+    }
+
     public ControlledIdentifier<SelfAddressingIdentifier> member() {
         return member;
     }
@@ -255,10 +255,12 @@ public class SanctumSanctorum {
                 throw new IllegalStateException(
                 "Unable to create identifier file: %s".formatted(parameters.identityFile.toAbsolutePath()), e);
             }
-            log.info("New identifier: {} file: {}", member.getDigest(), parameters.identityFile.toAbsolutePath());
+            log.info("New identifier: {} file: {}", member.getIdentifier().getDigest(),
+                     parameters.identityFile.toAbsolutePath());
         } else {
             member = stereotomy.controlOf((SelfAddressingIdentifier) id);
-            log.info("Resuming identifier: {} file: {}", member.getDigest(), parameters.identityFile.toAbsolutePath());
+            log.info("Resuming identifier: {} file: {}", member.getIdentifier().getDigest(),
+                     parameters.identityFile.toAbsolutePath());
         }
     }
 
@@ -309,6 +311,8 @@ public class SanctumSanctorum {
 
     private void provision(byte[] master) {
         this.master = new SecretKeySpec(master, "AES");
+        assert this.master.getEncoded().length == 32 : "Must result in a 32 byte AES key: "
+        + this.master.getEncoded().length;
         generator = new TokenGenerator(this.master, new SecureRandom());
 
         initializeSchema();
@@ -317,7 +321,7 @@ public class SanctumSanctorum {
         keystore = initializeKeyStore(parameters.keyStoreFile, parameters.keyStoreType(), () -> this.root);
         initializeIdentifier();
 
-        this.id = member.getDigest();
+        this.id = member.getIdentifier().getDigest();
         log.info("Sanctum Sanctorum provisioned: {}", qb64(id));
     }
 
@@ -368,7 +372,7 @@ public class SanctumSanctorum {
         keystore = initializeKeyStore(parameters.keyStoreFile, parameters.keyStoreType(), () -> this.root);
         initializeIdentifier();
 
-        this.id = member.getDigest();
+        this.id = member.getIdentifier().getDigest();
         log.info("Sanctum Sanctorum unwrapped: {}", qb64(id));
     }
 

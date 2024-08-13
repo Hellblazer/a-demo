@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
-import java.util.function.Function;
 
 /**
  * @author hal.hildebrand
@@ -55,17 +54,8 @@ public class TokenGenerator {
         master = null;
     }
 
-    public String shared() {
-        return master.serialise();
-    }
-
     public boolean valid(HashedToken hashed) {
-        return !validate(new Validator<Bytes>() {
-            @Override
-            public Function<byte[], Bytes> getTransformer() {
-                return null;
-            }
-        }, hashed).equals(Bytes.getDefaultInstance());
+        return !validate(() -> null, hashed).equals(Bytes.getDefaultInstance());
     }
 
     public Bytes validate(Validator<Bytes> validator, HashedToken k) {

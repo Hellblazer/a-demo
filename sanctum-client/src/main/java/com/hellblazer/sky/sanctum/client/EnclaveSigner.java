@@ -23,6 +23,7 @@ import com.hellblazer.sanctorum.proto.Payload_;
 import com.salesforce.apollo.cryptography.JohnHancock;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.cryptography.Signer;
+import io.grpc.Channel;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,8 +35,8 @@ public class EnclaveSigner implements Signer {
     private final Enclave_Grpc.Enclave_BlockingStub client;
     private final SignatureAlgorithm                signatureAlgorithm;
 
-    public EnclaveSigner(Enclave_Grpc.Enclave_BlockingStub client, SignatureAlgorithm signatureAlgorithm) {
-        this.client = client;
+    public EnclaveSigner(Channel client, SignatureAlgorithm signatureAlgorithm) {
+        this.client = Enclave_Grpc.newBlockingStub(client);
         this.signatureAlgorithm = signatureAlgorithm;
     }
 

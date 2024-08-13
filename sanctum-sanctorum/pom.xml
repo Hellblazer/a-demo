@@ -57,5 +57,9 @@
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.salesforce.apollo</groupId>
+            <artifactId>stereotomy-services</artifactId>
+        </dependency>
     </dependencies>
 </project>
