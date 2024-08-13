@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Signer using the SanctumSanctorum enclave
+ * Signer using the SanctumService enclave
  *
  * @author hal.hildebrand
  **/

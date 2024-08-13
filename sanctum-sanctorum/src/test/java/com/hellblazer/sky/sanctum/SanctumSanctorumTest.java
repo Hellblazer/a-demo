@@ -29,9 +29,8 @@ import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import com.salesforce.apollo.gorgoneion.proto.Credentials;
 import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
-import io.grpc.ServerBuilder;
 import io.grpc.inprocess.InProcessChannelBuilder;
-import io.grpc.inprocess.InProcessServerBuilder;
+import io.grpc.inprocess.InProcessSocketAddress;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -57,18 +56,17 @@ public class SanctumSanctorumTest {
     @Test
     public void shamir() throws Exception {
         clean();
-        var name = UUID.randomUUID().toString();
+        var address = new InProcessSocketAddress(UUID.randomUUID().toString());
         var target = "target";
         var devSecret = "Give me food or give me slack or kill me";
         var parameters = new SanctumSanctorum.Parameters("jdbc:h2:mem:id-kerl;DB_CLOSE_DELAY=-1", "JCEKS",
                                                          Path.of(target, ".id"), new SanctumSanctorum.Shamir(4, 3),
                                                          Path.of(target, ".digest"), DigestAlgorithm.DEFAULT);
         Function<SignedNonce, Any> attestation = n -> Any.getDefaultInstance();
-        ServerBuilder builder = InProcessServerBuilder.forName(name);
-        SanctumSanctorum sanctum = new SanctumSanctorum(EncryptionAlgorithm.DEFAULT, parameters, attestation, builder);
+        var sanctum = new SanctumSanctorum(EncryptionAlgorithm.DEFAULT, parameters, attestation, address);
         sanctum.start();
 
-        var client = InProcessChannelBuilder.forName(name).usePlaintext().build();
+        var client = InProcessChannelBuilder.forName(address.getName()).usePlaintext().build();
         try {
             var sanctumClient = Enclave_Grpc.newBlockingStub(client);
             var status = sanctumClient.unseal(Empty.getDefaultInstance());

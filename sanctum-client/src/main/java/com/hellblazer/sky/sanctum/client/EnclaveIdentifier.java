@@ -54,8 +54,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * "Most" of a ControlledIdentifier, backed by the SanctumSanctorum Enclave.  Basically a blocking key management
- * enclave.  Provides enough to wrap using a SigningMember for Apollo integration.
+ * "Most" of a ControlledIdentifier, backed by the SanctumService Enclave.  Basically a blocking key management enclave.
+ * Provides enough to wrap using a SigningMember for Apollo integration.
  *
  * @author hal.hildebrand
  **/

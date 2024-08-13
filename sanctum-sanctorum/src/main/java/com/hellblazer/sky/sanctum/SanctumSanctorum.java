@@ -22,6 +22,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.sanctorum.proto.*;
+import com.jauntsdn.netty.channel.vsock.ServerVSockChannel;
 import com.macasaet.fernet.Token;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
@@ -47,6 +48,12 @@ import com.salesforce.apollo.utils.Utils;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.StatusRuntimeException;
+import io.grpc.inprocess.InProcessServerBuilder;
+import io.grpc.inprocess.InProcessSocketAddress;
+import io.grpc.netty.NettyServerBuilder;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.VSockAddress;
 import liquibase.Liquibase;
 import liquibase.Scope;
 import liquibase.database.core.H2Database;
@@ -63,6 +70,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.net.SocketAddress;
 import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -110,6 +118,11 @@ public class SanctumSanctorum {
     private volatile KeyPair                                        sessionKeyPair;
 
     public SanctumSanctorum(EncryptionAlgorithm encryptionAlgorithm, Parameters parameters,
+                            Function<SignedNonce, Any> attestation, SocketAddress enclaveAddress) {
+        this(encryptionAlgorithm, parameters, attestation, processBuilderFor(enclaveAddress));
+    }
+
+    public SanctumSanctorum(EncryptionAlgorithm encryptionAlgorithm, Parameters parameters,
                             Function<SignedNonce, Any> attestation, ServerBuilder builder) {
         this.encryptionAlgorithm = encryptionAlgorithm;
         this.parameters = parameters;
@@ -118,6 +131,21 @@ public class SanctumSanctorum {
                         .addService(new EnclaveKERLServer(new ProtoKERLReadAdapter(() -> kerl), null))
                         .build();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
+    }
+
+    private static ServerBuilder<?> processBuilderFor(SocketAddress enclaveAddress) {
+
+        if (enclaveAddress instanceof InProcessSocketAddress ipa) {
+            return InProcessServerBuilder.forAddress(ipa);
+        }
+        if (enclaveAddress instanceof VSockAddress vs) {
+            return NettyServerBuilder.forAddress(vs)
+                                     .withOption(ChannelOption.SO_REUSEADDR, true)
+                                     .channelType(ServerVSockChannel.class)
+                                     .workerEventLoopGroup(new EpollEventLoopGroup())
+                                     .withChildOption(ChannelOption.TCP_NODELAY, true);
+        }
+        throw new IllegalArgumentException("Unsupported enclave address: " + enclaveAddress);
     }
 
     public static StereotomyKeyStore initializeKeyStore(Path keyStoreFile, String keyStoreType, Supplier<char[]> root) {

@@ -34,6 +34,7 @@ import com.salesforce.apollo.cryptography.proto.Digeste;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
 import com.salesforce.apollo.delphinius.Oracle;
 import com.salesforce.apollo.fireflies.View;
+import com.salesforce.apollo.gorgoneion.proto.PublicKey_;
 import com.salesforce.apollo.stereotomy.Stereotomy;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.thoth.LoggingOutputStream;

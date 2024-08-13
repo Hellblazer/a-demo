@@ -31,6 +31,15 @@ service Enclave_ {
   rpc validate(FernetValidate) returns (Bytes) {}
 }
 
+service Sanctum_ {
+  rpc apply(EncryptedShare) returns(Status) {}
+  rpc unwrap(google.protobuf.Empty) returns(UnwrapStatus){}
+  rpc seal(google.protobuf.Empty) returns(Status) {}
+  rpc unseal(google.protobuf.Empty) returns(Status) {}
+  rpc sessionKey(google.protobuf.Empty) returns(gorgoneion.PublicKey_) {}
+  rpc identifier(google.protobuf.Empty) returns (crypto.Digeste) {}
+}
+
 message Bytes {
   bytes b = 1;
 }

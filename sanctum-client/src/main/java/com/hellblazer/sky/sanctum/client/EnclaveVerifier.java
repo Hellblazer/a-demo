@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Verifier using the SanctumSanctorum enclave
+ * Verifier using the SanctumService enclave
  *
  * @author hal.hildebrand
  **/

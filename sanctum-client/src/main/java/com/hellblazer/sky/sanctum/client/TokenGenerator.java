@@ -34,8 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 
 /**
- * Token generation/validation using the SanctumSanctorum enclave. Also caches validated and invalidated tokens (for
- * now)
+ * Token generation/validation using the SanctumService enclave. Also caches validated and invalidated tokens (for now)
  *
  * @author hal.hildebrand
  **/

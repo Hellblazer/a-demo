@@ -15,22 +15,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.nut.comms;
+package com.hellblazer.sky.sanctum.client;
 
 import com.google.protobuf.Empty;
-import com.hellblazer.nut.Sphinx;
-import com.hellblazer.nut.proto.EncryptedShare;
-import com.hellblazer.nut.proto.SphynxGrpc;
-import com.hellblazer.nut.proto.Status;
-import com.hellblazer.nut.proto.UnwrapStatus;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Sanctum_Grpc;
+import com.hellblazer.sanctorum.proto.Status;
+import com.hellblazer.sanctorum.proto.UnwrapStatus;
 import com.salesforce.apollo.cryptography.proto.Digeste;
 import com.salesforce.apollo.gorgoneion.proto.PublicKey_;
 import io.grpc.stub.StreamObserver;
 
-public class SphynxServer extends SphynxGrpc.SphynxImplBase {
-    private final Sphinx.Service service;
+public class SanctumServer extends Sanctum_Grpc.Sanctum_ImplBase {
+    private final SanctumService service;
 
-    public SphynxServer(Sphinx.Service service) {
+    public SanctumServer(SanctumService service) {
         this.service = service;
     }
 

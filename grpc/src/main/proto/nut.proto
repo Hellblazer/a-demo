@@ -7,6 +7,7 @@ option objc_class_prefix = "Nut";
 import "google/protobuf/empty.proto";
 
 import "crypto.proto";
+import "gorgoneion.proto";
 
 package com.hellblazer.nut;
 
@@ -15,7 +16,7 @@ service Sphynx {
   rpc unwrap(google.protobuf.Empty) returns(UnwrapStatus){}
   rpc seal(google.protobuf.Empty) returns(Status) {}
   rpc unseal(google.protobuf.Empty) returns(Status) {}
-  rpc sessionKey(google.protobuf.Empty) returns(PublicKey_) {}
+  rpc sessionKey(google.protobuf.Empty) returns(gorgoneion.PublicKey_) {}
   rpc identifier(google.protobuf.Empty) returns (crypto.Digeste) {}
 }
 
@@ -42,16 +43,6 @@ message UnwrapStatus {
   int32 shares = 2;
   string message = 3;
   crypto.Digeste identifier = 4;
-}
-
-message PublicKey_ {
-  enum algo {
-    INVALID = 0;
-    X25519 = 1;
-    X448 = 2;
-  }
-  algo algorithm = 1;
-  bytes publicKey = 2;
 }
 
 message FernetToken {
