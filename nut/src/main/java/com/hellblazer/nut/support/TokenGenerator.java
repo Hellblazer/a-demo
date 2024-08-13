@@ -21,10 +21,10 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.google.protobuf.Message;
-import com.hellblazer.nut.SkyApplication;
 import com.macasaet.fernet.Key;
 import com.macasaet.fernet.Token;
 import com.macasaet.fernet.TokenValidationException;
+import com.macasaet.fernet.Validator;
 import com.salesforce.apollo.archipelago.server.FernetServerInterceptor;
 import com.salesforce.apollo.cryptography.Digest;
 import org.slf4j.Logger;
@@ -38,12 +38,12 @@ import java.util.function.Function;
  * @author hal.hildebrand
  **/
 public class TokenGenerator implements Function<Message, Token> {
-    private static final Logger                                             log = LoggerFactory.getLogger(
-    TokenGenerator.class);
-    private final        SecureRandom                                       entropy;
-    private final        Cache<FernetServerInterceptor.HashedToken, String> cached;
-    private final        Cache<Digest, Boolean>                             invalid;
-    private volatile     Key                                                master;
+    private static final Logger log = LoggerFactory.getLogger(TokenGenerator.class);
+
+    private final    SecureRandom                                        entropy;
+    private final    Cache<FernetServerInterceptor.HashedToken, Message> cached;
+    private final    Cache<Digest, Boolean>                              invalid;
+    private volatile Key                                                 master;
 
     public TokenGenerator(java.security.Key master, SecureRandom entropy) {
         this(new Key(master.getEncoded()), entropy);
@@ -76,7 +76,25 @@ public class TokenGenerator implements Function<Message, Token> {
         master = null;
     }
 
-    public String validate(FernetServerInterceptor.HashedToken hashed, SkyApplication.TokenValidator validator) {
+    public String shared() {
+        return master.serialise();
+    }
+
+    public boolean valid(FernetServerInterceptor.HashedToken hashed) {
+        if (invalid.getIfPresent(hashed.hash()) != null) {
+            return false;
+        }
+        if (cached.getIfPresent(hashed) != null) {
+            return true;
+        }
+        if (!hashed.token().isValidSignature(master)) {
+            invalid.put(hashed.hash(), true);
+            return false;
+        }
+        return true;
+    }
+
+    public Message validate(FernetServerInterceptor.HashedToken hashed, Validator<Message> validator) {
         if (invalid.getIfPresent(hashed.hash()) != null) {
             log.info("Cached invalid Token: {}", hashed.hash());
             return null;
@@ -84,10 +102,10 @@ public class TokenGenerator implements Function<Message, Token> {
         return cached.get(hashed, k -> master != null ? validate(validator, k) : null);
     }
 
-    private String validate(SkyApplication.TokenValidator validator, FernetServerInterceptor.HashedToken k) {
+    private Message validate(Validator<Message> validator, FernetServerInterceptor.HashedToken k) {
         try {
             var decrypt = k.token().validateAndDecrypt(master, validator);
-            log.info("Decrypted Token: {} was cached: {}", k, decrypt);
+            log.info("Decrypted Token: {} was cached", k);
             return decrypt;
         } catch (TokenValidationException e) {
             log.info("Invalid Token: {}", k.hash());

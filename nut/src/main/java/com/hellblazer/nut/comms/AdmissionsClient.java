@@ -20,10 +20,10 @@ import com.salesforce.apollo.gorgoneion.client.client.comm.Admissions;
 import com.salesforce.apollo.gorgoneion.client.client.comm.GorgoneionClientMetrics;
 import com.salesforce.apollo.gorgoneion.proto.AdmissionsGrpc;
 import com.salesforce.apollo.gorgoneion.proto.Credentials;
+import com.salesforce.apollo.gorgoneion.proto.Establishment;
 import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
 import com.salesforce.apollo.membership.Member;
 import com.salesforce.apollo.stereotomy.event.proto.KERL_;
-import com.salesforce.apollo.stereotomy.event.proto.Validations;
 import io.grpc.ManagedChannel;
 
 import java.time.Duration;
@@ -70,7 +70,7 @@ public class AdmissionsClient implements Admissions {
         return member;
     }
 
-    public Validations register(Credentials credentials, Duration timeout) {
+    public Establishment register(Credentials credentials, Duration timeout) {
         if (metrics != null) {
             var serializedSize = credentials.getSerializedSize();
             metrics.outboundBandwidth().mark(serializedSize);

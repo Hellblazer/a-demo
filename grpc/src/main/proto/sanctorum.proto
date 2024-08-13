@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.hellblazer.sanctorum.proto";
+option java_outer_classname = "SanctorumProto";
+option objc_class_prefix = "Sanctorum";
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+import "crypto.proto";
+import "gorgoneion.proto";
+import "stereotomy.proto";
+
+package com.hellblazer.sanctorum;
+
+service Enclave_ {
+  rpc apply(EncryptedShare) returns(Status) {}
+  rpc unwrap(google.protobuf.Empty) returns(UnwrapStatus){}
+  rpc seal(google.protobuf.Empty) returns(Status) {}
+  rpc unseal(google.protobuf.Empty) returns(Status) {}
+  rpc sessionKey(google.protobuf.Empty) returns(gorgoneion.PublicKey_) {}
+  rpc identifier(google.protobuf.Empty) returns (crypto.Digeste) {}
+  rpc attestation(gorgoneion.SignedNonce) returns(google.protobuf.Any) {}
+  rpc provision(Provisioning_) returns(google.protobuf.Empty) {}
+  rpc sign(Payload_) returns(crypto.Sig) {}
+  rpc verify(Payload_) returns(Verified_) {}
+  rpc provisioning(gorgoneion.Credentials) returns (Provisioning_) {}
+  rpc generateToken(Bytes) returns (FernetToken) {}
+  rpc verifyToken(FernetToken) returns (Verified_) {}
+  rpc validate(FernetValidate) returns (Bytes) {}
+}
+
+message Bytes {
+  bytes b = 1;
+}
+
+message Verified_ {
+  bool verified = 1;
+  string errorMessage = 2;
+}
+
+message Payload_ {
+  bytes payload = 1;
+  crypto.Sig signature = 2;
+  stereotomy.SigningThreshold threshold = 3;
+}
+
+message EncryptedShare {
+  bytes encapsulation = 1;
+  bytes iv = 2;
+  bytes associatedData = 3;
+  bytes share = 4;
+}
+
+message Provisioning_ {
+  bytes encapsulation = 1;
+  bytes iv = 2;
+  bytes provisioned = 3;
+}
+
+message Share {
+  int32 key = 1;
+  bytes share = 2;
+}
+
+message Status {
+  bool success = 1;
+  int32 shares = 2;
+  string message = 3;
+}
+
+message UnwrapStatus {
+  bool success = 1;
+  int32 shares = 2;
+  string message = 3;
+  crypto.Digeste identifier = 4;
+}
+
+message FernetToken {
+  string token = 1;
+}
+
+message FernetValidate {
+  string token = 1;
+  google.protobuf.Timestamp duration = 2;
+}
+
+message InitialProvisioning {
+  // namespace to use
+  uint64 namespace = 1;
+  // relationships to assert with the newly minted subject
+  repeated uint64 relationships = 2;
+  // relationship mappings to other subjects to assert with the newly minted subject
+  map<uint64, uint64> mappings = 3;
+  // relationship assertions to map to objects
+  map<uint64, uint64> assertions = 4;
+}

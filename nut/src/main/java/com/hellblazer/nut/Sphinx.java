@@ -18,6 +18,7 @@
 package com.hellblazer.nut;
 
 import com.codahale.shamir.Scheme;
+import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.nut.comms.ApiServer;
@@ -59,7 +60,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
@@ -100,6 +100,7 @@ public class Sphinx {
     private volatile Runnable                closeApiServer;
     private volatile SocketAddress           apiAddress;
     private volatile CompletableFuture<Void> onFailure = new CompletableFuture<>();
+    private volatile String                  provisionedToken;
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -349,7 +350,8 @@ public class Sphinx {
     // Unwrap the root identity keystore and establish either a new identifier or resume the previous identifier
     private Digest unwrap(Duration viewGossipDuration, byte[] master) {
         sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
-        application = new SkyApplication(configuration, sanctum, onFailure);
+        application = new SkyApplication(configuration, sanctum, onFailure, signedNonce -> Any.pack(
+        FernetToken.newBuilder().setToken(provisionedToken == null ? "Hello World" : provisionedToken).build()));
 
         List<SocketAddress> approaches = configuration.approaches == null ? Collections.emptyList()
                                                                           : configuration.approaches.stream()
@@ -367,7 +369,7 @@ public class Sphinx {
         if (current == null) {
             throw new IllegalStateException("application is null");
         }
-        Thread.ofVirtual().start(Utils.wrapped(() -> {
+        Thread.ofPlatform().start(Utils.wrapped(() -> {
             if (approaches.isEmpty()) {
                 current.bootstrap(viewGossipDuration, onStart, configuration.endpoints.approachEndpoint());
             } else {

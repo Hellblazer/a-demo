@@ -133,7 +133,7 @@ public class SmokeTest {
 
         // Assert flagged technicians can directly view the document
         Oracle.Assertion grantTechs = flaggedTechnicianMembers.assertion(object123View);
-        var ts = retryNesting(() -> oracle.add(grantTechs), 3).get(120, TimeUnit.SECONDS);
+        var ts = retryNesting(() -> oracle.add(grantTechs), 3).get(120, TimeUnit.SECONDS).ts();
 
         // Now have 2 direct subjects that can view the doc
         viewers = oracle.read(object123View);

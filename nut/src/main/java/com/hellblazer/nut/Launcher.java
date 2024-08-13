@@ -44,15 +44,16 @@ import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
  * @author hal.hildebrand
  **/
 public class Launcher {
-    public final static String SEEDS_VAR      = "SEEDS";
-    public final static String APPROACHES_VAR = "APPROACHES";
-    public final static String GENESIS        = "GENESIS";
-    public final static String API_PORT       = "API";
-    public final static String APPROACH_PORT  = "APPROACH";
-    public final static String CLUSTER_PORT   = "CLUSTER";
-    public final static String BIND_INTERFACE = "BIND_INTERFACE";
-    public final static String SERVICE_PORT   = "SERVICE";
-    public final static String HEALTH_PORT    = "HEALTH";
+    public final static String SEEDS_VAR         = "SEEDS";
+    public final static String APPROACHES_VAR    = "APPROACHES";
+    public final static String GENESIS           = "GENESIS";
+    public final static String API_PORT          = "API";
+    public final static String APPROACH_PORT     = "APPROACH";
+    public final static String CLUSTER_PORT      = "CLUSTER";
+    public final static String BIND_INTERFACE    = "BIND_INTERFACE";
+    public final static String SERVICE_PORT      = "SERVICE";
+    public final static String HEALTH_PORT       = "HEALTH";
+    public final static String PROVISIONED_TOKEN = "PROVISIONED";
 
     private static final Logger log = LoggerFactory.getLogger(Sphinx.class);
 
@@ -85,6 +86,11 @@ public class Launcher {
             var approach = System.getenv(APPROACH_PORT);
             var service = System.getenv(SERVICE_PORT);
             var health = System.getenv(HEALTH_PORT);
+            var provisioned = System.getenv(PROVISIONED_TOKEN);
+
+            if (provisioned != null) {
+                config.provisionedToken = provisioned;
+            }
 
             var endpoints = new SkyConfiguration.InterfaceEndpoints();
             endpoints.interfaceName = bindInterface;

@@ -53,3 +53,18 @@ message PublicKey_ {
   algo algorithm = 1;
   bytes publicKey = 2;
 }
+
+message FernetToken {
+  string token = 1;
+}
+
+message InitialProvisioning {
+  // namespace to use
+  uint64 namespace = 1;
+  // relationships to assert with the newly minted subject
+  repeated uint64 relationships = 2;
+  // relationship mappings to other subjects to assert with the newly minted subject
+  map<uint64, uint64> mappings = 3;
+  // relationship assertions to map to objects
+  map<uint64, uint64> assertions = 4;
+}
