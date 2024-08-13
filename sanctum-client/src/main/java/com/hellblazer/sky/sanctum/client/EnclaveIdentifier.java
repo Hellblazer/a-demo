@@ -54,6 +54,9 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
+ * "Most" of a ControlledIdentifier, backed by the SanctumSanctorum Enclave.  Basically a blocking key management
+ * enclave.  Provides enough to wrap using a SigningMember for Apollo integration.
+ *
  * @author hal.hildebrand
  **/
 public class EnclaveIdentifier implements ControlledIdentifier<SelfAddressingIdentifier> {
@@ -227,5 +230,9 @@ public class EnclaveIdentifier implements ControlledIdentifier<SelfAddressingIde
     @Override
     public KeyState_ toKeyState_() {
         return state.toKeyState_();
+    }
+
+    public TokenGenerator tokenGenerator() {
+        return new TokenGenerator(client.getChannel());
     }
 }

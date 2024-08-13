@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * Verifier using the SanctumSanctorum enclave
+ *
  * @author hal.hildebrand
  **/
 public class EnclaveVerifier implements Verifier {

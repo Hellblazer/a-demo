@@ -21,18 +21,22 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.google.protobuf.ByteString;
+import com.hellblazer.sanctorum.proto.Bytes;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.hellblazer.sanctorum.proto.FernetToken;
 import com.hellblazer.sanctorum.proto.FernetValidate;
 import com.macasaet.fernet.Token;
 import com.salesforce.apollo.cryptography.Digest;
-import io.grpc.ManagedChannel;
+import io.grpc.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
 /**
+ * Token generation/validation using the SanctumSanctorum enclave. Also caches validated and invalidated tokens (for
+ * now)
+ *
  * @author hal.hildebrand
  **/
 public class TokenGenerator {
@@ -42,7 +46,7 @@ public class TokenGenerator {
     private final Cache<Digest, Boolean>            invalid;
     private final Enclave_Grpc.Enclave_BlockingStub client;
 
-    public TokenGenerator(ManagedChannel channel) {
+    public TokenGenerator(Channel channel) {
         this.client = Enclave_Grpc.newBlockingStub(channel);
         cached = Caffeine.newBuilder()
                          .maximumSize(1_000)
@@ -56,6 +60,11 @@ public class TokenGenerator {
                           .removalListener((Digest token, Boolean credentials, RemovalCause cause) -> log.trace(
                           "Invalid Token: {} was removed due to: {}", token, cause))
                           .build();
+    }
+
+    public Token apply(byte[] bytes) {
+        var tok = client.generateToken(Bytes.newBuilder().setB(ByteString.copyFrom(bytes)).build());
+        return Token.fromString(tok.getToken());
     }
 
     public boolean valid(HashedToken hashed) {

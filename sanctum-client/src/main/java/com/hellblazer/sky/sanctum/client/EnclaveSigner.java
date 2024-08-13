@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * Signer using the SanctumSanctorum enclave
+ *
  * @author hal.hildebrand
  **/
 public class EnclaveSigner implements Signer {

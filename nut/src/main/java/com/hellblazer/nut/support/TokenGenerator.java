@@ -105,7 +105,7 @@ public class TokenGenerator implements Function<Message, Token> {
     private Message validate(Validator<Message> validator, FernetServerInterceptor.HashedToken k) {
         try {
             var decrypt = k.token().validateAndDecrypt(master, validator);
-            log.info("Decrypted Token: {} was cached: {}", k, decrypt);
+            log.info("Decrypted Token: {} was cached", k);
             return decrypt;
         } catch (TokenValidationException e) {
             log.info("Invalid Token: {}", k.hash());
