@@ -48,18 +48,16 @@ public class Sanctum {
     }
 
     public static Channel channelFor(SocketAddress enclaveAddress) {
-        if (enclaveAddress instanceof InProcessSocketAddress ipa) {
-            return InProcessChannelBuilder.forAddress(ipa).usePlaintext().build();
-        }
-        if (enclaveAddress instanceof VSockAddress vs) {
-            return NettyChannelBuilder.forAddress(vs)
-                                      .withOption(ChannelOption.TCP_NODELAY, true)
-                                      .eventLoopGroup(new EpollEventLoopGroup())
-                                      .channelType(EpollVSockChannel.class)
-                                      .usePlaintext()
-                                      .build();
-        }
-        throw new IllegalArgumentException("Unsupported enclave address: " + enclaveAddress);
+        return switch (enclaveAddress) {
+            case InProcessSocketAddress ipa -> InProcessChannelBuilder.forAddress(ipa).usePlaintext().build();
+            case VSockAddress vs -> NettyChannelBuilder.forAddress(vs)
+                                                       .withOption(ChannelOption.TCP_NODELAY, true)
+                                                       .eventLoopGroup(new EpollEventLoopGroup())
+                                                       .channelType(EpollVSockChannel.class)
+                                                       .usePlaintext()
+                                                       .build();
+            default -> throw new IllegalArgumentException("Unsupported enclave address: " + enclaveAddress);
+        };
     }
 
     public Digest getId() {

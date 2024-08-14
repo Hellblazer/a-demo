@@ -8,7 +8,7 @@
         <artifactId>sky.app</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>sanctum-client</artifactId>
+    <artifactId>sanctum</artifactId>
 
     <dependencies>
         <dependency>

@@ -140,18 +140,15 @@ public class SanctumSanctorum {
     }
 
     private static ServerBuilder<?> processBuilderFor(SocketAddress enclaveAddress) {
-
-        if (enclaveAddress instanceof InProcessSocketAddress ipa) {
-            return InProcessServerBuilder.forAddress(ipa);
-        }
-        if (enclaveAddress instanceof VSockAddress vs) {
-            return NettyServerBuilder.forAddress(vs)
-                                     .withOption(ChannelOption.SO_REUSEADDR, true)
-                                     .channelType(ServerVSockChannel.class)
-                                     .workerEventLoopGroup(new EpollEventLoopGroup())
-                                     .withChildOption(ChannelOption.TCP_NODELAY, true);
-        }
-        throw new IllegalArgumentException("Unsupported enclave address: " + enclaveAddress);
+        return switch (enclaveAddress) {
+            case VSockAddress vs -> NettyServerBuilder.forAddress(vs)
+                                                      .withOption(ChannelOption.SO_REUSEADDR, true)
+                                                      .channelType(ServerVSockChannel.class)
+                                                      .workerEventLoopGroup(new EpollEventLoopGroup())
+                                                      .withChildOption(ChannelOption.TCP_NODELAY, true);
+            case InProcessSocketAddress vs -> InProcessServerBuilder.forAddress(vs);
+            default -> throw new IllegalArgumentException("Unsupported enclave address: " + enclaveAddress);
+        };
     }
 
     public static SanctumSanctorum.Encrypted encrypt(byte[] plaintext, SecretKey secretKey, byte[] associatedData) {
