@@ -34,8 +34,6 @@ import io.grpc.inprocess.InProcessSocketAddress;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.spec.SecretKeySpec;
-import java.io.File;
-import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.function.Function;
@@ -46,24 +44,16 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author hal.hildebrandEnclave_
  **/
 public class SanctumSanctorumTest {
-    private static void clean() {
-        new File("target/.id").delete();
-        new File("target/.digest").delete();
-        new File("target/kerl-state.mv.db").delete();
-        new File("target/kerl-state.trace.db").delete();
-    }
 
     @Test
     public void shamir() throws Exception {
-        clean();
         var address = new InProcessSocketAddress(UUID.randomUUID().toString());
         var target = "target";
         var devSecret = "Give me food or give me slack or kill me";
-        var parameters = new SanctumSanctorum.Parameters("jdbc:h2:mem:id-kerl;DB_CLOSE_DELAY=-1", "JCEKS",
-                                                         Path.of(target, ".id"), new SanctumSanctorum.Shamir(4, 3),
-                                                         Path.of(target, ".digest"), DigestAlgorithm.DEFAULT);
+        var parameters = new SanctumSanctorum.Parameters(new SanctumSanctorum.Shamir(4, 3), DigestAlgorithm.DEFAULT,
+                                                         EncryptionAlgorithm.DEFAULT, address);
         Function<SignedNonce, Any> attestation = n -> Any.getDefaultInstance();
-        var sanctum = new SanctumSanctorum(EncryptionAlgorithm.DEFAULT, parameters, attestation, address);
+        var sanctum = new SanctumSanctorum(parameters, attestation);
         sanctum.start();
 
         var client = InProcessChannelBuilder.forName(address.getName()).usePlaintext().build();
