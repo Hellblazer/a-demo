@@ -17,6 +17,7 @@
 
 package com.hellblazer.sky.sanctum.client;
 
+import com.jauntsdn.netty.channel.vsock.EpollVSockChannel;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
@@ -25,6 +26,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.VSockAddress;
 
 import java.net.SocketAddress;
@@ -51,8 +53,10 @@ public class Sanctum {
         }
         if (enclaveAddress instanceof VSockAddress vs) {
             return NettyChannelBuilder.forAddress(vs)
-                                      .usePlaintext()
                                       .withOption(ChannelOption.TCP_NODELAY, true)
+                                      .eventLoopGroup(new EpollEventLoopGroup())
+                                      .channelType(EpollVSockChannel.class)
+                                      .usePlaintext()
                                       .build();
         }
         throw new IllegalArgumentException("Unsupported enclave address: " + enclaveAddress);

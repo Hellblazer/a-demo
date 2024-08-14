@@ -33,14 +33,16 @@ import com.salesforce.apollo.cryptography.proto.Sig;
 import com.salesforce.apollo.gorgoneion.proto.Credentials;
 import com.salesforce.apollo.gorgoneion.proto.PublicKey_;
 import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
-import com.salesforce.apollo.stereotomy.*;
+import com.salesforce.apollo.stereotomy.ControlledIdentifier;
+import com.salesforce.apollo.stereotomy.KERL;
+import com.salesforce.apollo.stereotomy.Stereotomy;
+import com.salesforce.apollo.stereotomy.StereotomyImpl;
 import com.salesforce.apollo.stereotomy.caching.CachingKERL;
 import com.salesforce.apollo.stereotomy.db.UniKERLDirect;
 import com.salesforce.apollo.stereotomy.event.protobuf.ProtobufEventFactory;
 import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
 import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
 import com.salesforce.apollo.utils.Entropy;
-import com.salesforce.apollo.utils.Hex;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.StatusRuntimeException;
@@ -89,40 +91,52 @@ import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
  * @author hal.hildebrand
  **/
 public class SanctumSanctorum {
-    public static final  String                       AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
-    public static final  String                       AES                = "AES";
-    public static final  int                          TAG_LENGTH         = 128; // bits
-    public static final  int                          IV_LENGTH          = 16; // bytes
-    public static final  String                       SANCTUM_DB_URL     = "jdbc:h2:mem:sanctum;DB_CLOSE_DELAY=-1";
-    private static final Logger                       log                = LoggerFactory.getLogger(
-    SanctumSanctorum.class);
-    private final        SanctumSanctorum.Service     service            = new SanctumSanctorum.Service();
-    private final        Server                       server;
-    private final        Parameters                   parameters;
-    private final        Function<SignedNonce, Any>   attestation;
-    private final        AtomicReference<SignedNonce> currentAttestation = new AtomicReference<>();
+    public static final String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
+    public static final String AES                = "AES";
+    public static final int    TAG_LENGTH         = 128; // bits
+    public static final int    IV_LENGTH          = 16; // bytes
+    public static final String SANCTUM_DB_URL     = "jdbc:h2:mem:sanctum;DB_CLOSE_DELAY=-1";
 
-    private volatile StereotomyKeyStore                             keystore;
-    private volatile Digest                                         id;
-    private volatile TokenGenerator                                 generator;
-    private volatile KERL.AppendKERL                                kerl;
-    private volatile Key                                            master;
-    private volatile ControlledIdentifier<SelfAddressingIdentifier> member;
-    private volatile char[]                                         root;
-    private volatile Stereotomy                                     stereotomy;
-    private volatile KeyPair                                        sessionKeyPair;
+    private static final Logger log = LoggerFactory.getLogger(SanctumSanctorum.class);
 
-    public SanctumSanctorum(Parameters parameters, Function<SignedNonce, Any> attestation) {
-        this(parameters, attestation, processBuilderFor(parameters.enclaveAddress));
+    private final SanctumSanctorum.Service                       service;
+    private final Server                                         server;
+    private final Parameters                                     parameters;
+    private final Function<SignedNonce, Any>                     attestation;
+    private final AtomicReference<SignedNonce>                   currentAttestation = new AtomicReference<>();
+    private final Digest                                         id;
+    private final ControlledIdentifier<SelfAddressingIdentifier> member;
+    private final Stereotomy                                     stereotomy;
+    private final KERL.AppendKERL                                kerl;
+    private final KeyPair                                        sessionKeyPair;
+
+    private volatile TokenGenerator generator;
+    private volatile Key            master;
+
+    public SanctumSanctorum(Parameters parameters, Function<SignedNonce, Any> attestation, SecureRandom entropy) {
+        this(parameters, attestation, processBuilderFor(parameters.enclaveAddress), entropy);
     }
 
-    public SanctumSanctorum(Parameters parameters, Function<SignedNonce, Any> attestation, ServerBuilder builder) {
+    public SanctumSanctorum(Parameters parameters, Function<SignedNonce, Any> attestation) {
+        this(parameters, attestation, processBuilderFor(parameters.enclaveAddress), new SecureRandom());
+    }
+
+    public SanctumSanctorum(Parameters parameters, Function<SignedNonce, Any> attestation, ServerBuilder builder,
+                            SecureRandom entropy) {
         this.parameters = parameters;
+        initializeSchema();
+        kerl = initializeKerl();
+        stereotomy = new StereotomyImpl(new MemKeyStore(), new CachingKERL(f -> f.apply(kerl)), entropy);
+        member = stereotomy.newIdentifier();
+        log.info("New identifier: {}", member.getIdentifier().getDigest());
+        this.id = member.getIdentifier().getDigest();
+        service = new SanctumSanctorum.Service();
         this.attestation = attestation;
         server = builder.addService(new EnclaveServer(service))
                         .addService(new EnclaveKERLServer(new ProtoKERLReadAdapter(() -> kerl), null))
                         .build();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
+        sessionKeyPair = parameters.encryptionAlgorithm.generateKeyPair();
     }
 
     private static ServerBuilder<?> processBuilderFor(SocketAddress enclaveAddress) {
@@ -138,10 +152,6 @@ public class SanctumSanctorum {
                                      .withChildOption(ChannelOption.TCP_NODELAY, true);
         }
         throw new IllegalArgumentException("Unsupported enclave address: " + enclaveAddress);
-    }
-
-    public static StereotomyKeyStore initializeKeyStore() {
-        return new MemKeyStore();
     }
 
     public static SanctumSanctorum.Encrypted encrypt(byte[] plaintext, SecretKey secretKey, byte[] associatedData) {
@@ -179,7 +189,6 @@ public class SanctumSanctorum {
 
     public void clear() {
         master = null;
-        root = new char[0];
         generator.clear();
     }
 
@@ -230,20 +239,14 @@ public class SanctumSanctorum {
         return id.toDigeste();
     }
 
-    private void initializeIdentifier() {
-        stereotomy = new StereotomyImpl(keystore, new CachingKERL(f -> f.apply(kerl)), new SecureRandom());
-        member = stereotomy.newIdentifier();
-        log.info("New identifier: {}", member.getIdentifier().getDigest());
-    }
-
-    private void initializeKerl() {
+    private UniKERLDirect initializeKerl() {
         Connection connection = null;
         try {
             connection = new JdbcConnection(SANCTUM_DB_URL, new Properties(), "", "", false);
         } catch (SQLException e) {
             log.error("Unable to create JDBC connection: {}", SANCTUM_DB_URL);
         }
-        kerl = new UniKERLDirect(connection, parameters.algorithm);
+        return new UniKERLDirect(connection, parameters.algorithm);
     }
 
     private void initializeSchema() {
@@ -286,14 +289,6 @@ public class SanctumSanctorum {
         assert this.master.getEncoded().length == 32 : "Must result in a 32 byte AES key: "
         + this.master.getEncoded().length;
         generator = new TokenGenerator(this.master, new SecureRandom());
-
-        initializeSchema();
-        initializeKerl();
-
-        keystore = new MemKeyStore();
-        initializeIdentifier();
-
-        this.id = member.getIdentifier().getDigest();
         log.info("Sanctum Sanctorum provisioned: {}", qb64(id));
     }
 
@@ -314,7 +309,6 @@ public class SanctumSanctorum {
     }
 
     private Status seal() {
-        sessionKeyPair = null;
         var id = getId();
         clear();
         service.shares.clear();
@@ -333,18 +327,9 @@ public class SanctumSanctorum {
     }
 
     private void unwrap(byte[] root) {
-        this.root = Hex.hexChars(root);
         this.master = new SecretKeySpec(parameters.algorithm.digest(root).getBytes(), "AES");
         assert master.getEncoded().length == 32 : "Must result in a 32 byte AES key: " + master.getEncoded().length;
         generator = new TokenGenerator(master, new SecureRandom());
-
-        initializeSchema();
-        initializeKerl();
-
-        keystore = new MemKeyStore();
-        initializeIdentifier();
-
-        this.id = member.getIdentifier().getDigest();
         log.info("Sanctum Sanctorum unwrapped: {}", qb64(id));
     }
 
@@ -454,7 +439,6 @@ public class SanctumSanctorum {
 
         public Status unseal() {
             log.info("Unsealing service");
-            sessionKeyPair = parameters.encryptionAlgorithm.generateKeyPair();
             return Status.newBuilder().setSuccess(true).setShares(0).build();
         }
 
