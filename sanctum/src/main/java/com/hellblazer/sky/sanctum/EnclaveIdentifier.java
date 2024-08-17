@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.sky.sanctum.client;
+package com.hellblazer.sky.sanctum;
 
 import com.google.protobuf.Empty;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
@@ -66,8 +66,8 @@ public class EnclaveIdentifier implements ControlledIdentifier<SelfAddressingIde
     private final    SignatureAlgorithm                algorithm;
     private final    SelfAddressingIdentifier          identifier;
     private final    Signer                            signer;
-    private final    KERL                              kerl;
-    private volatile KeyState                          state;
+    private final KERL     kerl;
+    private final KeyState state;
 
     public EnclaveIdentifier(SignatureAlgorithm algorithm, Channel channel) {
         this.client = Enclave_Grpc.newBlockingStub(channel);
@@ -76,6 +76,7 @@ public class EnclaveIdentifier implements ControlledIdentifier<SelfAddressingIde
         this.signer = new EnclaveSigner(channel, algorithm);
         var stub = KERLServiceGrpc.newBlockingStub(channel);
         kerl = new KERLAdapter(new CommonKERLClient(stub, null), DigestAlgorithm.DEFAULT);
+        this.state = kerl.getKeyState(identifier);
     }
 
     @Override

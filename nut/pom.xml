@@ -42,6 +42,14 @@
             <artifactId>grpc</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.hellblazer.sky</groupId>
+            <artifactId>sanctum</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.hellblazer.sky</groupId>
+            <artifactId>sanctum-sanctorum</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.codahale</groupId>
             <artifactId>shamir</artifactId>
         </dependency>

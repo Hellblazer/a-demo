@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.sky.sanctum;
+package com.hellblazer.sky.sanctum.sanctorum;
 
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.Any;
@@ -137,6 +137,9 @@ public class SanctumSanctorum {
                         .build();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
         sessionKeyPair = parameters.encryptionAlgorithm.generateKeyPair();
+        if (parameters.devSecret != null) {
+            unwrap(parameters.devSecret);
+        }
     }
 
     private static ServerBuilder<?> processBuilderFor(SocketAddress enclaveAddress) {
@@ -354,7 +357,7 @@ public class SanctumSanctorum {
     }
 
     public record Parameters(SanctumSanctorum.Shamir shamir, DigestAlgorithm algorithm,
-                             EncryptionAlgorithm encryptionAlgorithm, SocketAddress enclaveAddress) {
+                             EncryptionAlgorithm encryptionAlgorithm, SocketAddress enclaveAddress, byte[] devSecret) {
     }
 
     public record Shamir(int shares, int threshold) {

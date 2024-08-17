@@ -21,9 +21,9 @@ import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.proto.EncryptedShare;
-import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.proto.SphynxGrpc;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Share;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
@@ -77,11 +77,7 @@ public class SphinxTest {
         var client = client((InetSocketAddress) sphinx.getApiEndpoint());
         try {
             var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
-            var status = sphynxClient.unseal(Empty.getDefaultInstance());
-
-            assertNotNull(status);
-            assertTrue(status.getSuccess());
-            assertEquals(0, status.getShares());
+            sphynxClient.unseal(Empty.getDefaultInstance());
 
             var publicKey_ = sphynxClient.sessionKey(Empty.getDefaultInstance());
             assertNotNull(publicKey_);

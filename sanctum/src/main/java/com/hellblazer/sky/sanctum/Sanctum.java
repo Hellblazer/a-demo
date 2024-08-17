@@ -15,8 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.sky.sanctum.client;
+package com.hellblazer.sky.sanctum;
 
+import com.google.protobuf.Empty;
+import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.jauntsdn.netty.channel.vsock.EpollVSockChannel;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
@@ -37,6 +39,7 @@ import java.net.SocketAddress;
 public class Sanctum {
     private final EnclaveIdentifier          identifier;
     private final ControlledIdentifierMember member;
+    private final Channel                    channel;
 
     public Sanctum(SignatureAlgorithm algorithm, SocketAddress enclaveAddress) {
         this(algorithm, channelFor(enclaveAddress));
@@ -45,6 +48,7 @@ public class Sanctum {
     public Sanctum(SignatureAlgorithm algorithm, Channel channel) {
         identifier = new EnclaveIdentifier(algorithm, channel);
         member = new ControlledIdentifierMember(identifier);
+        this.channel = channel;
     }
 
     public static Channel channelFor(SocketAddress enclaveAddress) {
@@ -60,11 +64,23 @@ public class Sanctum {
         };
     }
 
+    public Enclave_Grpc.Enclave_BlockingStub getClient() {
+        return Enclave_Grpc.newBlockingStub(channel);
+    }
+
     public Digest getId() {
         return member.getId();
     }
 
     public ControlledIdentifierMember getMember() {
         return member;
+    }
+
+    public TokenGenerator tokenGenerator() {
+        return new TokenGenerator(channel);
+    }
+
+    public void unwrap() {
+        getClient().unwrap(Empty.getDefaultInstance());
     }
 }

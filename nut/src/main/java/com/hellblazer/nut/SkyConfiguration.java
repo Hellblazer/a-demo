@@ -87,6 +87,8 @@ public class SkyConfiguration {
     public Duration                                            viewGossipDuration = Duration.ofMillis(10);
     @JsonProperty
     public String                                              provisionedToken   = "Give me food or give me slack or kill me";
+    public SocketAddress                                       enclaveEndpoint    = new InProcessSocketAddress(
+    UUID.randomUUID().toString());
 
     {
         // Default configuration

@@ -8,45 +8,17 @@ import "google/protobuf/empty.proto";
 
 import "crypto.proto";
 import "gorgoneion.proto";
+import "sanctorum.proto";
 
 package com.hellblazer.nut;
 
 service Sphynx {
-  rpc apply(EncryptedShare) returns(Status) {}
-  rpc unwrap(google.protobuf.Empty) returns(UnwrapStatus){}
-  rpc seal(google.protobuf.Empty) returns(Status) {}
-  rpc unseal(google.protobuf.Empty) returns(Status) {}
+  rpc apply(sanctorum.EncryptedShare) returns(sanctorum.Status) {}
+  rpc unwrap(google.protobuf.Empty) returns(sanctorum.UnwrapStatus){}
+  rpc seal(google.protobuf.Empty) returns(sanctorum.Status) {}
+  rpc unseal(google.protobuf.Empty) returns(sanctorum.Status) {}
   rpc sessionKey(google.protobuf.Empty) returns(gorgoneion.PublicKey_) {}
   rpc identifier(google.protobuf.Empty) returns (crypto.Digeste) {}
-}
-
-message EncryptedShare {
-  bytes encapsulation = 1;
-  bytes iv = 2;
-  bytes associatedData = 3;
-  bytes share = 4;
-}
-
-message Share {
-  int32 key = 1;
-  bytes share = 2;
-}
-
-message Status {
-  bool success = 1;
-  int32 shares = 2;
-  string message = 3;
-}
-
-message UnwrapStatus {
-  bool success = 1;
-  int32 shares = 2;
-  string message = 3;
-  crypto.Digeste identifier = 4;
-}
-
-message FernetToken {
-  string token = 1;
 }
 
 message InitialProvisioning {

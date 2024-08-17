@@ -19,10 +19,10 @@ package com.hellblazer.nut.comms;
 
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.Sphinx;
-import com.hellblazer.nut.proto.EncryptedShare;
 import com.hellblazer.nut.proto.SphynxGrpc;
-import com.hellblazer.nut.proto.Status;
-import com.hellblazer.nut.proto.UnwrapStatus;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Status;
+import com.hellblazer.sanctorum.proto.UnwrapStatus;
 import com.salesforce.apollo.cryptography.proto.Digeste;
 import com.salesforce.apollo.gorgoneion.proto.PublicKey_;
 import io.grpc.stub.StreamObserver;

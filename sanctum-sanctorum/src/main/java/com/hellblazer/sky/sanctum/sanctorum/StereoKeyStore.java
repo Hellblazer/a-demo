@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.sky.sanctum;
+package com.hellblazer.sky.sanctum.sanctorum;
 
 import com.salesforce.apollo.stereotomy.KeyCoordinates;
 import com.salesforce.apollo.stereotomy.StereotomyKeyStore;

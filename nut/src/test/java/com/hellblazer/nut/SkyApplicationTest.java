@@ -18,6 +18,7 @@
 package com.hellblazer.nut;
 
 import com.google.protobuf.Any;
+import com.hellblazer.sky.sanctum.Sanctum;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
 import com.salesforce.apollo.stereotomy.StereotomyImpl;
@@ -51,8 +52,8 @@ public class SkyApplicationTest {
         var stereotomy = new StereotomyImpl(new MemKeyStore(), new MemKERL(DigestAlgorithm.DEFAULT), entropy);
         var member = new ControlledIdentifierMember(stereotomy.newIdentifier());
         SkyApplication app;
-        var sanctum = Mockito.mock(SanctumSanctorum.class);
-        when(sanctum.member()).thenReturn(member);
+        var sanctum = Mockito.mock(Sanctum.class);
+        when(sanctum.getMember()).thenReturn(member);
         try (var is = getClass().getResourceAsStream("/sky-test.yaml")) {
             app = new SkyApplication(SkyConfiguration.from(is), sanctum, _ -> Any.getDefaultInstance());
         }

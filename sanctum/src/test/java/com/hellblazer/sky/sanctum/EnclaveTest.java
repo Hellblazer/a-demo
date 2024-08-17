@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.sky.sanctum.client;
+package com.hellblazer.sky.sanctum;
 
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.Any;
@@ -25,7 +25,7 @@ import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
 import com.hellblazer.sanctorum.proto.FernetValidate;
 import com.hellblazer.sanctorum.proto.Share;
-import com.hellblazer.sky.sanctum.SanctumSanctorum;
+import com.hellblazer.sky.sanctum.sanctorum.SanctumSanctorum;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import com.salesforce.apollo.cryptography.SignatureAlgorithm;
@@ -102,7 +102,7 @@ public class EnclaveTest {
         var target = "target";
         var devSecret = "Give me food or give me slack or kill me";
         var parameters = new SanctumSanctorum.Parameters(new SanctumSanctorum.Shamir(4, 3), DigestAlgorithm.DEFAULT,
-                                                         EncryptionAlgorithm.DEFAULT, address);
+                                                         EncryptionAlgorithm.DEFAULT, address, null);
         Function<SignedNonce, Any> attestation = n -> Any.getDefaultInstance();
         SanctumSanctorum sanctum = new SanctumSanctorum(parameters, attestation);
         sanctum.start();

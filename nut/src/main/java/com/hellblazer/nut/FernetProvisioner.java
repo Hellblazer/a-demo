@@ -18,12 +18,10 @@ package com.hellblazer.nut;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.hellblazer.nut.proto.FernetToken;
 import com.hellblazer.nut.proto.InitialProvisioning;
 import com.hellblazer.nut.service.Geb;
-import com.hellblazer.nut.support.MessageValidator;
-import com.hellblazer.nut.support.TokenGenerator;
-import com.salesforce.apollo.archipelago.server.FernetServerInterceptor;
+import com.hellblazer.sanctorum.proto.FernetToken;
+import com.hellblazer.sky.sanctum.TokenGenerator;
 import com.salesforce.apollo.choam.support.InvalidTransaction;
 import com.salesforce.apollo.cryptography.Digest;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
@@ -64,23 +62,22 @@ public class FernetProvisioner extends Provisioner {
     public static final  String TOKEN_VALIDATOR = "TOKEN_VALIDATOR";
     private static final Logger log             = LoggerFactory.getLogger(FernetProvisioner.class);
 
-    private final Function<FernetServerInterceptor.HashedToken, InitialProvisioning> validator;
-    private final DigestAlgorithm                                                    algorithm;
-    private final Duration                                                           timeout;
+    private final Function<TokenGenerator.HashedToken, InitialProvisioning> validator;
+    private final DigestAlgorithm                                           algorithm;
+    private final Duration                                                  timeout;
 
     public FernetProvisioner(Digest id, Oracle oracle, Geb geb, DigestAlgorithm algorithm,
                              TokenGenerator tokenGenerator, Mutator mutator, Duration timeout) {
         super(id, oracle, geb, mutator);
-        this.validator = hashedToken -> (InitialProvisioning) tokenGenerator.validate(hashedToken,
-                                                                                      new MessageValidator() {
-                                                                                          @Override
-                                                                                          protected Message parse(
-                                                                                          byte[] bytes)
-                                                                                          throws Exception {
-                                                                                              return InitialProvisioning.parseFrom(
-                                                                                              bytes);
-                                                                                          }
-                                                                                      });
+        this.validator = hashedToken -> {
+            try {
+                return InitialProvisioning.parseFrom(
+                tokenGenerator.validate(new TokenGenerator.HashedToken(hashedToken.hash(), hashedToken.token())));
+            } catch (InvalidProtocolBufferException e) {
+                throw new IllegalArgumentException(
+                "Cannot parse validated token: %s on: %s".formatted(hashedToken.token(), id), e);
+            }
+        };
         this.algorithm = algorithm;
         this.timeout = timeout;
     }
@@ -196,6 +193,6 @@ public class FernetProvisioner extends Provisioner {
     public interface TokenValidator extends Function<String, ValidatedToken<? extends Message>> {
     }
 
-    public record ValidatedToken<T extends Message>(FernetServerInterceptor.HashedToken token, T message) {
+    public record ValidatedToken<T extends Message>(TokenGenerator.HashedToken token, T message) {
     }
 }

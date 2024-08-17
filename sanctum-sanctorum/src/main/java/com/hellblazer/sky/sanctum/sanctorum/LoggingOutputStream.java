@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.sky.sanctum;
+package com.hellblazer.sky.sanctum.sanctorum;
 
 import org.slf4j.Logger;
 

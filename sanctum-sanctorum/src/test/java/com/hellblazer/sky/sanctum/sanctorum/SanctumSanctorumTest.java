@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.sky.sanctum;
+package com.hellblazer.sky.sanctum.sanctorum;
 
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.Any;
@@ -51,7 +51,7 @@ public class SanctumSanctorumTest {
         var target = "target";
         var devSecret = "Give me food or give me slack or kill me";
         var parameters = new SanctumSanctorum.Parameters(new SanctumSanctorum.Shamir(4, 3), DigestAlgorithm.DEFAULT,
-                                                         EncryptionAlgorithm.DEFAULT, address);
+                                                         EncryptionAlgorithm.DEFAULT, address, devSecret.getBytes());
         Function<SignedNonce, Any> attestation = n -> Any.getDefaultInstance();
         var sanctum = new SanctumSanctorum(parameters, attestation);
         sanctum.start();

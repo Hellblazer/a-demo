@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.sky.sanctum.client;
+package com.hellblazer.sky.sanctum;
 
 import com.google.protobuf.ByteString;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;

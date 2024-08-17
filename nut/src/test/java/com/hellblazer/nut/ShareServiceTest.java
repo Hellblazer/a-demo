@@ -18,8 +18,8 @@
 package com.hellblazer.nut;
 
 import com.codahale.shamir.Scheme;
-import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.support.ShareService;
+import com.hellblazer.sanctorum.proto.Share;
 import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
 import org.junit.jupiter.api.Test;

@@ -17,17 +17,19 @@
 
 package com.hellblazer.nut;
 
-import com.codahale.shamir.Scheme;
 import com.google.protobuf.Any;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Empty;
 import com.hellblazer.nut.comms.ApiServer;
 import com.hellblazer.nut.comms.SphynxServer;
-import com.hellblazer.nut.proto.*;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.FernetToken;
+import com.hellblazer.sanctorum.proto.Status;
+import com.hellblazer.sanctorum.proto.UnwrapStatus;
+import com.hellblazer.sky.sanctum.Sanctum;
+import com.hellblazer.sky.sanctum.sanctorum.SanctumSanctorum;
 import com.salesforce.apollo.archipelago.EndpointProvider;
 import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
 import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
 import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
 import com.salesforce.apollo.cryptography.cert.Certificates;
 import com.salesforce.apollo.cryptography.proto.Digeste;
@@ -62,7 +64,6 @@ import javax.crypto.spec.GCMParameterSpec;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SecureRandom;
@@ -71,9 +72,11 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -96,7 +99,8 @@ public class Sphinx {
     private final    Service                 service   = new Service();
     private final    SecureRandom            entropy;
     private final    CompletableFuture<Void> onStart   = new CompletableFuture<>();
-    private volatile SanctumSanctorum        sanctum;
+    private final    String                  devSecret;
+    private volatile Sanctum                 sanctum;
     private volatile SkyApplication          application;
     private volatile Runnable                closeApiServer;
     private volatile SocketAddress           apiAddress;
@@ -120,11 +124,29 @@ public class Sphinx {
         this.configuration = configuration;
         initializeSchema();
 
+        this.devSecret = devSecret;
         if (devSecret != null) {
             log.warn("Operating in development mode with dev secret");
-            unwrap(configuration.viewGossipDuration, devSecret.getBytes(Charset.defaultCharset()));
         } else {
             log.info("Operating in sealed mode: {}", configuration.shamir);
+        }
+        if (configuration.enclaveEndpoint instanceof InProcessSocketAddress) {
+            inProcessSanctorum(configuration, devSecret);
+        }
+        sanctum = new Sanctum(configuration.identity.signatureAlgorithm(), configuration.enclaveEndpoint);
+    }
+
+    public static void inProcessSanctorum(SkyConfiguration config, String devSecret) {
+        log.info("Starting in process sanctorum on: {}", config.enclaveEndpoint);
+        var shamir = new SanctumSanctorum.Shamir(config.shamir.shares(), config.shamir.threshold());
+        var parameters = new SanctumSanctorum.Parameters(shamir, config.identity.digestAlgorithm(),
+                                                         config.identity.encryptionAlgorithm(), config.enclaveEndpoint,
+                                                         devSecret == null ? null : devSecret.getBytes());
+        var enclave = new SanctumSanctorum(parameters, _ -> Any.getDefaultInstance());
+        try {
+            enclave.start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -210,6 +232,10 @@ public class Sphinx {
 
     public SocketAddress getApiEndpoint() {
         return apiAddress;
+    }
+
+    public SkyConfiguration getConfiguration() {
+        return configuration;
     }
 
     public CompletableFuture<Void> getOnFailure() {
@@ -348,9 +374,10 @@ public class Sphinx {
         }
     }
 
-    // Unwrap the root identity keystore and establish either a new identifier or resume the previous identifier
-    private Digest unwrap(Duration viewGossipDuration, byte[] master) {
-        sanctum = new SanctumSanctorum(master, DigestAlgorithm.BLAKE2S_256, entropy, configuration);
+    // Unwrap the master key
+    private Digest unwrap(Duration viewGossipDuration) {
+        log.info("Unwrapping");
+        sanctum.unwrap();
         application = new SkyApplication(configuration, sanctum, onFailure, signedNonce -> Any.pack(
         FernetToken.newBuilder().setToken(provisionedToken == null ? "Hello World" : provisionedToken).build()));
 
@@ -401,32 +428,9 @@ public class Sphinx {
     }
 
     public class Service {
-        private final    Map<Integer, byte[]> shares = new ConcurrentHashMap<>();
-        private volatile KeyPair              sessionKeyPair;
 
         public Status apply(EncryptedShare eShare) {
-            log.info("Applying encrypted share");
-            byte[] decrypted;
-            try {
-                var secretKey = configuration.identity.encryptionAlgorithm()
-                                                      .decapsulate(sessionKeyPair.getPrivate(),
-                                                                   eShare.getEncapsulation().toByteArray(), AES);
-                var encrypted = new Encrypted(eShare.getShare().toByteArray(), eShare.getIv().toByteArray(),
-                                              eShare.getAssociatedData().toByteArray());
-                decrypted = decrypt(encrypted, secretKey);
-            } catch (Throwable t) {
-                log.warn("Cannot decrypt share", t);
-                return Status.newBuilder().setSuccess(false).build();
-            }
-            try {
-                var share = Share.parseFrom(decrypted);
-                shares.put(share.getKey(), share.getShare().toByteArray());
-                log.warn("Share applied: {}", share.getKey());
-                return Status.newBuilder().setShares(shares.size()).setSuccess(true).build();
-            } catch (InvalidProtocolBufferException e) {
-                log.info("Not a valid share: {}", e.toString());
-                return Status.newBuilder().setShares(shares.size()).setSuccess(false).build();
-            }
+            return sanctum.getClient().apply(eShare);
         }
 
         public Digeste identifier() {
@@ -435,19 +439,13 @@ public class Sphinx {
                 log.warn("No identifier");
                 throw new StatusRuntimeException(io.grpc.Status.FAILED_PRECONDITION);
             }
-            log.warn("Identifier requested on: {}", sanctum.getId());
+            log.warn("Identifier requested on: {}", sanctum.getMember().getId());
             return id.toDigeste();
         }
 
         public Status seal() {
             var id = sanctum == null ? null : sanctum.getId();
-            final var sanctorum = sanctum;
             sanctum = null;
-            if (sanctorum != null) {
-                sanctorum.clear();
-            }
-            sessionKeyPair = null;
-            service.shares.clear();
             final var currentApplication = application;
             application = null;
             if (currentApplication != null) {
@@ -458,51 +456,20 @@ public class Sphinx {
         }
 
         public PublicKey_ sessionKey() {
-            if (sessionKeyPair == null) {
-                log.info("Session key pair not available");
-                throw new StatusRuntimeException(io.grpc.Status.FAILED_PRECONDITION);
-            }
-            log.info("Requesting session key pair");
-            var alg = configuration.identity.encryptionAlgorithm();
-            return PublicKey_.newBuilder()
-                             .setAlgorithm(PublicKey_.algo.forNumber(alg.getCode()))
-                             .setPublicKey(ByteString.copyFrom(alg.encode(sessionKeyPair.getPublic())))
-                             .build();
+            return sanctum.getClient().sessionKey(Empty.getDefaultInstance());
         }
 
         public Status unseal() {
-            if (application != null) {
-                log.info("Service already unwrapped on: {}", sanctum.getId());
-                return Status.newBuilder().setSuccess(true).setShares(shares.size()).build();
+            if (sanctum == null) {
+                throw new StatusRuntimeException(io.grpc.Status.FAILED_PRECONDITION);
             }
-            log.info("Unsealing service");
-            sessionKeyPair = configuration.identity.encryptionAlgorithm().generateKeyPair();
-            return Status.newBuilder().setSuccess(true).setShares(0).build();
+            return sanctum.getClient().unseal(Empty.getDefaultInstance());
         }
 
         public UnwrapStatus unwrap() {
-            if (shares.size() < configuration.shamir.threshold()) {
-                log.info("Cannot unwrap with: {} shares configured: {} out of {}", shares.size(),
-                         configuration.shamir.threshold(), configuration.shamir.shares());
-                return UnwrapStatus.newBuilder()
-                                   .setSuccess(false)
-                                   .setShares(shares.size())
-                                   .setMessage(
-                                   "Cannot unwrap with: %s shares configured: %s out of %s".formatted(shares.size(),
-                                                                                                      configuration.shamir.threshold(),
-                                                                                                      configuration.shamir.shares()))
-                                   .build();
-            }
-            log.info("Unwrapping service with: {} shares configured: {} out of {}", shares.size(),
-                     configuration.shamir.threshold(), configuration.shamir.shares());
-            var scheme = new Scheme(new SecureRandom(), configuration.shamir.shares(),
-                                    configuration.shamir.threshold());
-            var status = UnwrapStatus.newBuilder().setShares(shares.size()).setSuccess(true);
-            var clone = new HashMap<>(shares);
-            shares.clear();
-            sessionKeyPair = null;
-            var identifier = Sphinx.this.unwrap(configuration.viewGossipDuration, scheme.join(clone));
-            return status.setIdentifier(identifier.toDigeste()).build();
+            var status = sanctum.getClient().unwrap(Empty.getDefaultInstance());
+            Sphinx.this.unwrap(configuration.viewGossipDuration);
+            return status;
         }
     }
 }
