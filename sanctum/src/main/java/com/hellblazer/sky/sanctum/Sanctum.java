@@ -17,12 +17,20 @@
 
 package com.hellblazer.sky.sanctum;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.hellblazer.delos.cryptography.Digest;
 import com.hellblazer.delos.cryptography.SignatureAlgorithm;
 import com.hellblazer.delos.membership.stereotomy.ControlledIdentifierMember;
+import com.hellblazer.sanctorum.proto.Bytes;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
+import com.hellblazer.sanctorum.proto.FernetValidate;
 import com.jauntsdn.netty.channel.vsock.EpollVSockChannel;
+import com.macasaet.fernet.Token;
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
@@ -30,17 +38,23 @@ import io.grpc.netty.NettyChannelBuilder;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.VSockAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
+import java.time.Duration;
 
 /**
  * @author hal.hildebrand
  **/
 public class Sanctum {
-    private final EnclaveIdentifier          identifier;
-    private final ControlledIdentifierMember member;
-    private final Channel                    channel;
-    private final TokenGenerator             generator;
+    private final static Logger                            log = LoggerFactory.getLogger(Sanctum.class);
+    private final        EnclaveIdentifier                 identifier;
+    private final        ControlledIdentifierMember        member;
+    private final        Channel                           channel;
+    private final        Cache<HashedToken, ByteString>    cached;
+    private final        Cache<Digest, Boolean>            invalid;
+    private final        Enclave_Grpc.Enclave_BlockingStub client;
 
     public Sanctum(SignatureAlgorithm algorithm, SocketAddress enclaveAddress) {
         this(algorithm, channelFor(enclaveAddress));
@@ -50,7 +64,20 @@ public class Sanctum {
         identifier = new EnclaveIdentifier(algorithm, channel);
         member = new ControlledIdentifierMember(identifier);
         this.channel = channel;
-        generator = new TokenGenerator(channel);
+        this.client = Enclave_Grpc.newBlockingStub(channel);
+        cached = Caffeine.newBuilder()
+                         .maximumSize(1_000)
+                         .expireAfterWrite(Duration.ofDays(1))
+                         .removalListener((HashedToken ht, Object credentials, RemovalCause cause) -> log.trace(
+                         "Validated Token: {} was removed due to: {}", ht.hash, cause))
+                         .build(hashed -> client.validate(
+                         FernetValidate.newBuilder().setToken(hashed.token().serialise()).build()).getB());
+        invalid = Caffeine.newBuilder()
+                          .maximumSize(1_000)
+                          .expireAfterWrite(Duration.ofDays(1))
+                          .removalListener((Digest token, Boolean credentials, RemovalCause cause) -> log.trace(
+                          "Invalid Token: {} was removed due to: {}", token, cause))
+                          .build();
     }
 
     public static Channel channelFor(SocketAddress enclaveAddress) {
@@ -66,6 +93,10 @@ public class Sanctum {
         };
     }
 
+    public CacheStats cachedStats() {
+        return cached.stats();
+    }
+
     public Enclave_Grpc.Enclave_BlockingStub getClient() {
         return Enclave_Grpc.newBlockingStub(channel);
     }
@@ -78,11 +109,63 @@ public class Sanctum {
         return member;
     }
 
+    public CacheStats invalidStats() {
+        return invalid.stats();
+    }
+
     public TokenGenerator tokenGenerator() {
-        return generator;
+        return new TokenGenerator() {
+            @Override
+            public Token apply(byte[] bytes) {
+                return Sanctum.this.apply(bytes);
+            }
+
+            @Override
+            public ByteString validate(HashedToken hashed) {
+                return Sanctum.this.validate(hashed);
+            }
+        };
     }
 
     public void unwrap() {
         getClient().unwrap(Empty.getDefaultInstance());
+    }
+
+    private Token apply(byte[] bytes) {
+        var tok = client.generateToken(Bytes.newBuilder().setB(ByteString.copyFrom(bytes)).build());
+        return Token.fromString(tok.getToken());
+    }
+
+    private ByteString validate(HashedToken hashed) {
+        if (invalid.getIfPresent(hashed.hash()) != null) {
+            log.info("Cached invalid Token: {}", hashed.hash());
+            return null;
+        }
+        return cached.get(hashed, h -> {
+            var validated = client.validate(FernetValidate.newBuilder().setToken(h.token().serialise()).build());
+            log.info("Caching Token: {}", h.hash());
+            return validated == null ? null : validated.getB();
+        });
+    }
+
+    /**
+     * This record provides the hash of the Token.serialized() string using the interceptor's DigestAlgorithm
+     *
+     * @param hash  - the hash of the serialized token String
+     * @param token - the deserialized Token
+     */
+    public record HashedToken(Digest hash, Token token) {
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof HashedToken ht) {
+                return hash.equals(ht.hash);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return hash.hashCode();
+        }
     }
 }

@@ -21,6 +21,10 @@ service Sphynx {
   rpc identifier(google.protobuf.Empty) returns (crypto.Digeste) {}
 }
 
+service Provisioning {
+  rpc provision(InitialProvisioning) returns (sanctorum.FernetToken) {}
+}
+
 message InitialProvisioning {
   // namespace to use
   uint64 namespace = 1;
