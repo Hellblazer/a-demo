@@ -20,7 +20,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hellblazer.delphi.proto.*;
-import com.salesforce.apollo.delphinius.Oracle;
+import com.hellblazer.delos.delphinius.Oracle;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import org.joou.ULong;

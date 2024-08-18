@@ -1,12 +1,12 @@
 package com.hellblazer.nut.comms;
 
-import com.salesforce.apollo.comm.grpc.ServerContextSupplier;
-import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
-import com.salesforce.apollo.cryptography.ssl.NodeKeyManagerFactory;
-import com.salesforce.apollo.cryptography.ssl.NodeTrustManagerFactory;
-import com.salesforce.apollo.cryptography.ssl.TlsInterceptor;
-import com.salesforce.apollo.protocols.ClientIdentity;
+import com.hellblazer.delos.comm.grpc.ServerContextSupplier;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
+import com.hellblazer.delos.cryptography.ssl.NodeKeyManagerFactory;
+import com.hellblazer.delos.cryptography.ssl.NodeTrustManagerFactory;
+import com.hellblazer.delos.cryptography.ssl.TlsInterceptor;
+import com.hellblazer.delos.protocols.ClientIdentity;
 import io.grpc.*;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyServerBuilder;

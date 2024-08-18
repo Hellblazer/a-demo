@@ -18,26 +18,24 @@ package com.hellblazer.nut;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.hellblazer.nut.proto.FernetToken;
 import com.hellblazer.nut.proto.InitialProvisioning;
 import com.hellblazer.nut.service.Geb;
-import com.hellblazer.nut.support.MessageValidator;
-import com.hellblazer.nut.support.TokenGenerator;
-import com.salesforce.apollo.archipelago.server.FernetServerInterceptor;
-import com.salesforce.apollo.choam.support.InvalidTransaction;
-import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
-import com.salesforce.apollo.delphinius.AbstractOracle;
-import com.salesforce.apollo.delphinius.Oracle;
-import com.salesforce.apollo.gorgoneion.proto.Attestation;
-import com.salesforce.apollo.h2.SessionServices;
-import com.salesforce.apollo.state.Mutator;
-import com.salesforce.apollo.state.SqlStateMachine;
-import com.salesforce.apollo.stereotomy.event.EstablishmentEvent;
-import com.salesforce.apollo.stereotomy.event.proto.KERL_;
-import com.salesforce.apollo.stereotomy.event.protobuf.ProtobufEventFactory;
-import com.salesforce.apollo.stereotomy.identifier.Identifier;
-import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
+import com.hellblazer.sanctorum.proto.FernetToken;
+import com.hellblazer.sky.sanctum.TokenGenerator;
+import com.hellblazer.delos.choam.support.InvalidTransaction;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.cryptography.DigestAlgorithm;
+import com.hellblazer.delos.delphinius.AbstractOracle;
+import com.hellblazer.delos.delphinius.Oracle;
+import com.hellblazer.delos.gorgoneion.proto.Attestation;
+import com.hellblazer.delos.h2.SessionServices;
+import com.hellblazer.delos.state.Mutator;
+import com.hellblazer.delos.state.SqlStateMachine;
+import com.hellblazer.delos.stereotomy.event.EstablishmentEvent;
+import com.hellblazer.delos.stereotomy.event.proto.KERL_;
+import com.hellblazer.delos.stereotomy.event.protobuf.ProtobufEventFactory;
+import com.hellblazer.delos.stereotomy.identifier.Identifier;
+import com.hellblazer.delos.stereotomy.identifier.SelfAddressingIdentifier;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -55,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
-import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
+import static com.hellblazer.delos.cryptography.QualifiedBase64.qb64;
 
 /**
  * @author hal.hildebrand
@@ -64,23 +62,22 @@ public class FernetProvisioner extends Provisioner {
     public static final  String TOKEN_VALIDATOR = "TOKEN_VALIDATOR";
     private static final Logger log             = LoggerFactory.getLogger(FernetProvisioner.class);
 
-    private final Function<FernetServerInterceptor.HashedToken, InitialProvisioning> validator;
-    private final DigestAlgorithm                                                    algorithm;
-    private final Duration                                                           timeout;
+    private final Function<TokenGenerator.HashedToken, InitialProvisioning> validator;
+    private final DigestAlgorithm                                           algorithm;
+    private final Duration                                                  timeout;
 
     public FernetProvisioner(Digest id, Oracle oracle, Geb geb, DigestAlgorithm algorithm,
                              TokenGenerator tokenGenerator, Mutator mutator, Duration timeout) {
         super(id, oracle, geb, mutator);
-        this.validator = hashedToken -> (InitialProvisioning) tokenGenerator.validate(hashedToken,
-                                                                                      new MessageValidator() {
-                                                                                          @Override
-                                                                                          protected Message parse(
-                                                                                          byte[] bytes)
-                                                                                          throws Exception {
-                                                                                              return InitialProvisioning.parseFrom(
-                                                                                              bytes);
-                                                                                          }
-                                                                                      });
+        this.validator = hashedToken -> {
+            try {
+                return InitialProvisioning.parseFrom(
+                tokenGenerator.validate(new TokenGenerator.HashedToken(hashedToken.hash(), hashedToken.token())));
+            } catch (InvalidProtocolBufferException e) {
+                throw new IllegalArgumentException(
+                "Cannot parse validated token: %s on: %s".formatted(hashedToken.token(), id), e);
+            }
+        };
         this.algorithm = algorithm;
         this.timeout = timeout;
     }
@@ -196,6 +193,6 @@ public class FernetProvisioner extends Provisioner {
     public interface TokenValidator extends Function<String, ValidatedToken<? extends Message>> {
     }
 
-    public record ValidatedToken<T extends Message>(FernetServerInterceptor.HashedToken token, T message) {
+    public record ValidatedToken<T extends Message>(TokenGenerator.HashedToken token, T message) {
     }
 }

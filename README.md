@@ -1,12 +1,12 @@
-# Apollo Large Scale Demo
+# Delos Large Scale Demo
 
 ## Build Status
 
 ![Build Status](https://github.com/Hellblazer/a-demo/actions/workflows/maven.yml/badge.svg)
 
-This is the repository of the Sky application, built on the Apollo distributed platform. It's a fantasy POC for a
+This is the repository of the Sky application, built on the Delos distributed platform. It's a fantasy POC for a
 minimal
-viable system built using the modular framework of Apollo.
+viable system built using the modular framework of Delos.
 
 ## Build
 

@@ -19,8 +19,12 @@ package com.hellblazer.nut.comms;
 
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.Sphinx;
-import com.hellblazer.nut.proto.*;
-import com.salesforce.apollo.cryptography.proto.Digeste;
+import com.hellblazer.nut.proto.SphynxGrpc;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Status;
+import com.hellblazer.sanctorum.proto.UnwrapStatus;
+import com.hellblazer.delos.cryptography.proto.Digeste;
+import com.hellblazer.delos.gorgoneion.proto.PublicKey_;
 import io.grpc.stub.StreamObserver;
 
 public class SphynxServer extends SphynxGrpc.SphynxImplBase {

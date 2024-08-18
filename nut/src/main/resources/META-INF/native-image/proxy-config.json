@@ -1,14 +1,22 @@
 [
   {
-    "interfaces":["com.salesforce.apollo.choam.fsm.Combine$Transitions"]
+    "interfaces": [
+      "com.hellblazer.delos.choam.fsm.Combine$Transitions"
+    ]
   },
   {
-    "interfaces":["com.salesforce.apollo.choam.fsm.Driven$Transitions"]
+    "interfaces": [
+      "com.hellblazer.delos.choam.fsm.Driven$Transitions"
+    ]
   },
   {
-    "interfaces":["com.salesforce.apollo.choam.fsm.Genesis$Transitions"]
+    "interfaces": [
+      "com.hellblazer.delos.choam.fsm.Genesis$Transitions"
+    ]
   },
   {
-    "interfaces":["com.salesforce.apollo.choam.fsm.Reconfiguration$Transitions"]
+    "interfaces": [
+      "com.hellblazer.delos.choam.fsm.Reconfiguration$Transitions"
+    ]
   }
 ]

@@ -27,11 +27,11 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.fireflies" level="info" additivity="false">
+    <logger name="com.hellblazer.delos.fireflies" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam" level="info" additivity="false">
+    <logger name="com.hellblazer.delos.choam" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
@@ -39,31 +39,31 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.support.TxDataSource" level="warn" additivity="false">
+    <logger name="com.hellblazer.delos.choam.support.TxDataSource" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.support.BatchingQueue" level="warn" additivity="false">
+    <logger name="com.hellblazer.delos.choam.support.BatchingQueue" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.gorgoneion" level="info" additivity="false">
+    <logger name="com.hellblazer.delos.gorgoneion" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.thoth.KerlSpace" level="warn" additivity="false">
+    <logger name="com.hellblazer.delos.thoth.KerlSpace" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.ethereal.Ethereal" level="info" additivity="false">
+    <logger name="com.hellblazer.delos.ethereal.Ethereal" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.ethereal.EpochProofBuilder" level="info" additivity="false">
+    <logger name="com.hellblazer.delos.ethereal.EpochProofBuilder" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.stereotomy" level="info" additivity="false">
+    <logger name="com.hellblazer.delos.stereotomy" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 

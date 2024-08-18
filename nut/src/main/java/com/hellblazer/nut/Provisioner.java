@@ -17,10 +17,10 @@
 package com.hellblazer.nut;
 
 import com.hellblazer.nut.service.Geb;
-import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.delphinius.Oracle;
-import com.salesforce.apollo.gorgoneion.proto.Attestation;
-import com.salesforce.apollo.state.Mutator;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.delphinius.Oracle;
+import com.hellblazer.delos.gorgoneion.proto.Attestation;
+import com.hellblazer.delos.state.Mutator;
 
 /**
  * Provision and validate an attested member.

@@ -20,10 +20,10 @@ package com.hellblazer.nut.support;
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
 import com.hellblazer.nut.Sphinx;
-import com.hellblazer.nut.proto.EncryptedShare;
-import com.hellblazer.nut.proto.Share;
-import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Share;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.security.PublicKey;

@@ -18,13 +18,14 @@
 package com.hellblazer.nut;
 
 import com.google.protobuf.Any;
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
-import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
-import com.salesforce.apollo.stereotomy.StereotomyImpl;
-import com.salesforce.apollo.stereotomy.mem.MemKERL;
-import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
-import com.salesforce.apollo.utils.Entropy;
-import com.salesforce.apollo.utils.Utils;
+import com.hellblazer.sky.sanctum.Sanctum;
+import com.hellblazer.delos.cryptography.DigestAlgorithm;
+import com.hellblazer.delos.membership.stereotomy.ControlledIdentifierMember;
+import com.hellblazer.delos.stereotomy.StereotomyImpl;
+import com.hellblazer.delos.stereotomy.mem.MemKERL;
+import com.hellblazer.delos.stereotomy.mem.MemKeyStore;
+import com.hellblazer.delos.utils.Entropy;
+import com.hellblazer.delos.utils.Utils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -51,8 +52,8 @@ public class SkyApplicationTest {
         var stereotomy = new StereotomyImpl(new MemKeyStore(), new MemKERL(DigestAlgorithm.DEFAULT), entropy);
         var member = new ControlledIdentifierMember(stereotomy.newIdentifier());
         SkyApplication app;
-        var sanctum = Mockito.mock(SanctumSanctorum.class);
-        when(sanctum.member()).thenReturn(member);
+        var sanctum = Mockito.mock(Sanctum.class);
+        when(sanctum.getMember()).thenReturn(member);
         try (var is = getClass().getResourceAsStream("/sky-test.yaml")) {
             app = new SkyApplication(SkyConfiguration.from(is), sanctum, _ -> Any.getDefaultInstance());
         }

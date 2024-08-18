@@ -21,19 +21,19 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.proto.EncryptedShare;
-import com.hellblazer.nut.proto.Share;
 import com.hellblazer.nut.proto.SphynxGrpc;
 import com.hellblazer.nut.service.OracleAdapter;
 import com.hellblazer.nut.support.ShareService;
-import com.salesforce.apollo.archipelago.EndpointProvider;
-import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
-import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
-import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
-import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
-import com.salesforce.apollo.delphinius.Oracle;
-import com.salesforce.apollo.utils.Utils;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Share;
+import com.hellblazer.delos.archipelago.EndpointProvider;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.cryptography.DigestAlgorithm;
+import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
+import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
+import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
+import com.hellblazer.delos.delphinius.Oracle;
+import com.hellblazer.delos.utils.Utils;
 import io.netty.handler.ssl.ClientAuth;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,8 +64,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-import static com.salesforce.apollo.choam.Session.retryNesting;
-import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
+import static com.hellblazer.delos.choam.Session.retryNesting;
+import static com.hellblazer.delos.cryptography.QualifiedBase64.qb64;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -332,7 +332,8 @@ public class E2ETest {
 
         Thread.sleep(1000);
         var oracle = of(sphinxes.getFirst().getServiceEndpoint());
-        oracle.add(new Oracle.Namespace("test")).get(120, TimeUnit.SECONDS);
+        assertTrue(sphinxes.getFirst().active());
+        oracle.add(new Oracle.Namespace("test")).get(20, TimeUnit.SECONDS);
         smoke(oracle);
     }
 

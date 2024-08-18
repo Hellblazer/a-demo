@@ -25,18 +25,18 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hellblazer.nut.support.DigestDeserializer;
-import com.salesforce.apollo.archipelago.EndpointProvider;
-import com.salesforce.apollo.archipelago.ServerConnectionCache;
-import com.salesforce.apollo.choam.Parameters;
-import com.salesforce.apollo.choam.Parameters.ProducerParameters;
-import com.salesforce.apollo.context.DynamicContext;
-import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
-import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
-import com.salesforce.apollo.cryptography.SignatureAlgorithm;
-import com.salesforce.apollo.membership.Member;
-import com.salesforce.apollo.model.ProcessDomain.ProcessDomainParameters;
-import com.salesforce.apollo.utils.Utils;
+import com.hellblazer.delos.archipelago.EndpointProvider;
+import com.hellblazer.delos.archipelago.ServerConnectionCache;
+import com.hellblazer.delos.choam.Parameters;
+import com.hellblazer.delos.choam.Parameters.ProducerParameters;
+import com.hellblazer.delos.context.DynamicContext;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.cryptography.DigestAlgorithm;
+import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
+import com.hellblazer.delos.cryptography.SignatureAlgorithm;
+import com.hellblazer.delos.membership.Member;
+import com.hellblazer.delos.model.ProcessDomain.ProcessDomainParameters;
+import com.hellblazer.delos.utils.Utils;
 import io.grpc.inprocess.InProcessSocketAddress;
 import org.slf4j.LoggerFactory;
 
@@ -55,38 +55,40 @@ import java.util.UUID;
  */
 public class SkyConfiguration {
     @JsonProperty
-    public Endpoints                                           endpoints          = new InterfaceEndpoints();
+    public Endpoints                                          endpoints          = new InterfaceEndpoints();
     @JsonProperty
-    public Sphinx.UNWRAPPING                                   unwrapping;
+    public Sphinx.UNWRAPPING                                  unwrapping;
     @JsonProperty
-    public IdentityConfiguration                               identity;
+    public IdentityConfiguration                              identity;
     @JsonProperty
-    public Shamir                                              shamir;
+    public Shamir                                             shamir;
     @JsonProperty
-    public Digest                                              group;
+    public Digest                                             group;
     @JsonProperty
-    public Digest                                              genesisViewId;
+    public Digest                                             genesisViewId;
     @JsonProperty
-    public Parameters.Builder                                  choamParameters;
-    public ProcessDomainParameters                             domain;
+    public Parameters.Builder                                 choamParameters;
+    public ProcessDomainParameters                            domain;
     @JsonProperty
-    public ServerConnectionCache.Builder                       connectionCache;
+    public ServerConnectionCache.Builder                      connectionCache;
     @JsonProperty
-    public DynamicContext.Builder<Member>                      context;
+    public DynamicContext.Builder<Member>                     context;
     @JsonProperty
-    public com.salesforce.apollo.gorgoneion.Parameters.Builder gorgoneionParameters;
+    public com.hellblazer.delos.gorgoneion.Parameters.Builder gorgoneionParameters;
     @JsonProperty
-    public List<String>                                        approaches         = Collections.emptyList();
+    public List<String>                                       approaches         = Collections.emptyList();
     @JsonProperty
-    public List<Seedling>                                      seeds              = Collections.emptyList();
+    public List<Seedling>                                     seeds              = Collections.emptyList();
     @JsonProperty
-    public com.salesforce.apollo.fireflies.Parameters.Builder  viewParameters;
+    public com.hellblazer.delos.fireflies.Parameters.Builder  viewParameters;
     @JsonProperty
-    public ProducerParameters.Builder                          producerParameters;
+    public ProducerParameters.Builder                         producerParameters;
     @JsonProperty
-    public Duration                                            viewGossipDuration = Duration.ofMillis(10);
+    public Duration                                           viewGossipDuration = Duration.ofMillis(10);
     @JsonProperty
-    public String                                              provisionedToken   = "Give me food or give me slack or kill me";
+    public String                                             provisionedToken   = "Give me food or give me slack or kill me";
+    public SocketAddress                                      enclaveEndpoint    = new InProcessSocketAddress(
+    UUID.randomUUID().toString());
 
     {
         // Default configuration
@@ -98,7 +100,7 @@ public class SkyConfiguration {
                                              Path.of(userDir, ".digest"), DigestAlgorithm.DEFAULT,
                                              SignatureAlgorithm.DEFAULT, EncryptionAlgorithm.DEFAULT);
         unwrapping = Sphinx.UNWRAPPING.SHAMIR;
-        gorgoneionParameters = com.salesforce.apollo.gorgoneion.Parameters.newBuilder();
+        gorgoneionParameters = com.hellblazer.delos.gorgoneion.Parameters.newBuilder();
         shamir = new Shamir(3, 2);
         group = DigestAlgorithm.DEFAULT.digest("SLACK");
         connectionCache = ServerConnectionCache.newBuilder().setTarget(30);
@@ -109,9 +111,9 @@ public class SkyConfiguration {
                                              Duration.ofMillis(5), 0.00125, Duration.ofMinutes(1), 3,
                                              Duration.ofMillis(100), 10, 0.1);
         choamParameters = Parameters.newBuilder().setGossipDuration(Duration.ofMillis(5)).setCheckpointBlockDelta(200);
-        viewParameters = com.salesforce.apollo.fireflies.Parameters.newBuilder()
-                                                                   .setFpr(0.000125)
-                                                                   .setSeedingTimout(Duration.ofSeconds(10));
+        viewParameters = com.hellblazer.delos.fireflies.Parameters.newBuilder()
+                                                                  .setFpr(0.000125)
+                                                                  .setSeedingTimout(Duration.ofSeconds(10));
         producerParameters = ProducerParameters.newBuilder()
                                                .setGossipDuration(Duration.ofMillis(5))
                                                .setBatchInterval(Duration.ofMillis(100))

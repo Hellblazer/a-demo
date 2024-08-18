@@ -16,14 +16,14 @@
  */
 package com.hellblazer.nut.comms;
 
-import com.salesforce.apollo.gorgoneion.client.client.comm.Admissions;
-import com.salesforce.apollo.gorgoneion.client.client.comm.GorgoneionClientMetrics;
-import com.salesforce.apollo.gorgoneion.proto.AdmissionsGrpc;
-import com.salesforce.apollo.gorgoneion.proto.Credentials;
-import com.salesforce.apollo.gorgoneion.proto.Establishment;
-import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
-import com.salesforce.apollo.membership.Member;
-import com.salesforce.apollo.stereotomy.event.proto.KERL_;
+import com.hellblazer.delos.gorgoneion.client.client.comm.Admissions;
+import com.hellblazer.delos.gorgoneion.client.client.comm.GorgoneionClientMetrics;
+import com.hellblazer.delos.gorgoneion.proto.AdmissionsGrpc;
+import com.hellblazer.delos.gorgoneion.proto.Credentials;
+import com.hellblazer.delos.gorgoneion.proto.Establishment;
+import com.hellblazer.delos.gorgoneion.proto.SignedNonce;
+import com.hellblazer.delos.membership.Member;
+import com.hellblazer.delos.stereotomy.event.proto.KERL_;
 import io.grpc.ManagedChannel;
 
 import java.time.Duration;

@@ -1,10 +1,10 @@
 package com.hellblazer.nut;
 
 import com.google.protobuf.ByteString;
-import com.hellblazer.nut.proto.EncryptedShare;
-import com.hellblazer.nut.proto.Share;
-import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
-import com.salesforce.apollo.cryptography.QualifiedBase64;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Share;
+import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
+import com.hellblazer.delos.cryptography.QualifiedBase64;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.SecretKey;
@@ -71,6 +71,6 @@ public class AesGcmTest {
 
     @Test
     public void testIt() throws Exception {
-       var d = QualifiedBase64.digest("FVfKoet2rqDRvpXe6dP7RWng9xj5WulOSUzDeyGy-wm4");
+        var d = QualifiedBase64.digest("FVfKoet2rqDRvpXe6dP7RWng9xj5WulOSUzDeyGy-wm4");
     }
 }
