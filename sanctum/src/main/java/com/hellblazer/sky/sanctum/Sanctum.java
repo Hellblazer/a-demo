@@ -18,11 +18,11 @@
 package com.hellblazer.sky.sanctum;
 
 import com.google.protobuf.Empty;
-import com.hellblazer.sanctorum.proto.Enclave_Grpc;
-import com.jauntsdn.netty.channel.vsock.EpollVSockChannel;
 import com.hellblazer.delos.cryptography.Digest;
 import com.hellblazer.delos.cryptography.SignatureAlgorithm;
 import com.hellblazer.delos.membership.stereotomy.ControlledIdentifierMember;
+import com.hellblazer.sanctorum.proto.Enclave_Grpc;
+import com.jauntsdn.netty.channel.vsock.EpollVSockChannel;
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
@@ -40,6 +40,7 @@ public class Sanctum {
     private final EnclaveIdentifier          identifier;
     private final ControlledIdentifierMember member;
     private final Channel                    channel;
+    private final TokenGenerator             generator;
 
     public Sanctum(SignatureAlgorithm algorithm, SocketAddress enclaveAddress) {
         this(algorithm, channelFor(enclaveAddress));
@@ -49,6 +50,7 @@ public class Sanctum {
         identifier = new EnclaveIdentifier(algorithm, channel);
         member = new ControlledIdentifierMember(identifier);
         this.channel = channel;
+        generator = new TokenGenerator(channel);
     }
 
     public static Channel channelFor(SocketAddress enclaveAddress) {
@@ -77,7 +79,7 @@ public class Sanctum {
     }
 
     public TokenGenerator tokenGenerator() {
-        return new TokenGenerator(channel);
+        return generator;
     }
 
     public void unwrap() {

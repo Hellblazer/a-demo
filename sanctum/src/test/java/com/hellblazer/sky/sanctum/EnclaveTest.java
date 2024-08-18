@@ -21,15 +21,15 @@ import com.codahale.shamir.Scheme;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
+import com.hellblazer.delos.cryptography.DigestAlgorithm;
+import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
+import com.hellblazer.delos.cryptography.SignatureAlgorithm;
+import com.hellblazer.delos.gorgoneion.proto.SignedNonce;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
 import com.hellblazer.sanctorum.proto.FernetValidate;
 import com.hellblazer.sanctorum.proto.Share;
 import com.hellblazer.sky.sanctum.sanctorum.SanctumSanctorum;
-import com.hellblazer.delos.cryptography.DigestAlgorithm;
-import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
-import com.hellblazer.delos.cryptography.SignatureAlgorithm;
-import com.hellblazer.delos.gorgoneion.proto.SignedNonce;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
 import org.junit.jupiter.api.Test;
@@ -99,7 +99,6 @@ public class EnclaveTest {
     @Test
     public void smokin() throws Exception {
         var address = new InProcessSocketAddress(UUID.randomUUID().toString());
-        var target = "target";
         var devSecret = "Give me food or give me slack or kill me";
         var parameters = new SanctumSanctorum.Parameters(new SanctumSanctorum.Shamir(4, 3), DigestAlgorithm.DEFAULT,
                                                          EncryptionAlgorithm.DEFAULT, address, null);
@@ -131,6 +130,55 @@ public class EnclaveTest {
 
             var bytes = sanctumClient.validate(FernetValidate.newBuilder().setToken(token.serialise()).buildPartial());
             assertArrayEquals(contents, bytes.getB().toByteArray());
+        } finally {
+            client.shutdown();
+            sanctum.shutdown();
+        }
+    }
+
+    @Test
+    public void testGenerator() throws Exception {
+        var address = new InProcessSocketAddress(UUID.randomUUID().toString());
+        var devSecret = "Give me food or give me slack or kill me";
+        var parameters = new SanctumSanctorum.Parameters(new SanctumSanctorum.Shamir(4, 3), DigestAlgorithm.DEFAULT,
+                                                         EncryptionAlgorithm.DEFAULT, address, null);
+        Function<SignedNonce, Any> attestation = n -> Any.getDefaultInstance();
+        SanctumSanctorum sanctum = new SanctumSanctorum(parameters, attestation);
+        sanctum.start();
+
+        var client = InProcessChannelBuilder.forName(address.getName()).usePlaintext().build();
+        try {
+            var sanctumClient = Enclave_Grpc.newBlockingStub(client);
+            unwrap(sanctumClient, devSecret);
+            var identifier = new EnclaveIdentifier(SignatureAlgorithm.DEFAULT, client);
+            assertNotNull(identifier.getIdentifier().getDigest());
+            assertEquals(sanctum.getId(), identifier.getIdentifier().getDigest());
+
+            var kerl = identifier.getKerl();
+            assertNotNull(kerl);
+            assertEquals(1, kerl.size());
+
+            var test = "Give me food or give me slack or kill me";
+            var signed = identifier.getSigner().sign(test);
+            assertNotNull(signed);
+            assertTrue(identifier.getVerifier().get().verify(signed, "Give me food or give me slack or kill me"));
+
+            var contents = new byte[] { 6, 6, 6 };
+            var tokenGenerator = new TokenGenerator(client);
+            var token = tokenGenerator.apply(contents);
+            assertNotNull(token);
+
+            var hashed = new TokenGenerator.HashedToken(DigestAlgorithm.DEFAULT.digest(token.serialise()), token);
+
+            var result = tokenGenerator.validate(hashed);
+            assertNotNull(result);
+
+            for (int i = 0; i < 10; i++) {
+                result = tokenGenerator.validate(hashed);
+                assertNotNull(result);
+            }
+
+            System.out.println("** " + tokenGenerator.cachedStats());
         } finally {
             client.shutdown();
             sanctum.shutdown();

@@ -18,7 +18,6 @@
 package com.hellblazer.sky.sanctum;
 
 import com.google.protobuf.Empty;
-import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.hellblazer.delos.cryptography.*;
 import com.hellblazer.delos.cryptography.cert.BcX500NameDnImpl;
 import com.hellblazer.delos.cryptography.cert.CertExtension;
@@ -40,6 +39,7 @@ import com.hellblazer.delos.stereotomy.identifier.spec.RotationSpecification;
 import com.hellblazer.delos.stereotomy.services.grpc.kerl.CommonKERLClient;
 import com.hellblazer.delos.stereotomy.services.grpc.kerl.KERLAdapter;
 import com.hellblazer.delos.stereotomy.services.grpc.proto.KERLServiceGrpc;
+import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import io.grpc.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -231,9 +231,5 @@ public class EnclaveIdentifier implements ControlledIdentifier<SelfAddressingIde
     @Override
     public KeyState_ toKeyState_() {
         return state.toKeyState_();
-    }
-
-    public TokenGenerator tokenGenerator() {
-        return new TokenGenerator(client.getChannel());
     }
 }

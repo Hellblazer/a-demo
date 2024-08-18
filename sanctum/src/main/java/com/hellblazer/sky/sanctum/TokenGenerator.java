@@ -20,12 +20,13 @@ package com.hellblazer.sky.sanctum;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.google.protobuf.ByteString;
+import com.hellblazer.delos.cryptography.Digest;
 import com.hellblazer.sanctorum.proto.Bytes;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.hellblazer.sanctorum.proto.FernetValidate;
 import com.macasaet.fernet.Token;
-import com.hellblazer.delos.cryptography.Digest;
 import io.grpc.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,24 +67,24 @@ public class TokenGenerator {
         return Token.fromString(tok.getToken());
     }
 
-    public ByteString validate(HashedToken hashed) {
-        if (true) {
-            return ByteString.EMPTY;
+    public CacheStats cachedStats() {
+        return cached.stats();
+    }
 
-        }
+    public CacheStats invalidStats() {
+        return invalid.stats();
+    }
+
+    public ByteString validate(HashedToken hashed) {
         if (invalid.getIfPresent(hashed.hash()) != null) {
             log.info("Cached invalid Token: {}", hashed.hash());
             return null;
         }
-        var result = cached.get(hashed, h -> {
-            var validated = client.validate(FernetValidate.newBuilder().setToken(hashed.token().serialise()).build());
+        return cached.get(hashed, h -> {
+            var validated = client.validate(FernetValidate.newBuilder().setToken(h.token().serialise()).build());
+            log.info("Caching Token: {}", h.hash());
             return validated == null ? null : validated.getB();
         });
-        if (result == null) {
-            cached.put(hashed, result);
-        }
-        System.out.println(cached.stats());
-        return result;
     }
 
     /**
