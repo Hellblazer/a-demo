@@ -19,14 +19,6 @@ package com.hellblazer.nut;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
-import com.hellblazer.nut.comms.ApiServer;
-import com.hellblazer.nut.comms.SphynxServer;
-import com.hellblazer.sanctorum.proto.EncryptedShare;
-import com.hellblazer.sanctorum.proto.FernetToken;
-import com.hellblazer.sanctorum.proto.Status;
-import com.hellblazer.sanctorum.proto.UnwrapStatus;
-import com.hellblazer.sky.sanctum.Sanctum;
-import com.hellblazer.sky.sanctum.sanctorum.SanctumSanctorum;
 import com.hellblazer.delos.archipelago.EndpointProvider;
 import com.hellblazer.delos.comm.grpc.ServerContextSupplier;
 import com.hellblazer.delos.cryptography.Digest;
@@ -42,6 +34,14 @@ import com.hellblazer.delos.stereotomy.identifier.SelfAddressingIdentifier;
 import com.hellblazer.delos.thoth.LoggingOutputStream;
 import com.hellblazer.delos.utils.Entropy;
 import com.hellblazer.delos.utils.Utils;
+import com.hellblazer.nut.comms.ApiServer;
+import com.hellblazer.nut.comms.SphynxServer;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.FernetToken;
+import com.hellblazer.sanctorum.proto.Status;
+import com.hellblazer.sanctorum.proto.UnwrapStatus;
+import com.hellblazer.sky.sanctum.Sanctum;
+import com.hellblazer.sky.sanctum.sanctorum.SanctumSanctorum;
 import io.grpc.StatusRuntimeException;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
@@ -386,17 +386,16 @@ public class Sphinx {
     }
 
     // Unwrap the master key
-    private Digest unwrap(Duration viewGossipDuration) {
+    private void unwrap(Duration viewGossipDuration) {
         log.info("Unwrapping");
         sanctum.unwrap();
         application = new SkyApplication(configuration, sanctum, onFailure, signedNonce -> Any.pack(
-        FernetToken.newBuilder().setToken(provisionedToken == null ? "Hello World" : provisionedToken).build()));
+        FernetToken.newBuilder().setToken(configuration.provisionedToken).build()));
 
         List<SocketAddress> approaches = configuration.approaches == null ? Collections.emptyList()
                                                                           : configuration.approaches.stream()
                                                                                                     .map(
-                                                                                                    ep -> EndpointProvider.reify(
-                                                                                                    ep))
+                                                                                                    EndpointProvider::reify)
                                                                                                     .map(
                                                                                                     e -> (SocketAddress) e)
                                                                                                     .toList();
@@ -415,8 +414,6 @@ public class Sphinx {
                 current.testify(Duration.ofMillis(10), approaches, onStart, seeds);
             }
         }, log));
-
-        return sanctum.getId();
     }
 
     private CertificateValidator validator() {
