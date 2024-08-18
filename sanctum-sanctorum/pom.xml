@@ -16,11 +16,11 @@
             <artifactId>grpc</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.salesforce.apollo</groupId>
+            <groupId>com.hellblazer.delos</groupId>
             <artifactId>stereotomy</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.salesforce.apollo</groupId>
+            <groupId>com.hellblazer.delos</groupId>
             <artifactId>vm-socket</artifactId>
         </dependency>
         <dependency>
@@ -61,7 +61,7 @@
             <artifactId>liquibase-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.salesforce.apollo</groupId>
+            <groupId>com.hellblazer.delos</groupId>
             <artifactId>stereotomy-services</artifactId>
         </dependency>
     </dependencies>

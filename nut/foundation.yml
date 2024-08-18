@@ -1,0 +1,6 @@
+type: specs.openrewrite.org/v1beta/recipe
+name: name
+recipeList:
+  - org.openrewrite.java.ChangePackageid:
+      oldPackageName: com.hellblazer.delos
+      newPackageName: com.hellblazer.deloss

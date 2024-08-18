@@ -20,9 +20,9 @@ package com.hellblazer.sky.sanctum;
 import com.google.protobuf.ByteString;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.hellblazer.sanctorum.proto.Payload_;
-import com.salesforce.apollo.cryptography.JohnHancock;
-import com.salesforce.apollo.cryptography.SignatureAlgorithm;
-import com.salesforce.apollo.cryptography.Signer;
+import com.hellblazer.delos.cryptography.JohnHancock;
+import com.hellblazer.delos.cryptography.SignatureAlgorithm;
+import com.hellblazer.delos.cryptography.Signer;
 import io.grpc.Channel;
 
 import java.io.IOException;

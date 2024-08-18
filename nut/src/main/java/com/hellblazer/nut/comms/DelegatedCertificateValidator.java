@@ -17,7 +17,7 @@
 
 package com.hellblazer.nut.comms;
 
-import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
+import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;

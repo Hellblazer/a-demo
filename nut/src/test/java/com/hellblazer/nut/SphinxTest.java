@@ -24,10 +24,10 @@ import com.hellblazer.nut.comms.MtlsClient;
 import com.hellblazer.nut.proto.SphynxGrpc;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
 import com.hellblazer.sanctorum.proto.Share;
-import com.salesforce.apollo.cryptography.EncryptionAlgorithm;
-import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
-import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
-import com.salesforce.apollo.utils.Utils;
+import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
+import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
+import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
+import com.hellblazer.delos.utils.Utils;
 import io.netty.handler.ssl.ClientAuth;
 import org.junit.jupiter.api.Test;
 

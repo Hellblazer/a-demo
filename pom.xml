@@ -19,7 +19,7 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
-        <apollo.version>0.0.1-SNAPSHOT</apollo.version>
+        <delos.version>0.0.1-SNAPSHOT</delos.version>
         <grpc.version>1.64.0</grpc.version>
         <protobuf.version>4.27.0</protobuf.version>
         <h2.version>2.2.224</h2.version>
@@ -86,9 +86,9 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.salesforce.apollo</groupId>
-                <artifactId>apollo.app</artifactId>
-                <version>${apollo.version}</version>
+                <groupId>com.hellblazer.delos</groupId>
+                <artifactId>delos.app</artifactId>
+                <version>${delos.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

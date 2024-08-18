@@ -19,13 +19,13 @@ package com.hellblazer.nut;
 
 import com.google.protobuf.Any;
 import com.hellblazer.sky.sanctum.Sanctum;
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
-import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
-import com.salesforce.apollo.stereotomy.StereotomyImpl;
-import com.salesforce.apollo.stereotomy.mem.MemKERL;
-import com.salesforce.apollo.stereotomy.mem.MemKeyStore;
-import com.salesforce.apollo.utils.Entropy;
-import com.salesforce.apollo.utils.Utils;
+import com.hellblazer.delos.cryptography.DigestAlgorithm;
+import com.hellblazer.delos.membership.stereotomy.ControlledIdentifierMember;
+import com.hellblazer.delos.stereotomy.StereotomyImpl;
+import com.hellblazer.delos.stereotomy.mem.MemKERL;
+import com.hellblazer.delos.stereotomy.mem.MemKeyStore;
+import com.hellblazer.delos.utils.Entropy;
+import com.hellblazer.delos.utils.Utils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 

@@ -46,11 +46,11 @@
             <artifactId>shamir</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.salesforce.apollo</groupId>
+            <groupId>com.hellblazer.delos</groupId>
             <artifactId>gorgoneion-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.salesforce.apollo</groupId>
+            <groupId>com.hellblazer.delos</groupId>
             <artifactId>model</artifactId>
         </dependency>
         <dependency>
@@ -198,9 +198,9 @@
                         <version>${h2.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>com.salesforce.apollo</groupId>
+                        <groupId>com.hellblazer.delos</groupId>
                         <artifactId>schemas</artifactId>
-                        <version>${apollo.version}</version>
+                        <version>${delos.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>

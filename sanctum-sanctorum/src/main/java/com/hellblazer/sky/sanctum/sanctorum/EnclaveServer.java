@@ -20,11 +20,11 @@ package com.hellblazer.sky.sanctum.sanctorum;
 import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
 import com.hellblazer.sanctorum.proto.*;
-import com.salesforce.apollo.cryptography.proto.Digeste;
-import com.salesforce.apollo.cryptography.proto.Sig;
-import com.salesforce.apollo.gorgoneion.proto.Credentials;
-import com.salesforce.apollo.gorgoneion.proto.PublicKey_;
-import com.salesforce.apollo.gorgoneion.proto.SignedNonce;
+import com.hellblazer.delos.cryptography.proto.Digeste;
+import com.hellblazer.delos.cryptography.proto.Sig;
+import com.hellblazer.delos.gorgoneion.proto.Credentials;
+import com.hellblazer.delos.gorgoneion.proto.PublicKey_;
+import com.hellblazer.delos.gorgoneion.proto.SignedNonce;
 import io.grpc.stub.StreamObserver;
 
 /**

@@ -18,15 +18,15 @@
 
 package com.hellblazer.nut;
 
-import com.salesforce.apollo.choam.Parameters;
-import com.salesforce.apollo.choam.proto.Transaction;
-import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.membership.stereotomy.ControlledIdentifierMember;
-import com.salesforce.apollo.model.ProcessDomain;
-import com.salesforce.apollo.state.Mutator;
-import com.salesforce.apollo.state.proto.Migration;
-import com.salesforce.apollo.state.proto.Txn;
-import com.salesforce.apollo.stereotomy.services.grpc.StereotomyMetrics;
+import com.hellblazer.delos.choam.Parameters;
+import com.hellblazer.delos.choam.proto.Transaction;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.membership.stereotomy.ControlledIdentifierMember;
+import com.hellblazer.delos.model.ProcessDomain;
+import com.hellblazer.delos.state.Mutator;
+import com.hellblazer.delos.state.proto.Migration;
+import com.hellblazer.delos.state.proto.Txn;
+import com.hellblazer.delos.stereotomy.services.grpc.StereotomyMetrics;
 
 import java.net.URL;
 import java.nio.file.Path;
@@ -41,7 +41,7 @@ import static java.nio.file.Path.of;
 public class Sky extends ProcessDomain {
     public Sky(Digest group, ControlledIdentifierMember member, ProcessDomain.ProcessDomainParameters params,
                Parameters.Builder builder, Parameters.RuntimeParameters.Builder runtime, String endpoint,
-               com.salesforce.apollo.fireflies.Parameters.Builder ff, StereotomyMetrics stereotomyMetrics) {
+               com.hellblazer.delos.fireflies.Parameters.Builder ff, StereotomyMetrics stereotomyMetrics) {
         super(group, member, params, builder, runtime, endpoint, ff, stereotomyMetrics);
     }
 

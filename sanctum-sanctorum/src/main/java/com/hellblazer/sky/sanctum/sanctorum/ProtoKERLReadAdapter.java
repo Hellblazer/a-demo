@@ -18,21 +18,21 @@
 package com.hellblazer.sky.sanctum.sanctorum;
 
 import com.google.protobuf.Empty;
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
-import com.salesforce.apollo.cryptography.JohnHancock;
-import com.salesforce.apollo.stereotomy.EventCoordinates;
-import com.salesforce.apollo.stereotomy.KEL;
-import com.salesforce.apollo.stereotomy.KERL;
-import com.salesforce.apollo.stereotomy.KERL.EventWithAttachments;
-import com.salesforce.apollo.stereotomy.KeyState;
-import com.salesforce.apollo.stereotomy.event.EstablishmentEvent;
-import com.salesforce.apollo.stereotomy.event.KeyEvent;
-import com.salesforce.apollo.stereotomy.event.KeyStateWithEndorsementsAndValidations;
-import com.salesforce.apollo.stereotomy.event.proto.*;
-import com.salesforce.apollo.stereotomy.event.protobuf.AttachmentEventImpl;
-import com.salesforce.apollo.stereotomy.event.protobuf.ProtobufEventFactory;
-import com.salesforce.apollo.stereotomy.identifier.Identifier;
-import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLService;
+import com.hellblazer.delos.cryptography.DigestAlgorithm;
+import com.hellblazer.delos.cryptography.JohnHancock;
+import com.hellblazer.delos.stereotomy.EventCoordinates;
+import com.hellblazer.delos.stereotomy.KEL;
+import com.hellblazer.delos.stereotomy.KERL;
+import com.hellblazer.delos.stereotomy.KERL.EventWithAttachments;
+import com.hellblazer.delos.stereotomy.KeyState;
+import com.hellblazer.delos.stereotomy.event.EstablishmentEvent;
+import com.hellblazer.delos.stereotomy.event.KeyEvent;
+import com.hellblazer.delos.stereotomy.event.KeyStateWithEndorsementsAndValidations;
+import com.hellblazer.delos.stereotomy.event.proto.*;
+import com.hellblazer.delos.stereotomy.event.protobuf.AttachmentEventImpl;
+import com.hellblazer.delos.stereotomy.event.protobuf.ProtobufEventFactory;
+import com.hellblazer.delos.stereotomy.identifier.Identifier;
+import com.hellblazer.delos.stereotomy.services.proto.ProtoKERLService;
 import org.joou.ULong;
 
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class ProtoKERLReadAdapter implements ProtoKERLService {
     @Override
     public List<KeyState_> append(KERL_ k) {
         List<KeyEvent> events = new ArrayList<>();
-        List<com.salesforce.apollo.stereotomy.event.AttachmentEvent> attachments = new ArrayList<>();
+        List<com.hellblazer.delos.stereotomy.event.AttachmentEvent> attachments = new ArrayList<>();
         k.getEventsList().stream().map(ProtobufEventFactory::from).forEach(ewa -> {
             events.add(ewa.event());
             attachments.add(
@@ -89,7 +89,7 @@ public class ProtoKERLReadAdapter implements ProtoKERLService {
                                                                                                              .map(
                                                                                                              AttachmentEventImpl::new)
                                                                                                              .map(
-                                                                                                             e -> (com.salesforce.apollo.stereotomy.event.AttachmentEvent) e)
+                                                                                                             e -> (com.hellblazer.delos.stereotomy.event.AttachmentEvent) e)
                                                                                                              .toList())
                         .stream()
                         .map(ks -> ks == null ? null : ks.toKeyState_())
@@ -100,7 +100,7 @@ public class ProtoKERLReadAdapter implements ProtoKERLService {
     public Empty appendAttachments(List<AttachmentEvent> attachments) {
         getKerl().append(attachments.stream()
                                     .map(AttachmentEventImpl::new)
-                                    .map(e -> (com.salesforce.apollo.stereotomy.event.AttachmentEvent) e)
+                                    .map(e -> (com.hellblazer.delos.stereotomy.event.AttachmentEvent) e)
                                     .toList());
         return Empty.getDefaultInstance();
     }

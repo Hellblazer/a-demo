@@ -22,7 +22,7 @@ import com.macasaet.fernet.Key;
 import com.macasaet.fernet.Token;
 import com.macasaet.fernet.TokenValidationException;
 import com.macasaet.fernet.Validator;
-import com.salesforce.apollo.cryptography.Digest;
+import com.hellblazer.delos.cryptography.Digest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -20,10 +20,10 @@ import com.google.common.net.HostAndPort;
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.comms.MtlsClient;
 import com.hellblazer.nut.proto.SphynxGrpc;
-import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
-import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
-import com.salesforce.apollo.utils.Utils;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
+import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
+import com.hellblazer.delos.utils.Utils;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.netty.handler.ssl.ClientAuth;
@@ -36,7 +36,7 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
+import static com.hellblazer.delos.cryptography.QualifiedBase64.digest;
 
 /**
  * Simple launcher to dynamically configure seeds, approaches and genesis generation

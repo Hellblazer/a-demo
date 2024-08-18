@@ -19,11 +19,11 @@ package com.hellblazer.sky.sanctum.sanctorum;
 
 import com.codahale.metrics.Timer.Context;
 import com.google.protobuf.Empty;
-import com.salesforce.apollo.stereotomy.event.proto.*;
-import com.salesforce.apollo.stereotomy.services.grpc.StereotomyMetrics;
-import com.salesforce.apollo.stereotomy.services.grpc.proto.*;
-import com.salesforce.apollo.stereotomy.services.grpc.proto.KERLServiceGrpc.KERLServiceImplBase;
-import com.salesforce.apollo.stereotomy.services.proto.ProtoKERLProvider;
+import com.hellblazer.delos.stereotomy.event.proto.*;
+import com.hellblazer.delos.stereotomy.services.grpc.StereotomyMetrics;
+import com.hellblazer.delos.stereotomy.services.grpc.proto.*;
+import com.hellblazer.delos.stereotomy.services.grpc.proto.KERLServiceGrpc.KERLServiceImplBase;
+import com.hellblazer.delos.stereotomy.services.proto.ProtoKERLProvider;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;

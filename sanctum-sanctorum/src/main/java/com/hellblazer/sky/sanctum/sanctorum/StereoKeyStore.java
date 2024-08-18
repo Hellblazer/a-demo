@@ -17,8 +17,8 @@
 
 package com.hellblazer.sky.sanctum.sanctorum;
 
-import com.salesforce.apollo.stereotomy.KeyCoordinates;
-import com.salesforce.apollo.stereotomy.StereotomyKeyStore;
+import com.hellblazer.delos.stereotomy.KeyCoordinates;
+import com.hellblazer.delos.stereotomy.StereotomyKeyStore;
 
 import java.security.KeyPair;
 import java.util.Optional;

@@ -23,7 +23,7 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.stereotomy" level="info" additivity="false">
+    <logger name="com.hellblazer.delos.stereotomy" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 

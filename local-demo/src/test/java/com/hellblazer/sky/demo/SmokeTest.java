@@ -2,10 +2,10 @@ package com.hellblazer.sky.demo;
 
 import com.hellblazer.nut.comms.MtlsClient;
 import com.hellblazer.nut.service.OracleAdapter;
-import com.salesforce.apollo.cryptography.cert.CertificateWithPrivateKey;
-import com.salesforce.apollo.cryptography.ssl.CertificateValidator;
-import com.salesforce.apollo.delphinius.Oracle;
-import com.salesforce.apollo.utils.Utils;
+import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
+import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
+import com.hellblazer.delos.delphinius.Oracle;
+import com.hellblazer.delos.utils.Utils;
 import io.netty.handler.ssl.ClientAuth;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -26,7 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.salesforce.apollo.choam.Session.retryNesting;
+import static com.hellblazer.delos.choam.Session.retryNesting;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

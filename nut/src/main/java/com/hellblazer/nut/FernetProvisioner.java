@@ -22,20 +22,20 @@ import com.hellblazer.nut.proto.InitialProvisioning;
 import com.hellblazer.nut.service.Geb;
 import com.hellblazer.sanctorum.proto.FernetToken;
 import com.hellblazer.sky.sanctum.TokenGenerator;
-import com.salesforce.apollo.choam.support.InvalidTransaction;
-import com.salesforce.apollo.cryptography.Digest;
-import com.salesforce.apollo.cryptography.DigestAlgorithm;
-import com.salesforce.apollo.delphinius.AbstractOracle;
-import com.salesforce.apollo.delphinius.Oracle;
-import com.salesforce.apollo.gorgoneion.proto.Attestation;
-import com.salesforce.apollo.h2.SessionServices;
-import com.salesforce.apollo.state.Mutator;
-import com.salesforce.apollo.state.SqlStateMachine;
-import com.salesforce.apollo.stereotomy.event.EstablishmentEvent;
-import com.salesforce.apollo.stereotomy.event.proto.KERL_;
-import com.salesforce.apollo.stereotomy.event.protobuf.ProtobufEventFactory;
-import com.salesforce.apollo.stereotomy.identifier.Identifier;
-import com.salesforce.apollo.stereotomy.identifier.SelfAddressingIdentifier;
+import com.hellblazer.delos.choam.support.InvalidTransaction;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.cryptography.DigestAlgorithm;
+import com.hellblazer.delos.delphinius.AbstractOracle;
+import com.hellblazer.delos.delphinius.Oracle;
+import com.hellblazer.delos.gorgoneion.proto.Attestation;
+import com.hellblazer.delos.h2.SessionServices;
+import com.hellblazer.delos.state.Mutator;
+import com.hellblazer.delos.state.SqlStateMachine;
+import com.hellblazer.delos.stereotomy.event.EstablishmentEvent;
+import com.hellblazer.delos.stereotomy.event.proto.KERL_;
+import com.hellblazer.delos.stereotomy.event.protobuf.ProtobufEventFactory;
+import com.hellblazer.delos.stereotomy.identifier.Identifier;
+import com.hellblazer.delos.stereotomy.identifier.SelfAddressingIdentifier;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
-import static com.salesforce.apollo.cryptography.QualifiedBase64.qb64;
+import static com.hellblazer.delos.cryptography.QualifiedBase64.qb64;
 
 /**
  * @author hal.hildebrand

@@ -17,11 +17,11 @@ package com.hellblazer.nut.support;/*
 
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.FromStringDeserializer;
-import com.salesforce.apollo.cryptography.Digest;
+import com.hellblazer.delos.cryptography.Digest;
 
 import java.io.IOException;
 
-import static com.salesforce.apollo.cryptography.QualifiedBase64.digest;
+import static com.hellblazer.delos.cryptography.QualifiedBase64.digest;
 
 /**
  * @author hal.hildebrand

@@ -25,7 +25,7 @@ import com.hellblazer.sanctorum.proto.Bytes;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.hellblazer.sanctorum.proto.FernetValidate;
 import com.macasaet.fernet.Token;
-import com.salesforce.apollo.cryptography.Digest;
+import com.hellblazer.delos.cryptography.Digest;
 import io.grpc.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +69,7 @@ public class TokenGenerator {
     public ByteString validate(HashedToken hashed) {
         if (true) {
             return ByteString.EMPTY;
-            
+
         }
         if (invalid.getIfPresent(hashed.hash()) != null) {
             log.info("Cached invalid Token: {}", hashed.hash());

@@ -22,27 +22,27 @@
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam" level="warn" additivity="false">
+    <logger name="com.hellblazer.delos.choam" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.CHOAM" level="info" additivity="false">
+    <logger name="com.hellblazer.delos.choam.CHOAM" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.fireflies" level="warn" additivity="false">
+    <logger name="com.hellblazer.delos.fireflies" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.archipelago" level="warn" additivity="false">
+    <logger name="com.hellblazer.delos.archipelago" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.archipelago.ServerConnectionCache" level="warn" additivity="false">
+    <logger name="com.hellblazer.delos.archipelago.ServerConnectionCache" level="warn" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
-    <logger name="com.salesforce.apollo.choam.support" level="info" additivity="false">
+    <logger name="com.hellblazer.delos.choam.support" level="info" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 

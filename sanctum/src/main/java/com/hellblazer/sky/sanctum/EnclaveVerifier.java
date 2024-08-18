@@ -20,10 +20,10 @@ package com.hellblazer.sky.sanctum;
 import com.google.protobuf.ByteString;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
 import com.hellblazer.sanctorum.proto.Payload_;
-import com.salesforce.apollo.cryptography.JohnHancock;
-import com.salesforce.apollo.cryptography.SigningThreshold;
-import com.salesforce.apollo.cryptography.Verifier;
-import com.salesforce.apollo.stereotomy.event.protobuf.ProtobufEventFactory;
+import com.hellblazer.delos.cryptography.JohnHancock;
+import com.hellblazer.delos.cryptography.SigningThreshold;
+import com.hellblazer.delos.cryptography.Verifier;
+import com.hellblazer.delos.stereotomy.event.protobuf.ProtobufEventFactory;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
