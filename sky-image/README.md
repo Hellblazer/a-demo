@@ -1,2 +1,2 @@
-# Apollo Large Scale Demo Docker Image
+# Delos Large Scale Demo Docker Image
 

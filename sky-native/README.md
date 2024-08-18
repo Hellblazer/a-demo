@@ -1,2 +1,2 @@
-# Apollo Large Scale Demo Native Image
+# Delos Large Scale Demo Native Image
 

@@ -55,7 +55,7 @@ import java.util.Set;
 
 /**
  * "Most" of a ControlledIdentifier, backed by the SanctumService Enclave.  Basically a blocking key management enclave.
- * Provides enough to wrap using a SigningMember for Apollo integration.
+ * Provides enough to wrap using a SigningMember for Delos integration.
  *
  * @author hal.hildebrand
  **/
