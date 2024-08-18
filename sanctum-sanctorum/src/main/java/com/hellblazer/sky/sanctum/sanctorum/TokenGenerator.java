@@ -47,7 +47,13 @@ public class TokenGenerator {
     }
 
     public Token apply(Bytes message) {
-        return master != null ? Token.generate(entropy, master, message.getB().toByteArray()) : null;
+        if (master == null) {
+            return null;
+        }
+
+        var token = Token.generate(entropy, master, message.getB().toByteArray());
+        log.info("Generated token: {}", token);
+        return token;
     }
 
     public void clear() {
@@ -61,10 +67,10 @@ public class TokenGenerator {
     public Bytes validate(Validator<Bytes> validator, HashedToken k) {
         try {
             var decrypt = k.token().validateAndDecrypt(master, validator);
-            log.info("Decrypted Token: {} was cached", k);
+            log.info("Decrypted Token: {} is valid: {}", k.hash(), k.token);
             return decrypt;
         } catch (TokenValidationException e) {
-            log.info("Invalid Token: {}", k.hash());
+            log.debug("Invalid Token: {}", k.hash());
             return Bytes.getDefaultInstance();
         }
     }

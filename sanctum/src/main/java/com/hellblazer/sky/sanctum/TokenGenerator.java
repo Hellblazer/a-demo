@@ -23,7 +23,6 @@ import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.google.protobuf.ByteString;
 import com.hellblazer.sanctorum.proto.Bytes;
 import com.hellblazer.sanctorum.proto.Enclave_Grpc;
-import com.hellblazer.sanctorum.proto.FernetToken;
 import com.hellblazer.sanctorum.proto.FernetValidate;
 import com.macasaet.fernet.Token;
 import com.salesforce.apollo.cryptography.Digest;
@@ -49,13 +48,14 @@ public class TokenGenerator {
         this.client = Enclave_Grpc.newBlockingStub(channel);
         cached = Caffeine.newBuilder()
                          .maximumSize(1_000)
-                         .expireAfterWrite(Duration.ofDays(10))
-                         .removalListener((HashedToken token, Object credentials, RemovalCause cause) -> log.trace(
-                         "Validated Token: {} was removed due to: {}", token.hash(), cause))
-                         .build();
+                         .expireAfterWrite(Duration.ofDays(1))
+                         .removalListener((HashedToken ht, Object credentials, RemovalCause cause) -> log.trace(
+                         "Validated Token: {} was removed due to: {}", ht.hash, cause))
+                         .build(hashed -> client.validate(
+                         FernetValidate.newBuilder().setToken(hashed.token().serialise()).build()).getB());
         invalid = Caffeine.newBuilder()
                           .maximumSize(1_000)
-                          .expireAfterWrite(Duration.ofSeconds(30))
+                          .expireAfterWrite(Duration.ofDays(1))
                           .removalListener((Digest token, Boolean credentials, RemovalCause cause) -> log.trace(
                           "Invalid Token: {} was removed due to: {}", token, cause))
                           .build();
@@ -66,26 +66,24 @@ public class TokenGenerator {
         return Token.fromString(tok.getToken());
     }
 
-    public boolean valid(HashedToken hashed) {
-        if (invalid.getIfPresent(hashed.hash()) != null) {
-            return false;
-        }
-        if (cached.getIfPresent(hashed) != null) {
-            return true;
-        }
-        if (!client.verifyToken(FernetToken.newBuilder().setToken(hashed.token.serialise()).build()).getVerified()) {
-            invalid.put(hashed.hash(), true);
-            return false;
-        }
-        return true;
-    }
-
     public ByteString validate(HashedToken hashed) {
+        if (true) {
+            return ByteString.EMPTY;
+            
+        }
         if (invalid.getIfPresent(hashed.hash()) != null) {
             log.info("Cached invalid Token: {}", hashed.hash());
             return null;
         }
-        return cached.get(hashed, k -> client.validate(FernetValidate.newBuilder().build()).getB());
+        var result = cached.get(hashed, h -> {
+            var validated = client.validate(FernetValidate.newBuilder().setToken(hashed.token().serialise()).build());
+            return validated == null ? null : validated.getB();
+        });
+        if (result == null) {
+            cached.put(hashed, result);
+        }
+        System.out.println(cached.stats());
+        return result;
     }
 
     /**

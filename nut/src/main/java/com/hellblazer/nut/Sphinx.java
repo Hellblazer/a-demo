@@ -45,6 +45,7 @@ import com.salesforce.apollo.utils.Utils;
 import io.grpc.StatusRuntimeException;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
+import io.netty.channel.epoll.VSockAddress;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import liquibase.Liquibase;
@@ -99,7 +100,6 @@ public class Sphinx {
     private final    Service                 service   = new Service();
     private final    SecureRandom            entropy;
     private final    CompletableFuture<Void> onStart   = new CompletableFuture<>();
-    private final    String                  devSecret;
     private volatile Sanctum                 sanctum;
     private volatile SkyApplication          application;
     private volatile Runnable                closeApiServer;
@@ -124,16 +124,27 @@ public class Sphinx {
         this.configuration = configuration;
         initializeSchema();
 
-        this.devSecret = devSecret;
         if (devSecret != null) {
             log.warn("Operating in development mode with dev secret");
         } else {
             log.info("Operating in sealed mode: {}", configuration.shamir);
         }
-        if (configuration.enclaveEndpoint instanceof InProcessSocketAddress) {
+        switch (configuration.enclaveEndpoint) {
+        case InProcessSocketAddress ipa: {
             inProcessSanctorum(configuration, devSecret);
+            break;
+        }
+        case VSockAddress vsa: {
+            vmEnclave(configuration, devSecret);
+            break;
+        }
+        default:
+            throw new IllegalStateException("Illegal enclave endpoint: " + configuration.enclaveEndpoint);
         }
         sanctum = new Sanctum(configuration.identity.signatureAlgorithm(), configuration.enclaveEndpoint);
+        if (devSecret != null) {
+            unwrap(configuration.viewGossipDuration);
+        }
     }
 
     public static void inProcessSanctorum(SkyConfiguration config, String devSecret) {
@@ -418,6 +429,10 @@ public class Sphinx {
             public void validateServer(X509Certificate[] chain) {
             }
         };
+    }
+
+    private void vmEnclave(SkyConfiguration configuration, String devSecret) {
+        throw new UnsupportedOperationException("vmEnclave unsupported");
     }
 
     public enum UNWRAPPING {

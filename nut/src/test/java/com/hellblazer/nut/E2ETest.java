@@ -332,7 +332,8 @@ public class E2ETest {
 
         Thread.sleep(1000);
         var oracle = of(sphinxes.getFirst().getServiceEndpoint());
-        oracle.add(new Oracle.Namespace("test")).get(120, TimeUnit.SECONDS);
+        assertTrue(sphinxes.getFirst().active());
+        oracle.add(new Oracle.Namespace("test")).get(20, TimeUnit.SECONDS);
         smoke(oracle);
     }
 

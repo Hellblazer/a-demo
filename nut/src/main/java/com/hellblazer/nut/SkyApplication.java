@@ -431,7 +431,7 @@ public class SkyApplication {
             if (current == null && started.get()) {
                 var msg = ByteMessage.newBuilder().setContents(ByteString.copyFromUtf8("My test message")).build();
                 token = generator.apply(msg.toByteArray());
-                log.info("Generating recognition token on context: {} on: {}", contextId, sanctorum.getId());
+                log.info("Generating recognition token: {} on context: {} on: {}", token, contextId, sanctorum.getId());
                 return token;
             }
             return current;
