@@ -20,5 +20,6 @@ public class ProvisioningServer extends ProvisioningGrpc.ProvisioningImplBase {
     public void provision(InitialProvisioning request, StreamObserver<FernetToken> responseObserver) {
         var token = provisioner.initialProvisioning(request);
         responseObserver.onNext(token);
+        responseObserver.onCompleted();
     }
 }

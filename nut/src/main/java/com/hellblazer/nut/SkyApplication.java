@@ -194,10 +194,9 @@ public class SkyApplication {
                                             sanctum.tokenGenerator(), getSky().getMutator(),
                                             choamParameters.getSubmitTimeout());
 
-        new Gorgoneion(configuration.approaches == null || configuration.approaches.isEmpty(), this::attest,
-                       this::establish, gorgoneionParameters.build(), sanctum.getMember(), runtime.getContext(),
-                       new DirectPublisher(sanctum.getMember().getId(), new ProtoKERLAdapter(k)), admissionsComms, null,
-                       clusterComms);
+        new Gorgoneion(this::attest, this::establish, gorgoneionParameters.build(), sanctum.getMember(),
+                       runtime.getContext(), new DirectPublisher(sanctum.getMember().getId(), new ProtoKERLAdapter(k)),
+                       admissionsComms, null, clusterComms);
         getSky().register(getTokenValidator(sanctum, gorgoneionParameters.getDigestAlgorithm()));
         log.info("Service api: {} on: {}", serviceEndpoint, sanctum.getId());
     }
@@ -216,7 +215,8 @@ public class SkyApplication {
             try {
                 return new FernetProvisioner.ValidatedToken<>(hashed, ByteMessage.parseFrom(msg));
             } catch (InvalidProtocolBufferException e) {
-                throw new IllegalArgumentException(e);
+                log.info("Unable to deserialize token: {}", e.toString());
+                return null;
             }
         };
     }
@@ -362,7 +362,7 @@ public class SkyApplication {
         try {
             return provisioner.provision(signedAttestation.getAttestation());
         } catch (Throwable e) {
-            log.error("Unable to validate attestation: {} on: {}", signedAttestation, node.getMember().getId(), e);
+            log.error("Unable to validate attestation on: {}", node.getMember().getId(), e);
             return false;
         }
     }

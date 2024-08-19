@@ -155,9 +155,6 @@ public class FernetProvisioner extends Provisioner {
 
     @Override
     public boolean provision(Attestation attestation) {
-        if (true) {
-            return true;
-        }
         FernetToken fernetAttestation;
         try {
             fernetAttestation = attestation.getAttestation().unpack(FernetToken.class);
