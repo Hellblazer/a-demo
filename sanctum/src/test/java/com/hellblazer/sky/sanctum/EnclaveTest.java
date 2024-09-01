@@ -26,6 +26,7 @@ import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import com.hellblazer.delos.cryptography.SignatureAlgorithm;
 import com.hellblazer.delos.gorgoneion.proto.SignedNonce;
 import com.hellblazer.sanctorum.proto.*;
+import com.hellblazer.sky.constants.Constants;
 import com.hellblazer.sky.sanctum.sanctorum.SanctumSanctorum;
 import com.hellblazer.sky.sanctum.sanctorum.TokenGenerator;
 import com.macasaet.fernet.Validator;
@@ -78,11 +79,9 @@ public class EnclaveTest {
                                .setKey(share.getKey())
                                .setShare(ByteString.copyFrom(share.getValue()))
                                .build();
-            var associatedData = "Hello world".getBytes();
-            var encrypted = SanctumSanctorum.encrypt(wrapped.toByteArray(), secretKey, associatedData);
+            var encrypted = SanctumSanctorum.encrypt(wrapped.toByteArray(), secretKey, Constants.SHAMIR_TAG);
             var encryptedShare = EncryptedShare.newBuilder()
                                                .setIv(ByteString.copyFrom(encrypted.iv()))
-                                               .setAssociatedData(ByteString.copyFrom(associatedData))
                                                .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                                .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                                .build();
@@ -100,7 +99,8 @@ public class EnclaveTest {
         var address = new InProcessSocketAddress(UUID.randomUUID().toString());
         var devSecret = "Give me food or give me slack or kill me";
         var parameters = new SanctumSanctorum.Parameters(new SanctumSanctorum.Shamir(4, 3), DigestAlgorithm.DEFAULT,
-                                                         EncryptionAlgorithm.DEFAULT, address, null);
+                                                         EncryptionAlgorithm.DEFAULT, Constants.SHAMIR_TAG, address,
+                                                         null);
         Function<SignedNonce, Any> attestation = n -> Any.getDefaultInstance();
         SanctumSanctorum sanctum = new SanctumSanctorum(parameters, attestation);
         sanctum.start();
@@ -140,7 +140,8 @@ public class EnclaveTest {
         var address = new InProcessSocketAddress(UUID.randomUUID().toString());
         var devSecret = "Give me food or give me slack or kill me";
         var parameters = new SanctumSanctorum.Parameters(new SanctumSanctorum.Shamir(4, 3), DigestAlgorithm.DEFAULT,
-                                                         EncryptionAlgorithm.DEFAULT, address, null);
+                                                         EncryptionAlgorithm.DEFAULT, Constants.SHAMIR_TAG, address,
+                                                         null);
         Function<SignedNonce, Any> attestation = n -> Any.getDefaultInstance();
         SanctumSanctorum sanctum = new SanctumSanctorum(parameters, attestation);
         sanctum.start();

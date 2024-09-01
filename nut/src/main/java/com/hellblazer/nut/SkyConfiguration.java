@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.hellblazer.nut.support.DigestDeserializer;
 import com.hellblazer.delos.archipelago.EndpointProvider;
 import com.hellblazer.delos.archipelago.ServerConnectionCache;
 import com.hellblazer.delos.choam.Parameters;
@@ -37,6 +36,7 @@ import com.hellblazer.delos.cryptography.SignatureAlgorithm;
 import com.hellblazer.delos.membership.Member;
 import com.hellblazer.delos.model.ProcessDomain.ProcessDomainParameters;
 import com.hellblazer.delos.utils.Utils;
+import com.hellblazer.nut.support.DigestDeserializer;
 import io.grpc.inprocess.InProcessSocketAddress;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +68,7 @@ public class SkyConfiguration {
     public Digest                                             genesisViewId;
     @JsonProperty
     public Parameters.Builder                                 choamParameters;
+    @JsonProperty
     public ProcessDomainParameters                            domain;
     @JsonProperty
     public ServerConnectionCache.Builder                      connectionCache;
@@ -86,7 +87,10 @@ public class SkyConfiguration {
     @JsonProperty
     public Duration                                           viewGossipDuration = Duration.ofMillis(10);
     @JsonProperty
-    public String                                             provisionedToken   = "Give me food or give me slack or kill me";
+    public String                                             provisionedToken;
+    @JsonProperty
+    public String                                             tag;
+    @JsonProperty
     public SocketAddress                                      enclaveEndpoint    = new InProcessSocketAddress(
     UUID.randomUUID().toString());
 

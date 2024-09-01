@@ -18,10 +18,9 @@
 package com.hellblazer.nut;
 
 import com.codahale.shamir.Scheme;
+import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import com.hellblazer.nut.support.ShareService;
 import com.hellblazer.sanctorum.proto.Share;
-import com.hellblazer.delos.cryptography.DigestAlgorithm;
-import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import org.junit.jupiter.api.Test;
 
 import java.security.SecureRandom;
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hellblazer.sky.constants.Constants.SHAMIR_TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -38,10 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ShareServiceTest {
     @Test
     public void smokin() throws Exception {
-        var authTag = DigestAlgorithm.DEFAULT.digest("Slack");
         var algorithm = EncryptionAlgorithm.DEFAULT;
         var entropy = new SecureRandom();
-        var secrets = new ShareService(authTag, entropy, algorithm);
+        var secrets = new ShareService(entropy, algorithm);
         var keys = IntStream.range(0, 3).mapToObj(i -> algorithm.generateKeyPair()).toList();
         var encryptedShares = secrets.shares(1024, keys.stream().map(kp -> kp.getPublic()).toList(), 2);
         assertEquals(keys.size(), encryptedShares.size());
@@ -50,8 +49,7 @@ public class ShareServiceTest {
             var key = algorithm.decapsulate(keys.get(i).getPrivate(),
                                             encryptedShares.get(i).getEncapsulation().toByteArray(), Sphinx.AES);
             var encrypted = new Sphinx.Encrypted(encryptedShares.get(i).getShare().toByteArray(),
-                                                 encryptedShares.get(i).getIv().toByteArray(),
-                                                 encryptedShares.get(i).getAssociatedData().toByteArray());
+                                                 encryptedShares.get(i).getIv().toByteArray(), SHAMIR_TAG);
             var plainText = Sphinx.decrypt(encrypted, key);
             shares.add(Share.parseFrom(plainText));
         }

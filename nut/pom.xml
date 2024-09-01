@@ -38,8 +38,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.hellblazer.sky</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>constants</artifactId>
         </dependency>
         <dependency>
             <groupId>com.codahale</groupId>
