@@ -20,14 +20,14 @@ package com.hellblazer.nut;
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
-import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.proto.SphynxGrpc;
-import com.hellblazer.sanctorum.proto.EncryptedShare;
-import com.hellblazer.sanctorum.proto.Share;
 import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
 import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
 import com.hellblazer.delos.utils.Utils;
+import com.hellblazer.nut.comms.MtlsClient;
+import com.hellblazer.nut.proto.SphynxGrpc;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Share;
 import io.netty.handler.ssl.ClientAuth;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +36,7 @@ import java.io.File;
 import java.net.InetSocketAddress;
 import java.security.SecureRandom;
 
+import static com.hellblazer.sky.constants.Constants.SHAMIR_TAG;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -103,11 +104,9 @@ public class SphinxTest {
                                    .setKey(share.getKey())
                                    .setShare(ByteString.copyFrom(share.getValue()))
                                    .build();
-                var associatedData = "Hello world    ".getBytes();
-                var encrypted = Sphinx.encrypt(wrapped.toByteArray(), secretKey, associatedData);
+                var encrypted = Sphinx.encrypt(wrapped.toByteArray(), secretKey, SHAMIR_TAG);
                 var encryptedShare = EncryptedShare.newBuilder()
                                                    .setIv(ByteString.copyFrom(encrypted.iv()))
-                                                   .setAssociatedData(ByteString.copyFrom(associatedData))
                                                    .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                                    .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                                    .build();

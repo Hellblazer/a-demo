@@ -21,12 +21,6 @@ import com.google.common.net.HostAndPort;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.comms.*;
-import com.hellblazer.nut.service.Delphi;
-import com.hellblazer.sky.sanctum.Sanctum;
-import com.hellblazer.sky.sanctum.TokenGenerator;
-import com.macasaet.fernet.Token;
 import com.hellblazer.delos.archipelago.*;
 import com.hellblazer.delos.archipelago.client.FernetCallCredentials;
 import com.hellblazer.delos.archipelago.server.FernetServerInterceptor;
@@ -56,6 +50,11 @@ import com.hellblazer.delos.stereotomy.services.proto.ProtoKERLAdapter;
 import com.hellblazer.delos.test.proto.ByteMessage;
 import com.hellblazer.delos.thoth.DirectPublisher;
 import com.hellblazer.delos.utils.Utils;
+import com.hellblazer.nut.comms.MtlsClient;
+import com.hellblazer.nut.comms.*;
+import com.hellblazer.nut.service.Delphi;
+import com.hellblazer.sky.sanctum.Sanctum;
+import com.macasaet.fernet.Token;
 import io.grpc.ManagedChannel;
 import io.grpc.NameResolver;
 import io.grpc.StatusRuntimeException;
@@ -94,25 +93,26 @@ import java.util.function.Predicate;
 public class SkyApplication {
     private static final Logger log = LoggerFactory.getLogger(SkyApplication.class);
 
-    private final    Digest                                    contextId;
-    private final    Sky                                       node;
-    private final    Router                                    clusterComms;
-    private final    CertificateWithPrivateKey                 certWithKey;
-    private final    Sanctum                                   sanctorum;
-    private final    Router                                    admissionsComms;
-    private final    ApiServer                                 serviceApi;
-    private final    Clock                                     clock;
-    private final    AtomicBoolean                             started   = new AtomicBoolean();
-    private final    DelegatedCertificateValidator             certificateValidator;
-    private final    Lock                                      tokenLock = new ReentrantLock();
-    private final    SkyConfiguration                          configuration;
-    private final    Provisioner                               provisioner;
-    private final    Function<SignedNonce, Any>                attestation;
-    private final    int                                       retries   = 5;
-    private final    BiFunction<Credentials, Validations, Any> establishment;
-    private volatile Token                                     token;
-    private volatile ManagedChannel                            joinChannel;
-    private volatile ServerSocket                              health;
+    private final Digest                                    contextId;
+    private final Sky                                       node;
+    private final Router                                    clusterComms;
+    private final CertificateWithPrivateKey                 certWithKey;
+    private final Sanctum                                   sanctorum;
+    private final Router                                    admissionsComms;
+    private final ApiServer                                 serviceApi;
+    private final Clock                                     clock;
+    private final AtomicBoolean                             started   = new AtomicBoolean();
+    private final DelegatedCertificateValidator             certificateValidator;
+    private final Lock                                      tokenLock = new ReentrantLock();
+    private final SkyConfiguration                          configuration;
+    private final Provisioner                               provisioner;
+    private final Function<SignedNonce, Any>                attestation;
+    private final int                                       retries   = 5;
+    private final BiFunction<Credentials, Validations, Any> establishment;
+
+    private volatile Token          token;
+    private volatile ManagedChannel joinChannel;
+    private volatile ServerSocket   health;
 
     public SkyApplication(SkyConfiguration configuration, Sanctum sanctum, CompletableFuture<Void> onFailure,
                           Function<SignedNonce, Any> attestation) {
@@ -142,15 +142,10 @@ public class SkyApplication {
                                            serverContextSupplier(certWithKey));
         }
         Predicate<FernetServerInterceptor.HashedToken> validator = token -> {
-            var generator = sanctum.tokenGenerator();
-            var result = generator == null ? null : generator.validate(
-            new com.hellblazer.sky.sanctum.TokenGenerator.HashedToken(token.hash(), token.token()));
+            var result = sanctum.tokenGenerator().validate(new Sanctum.HashedToken(token.hash(), token.token()));
             return result != null;
         };
-        var credentials = FernetCallCredentials.blocking(() -> {
-            var generator = sanctum.tokenGenerator();
-            return generator == null ? null : generate(generator);
-        });
+        var credentials = FernetCallCredentials.blocking(this::generateCredentials);
         clusterComms = clusterServer.router(configuration.connectionCache.setCredentials(credentials),
                                             RouterImpl::defaultServerLimit, null,
                                             Collections.singletonList(new FernetServerInterceptor()), validator);
@@ -196,13 +191,12 @@ public class SkyApplication {
 
         // hard-wire Fernet provisioner for now
         provisioner = new FernetProvisioner(node.getMember().getId(), getSky().getDelphi(), null,
-                                            gorgoneionParameters.getDigestAlgorithm(), sanctum.tokenGenerator(),
-                                            getSky().getMutator(), choamParameters.getSubmitTimeout());
+                                            sanctum.tokenGenerator(), getSky().getMutator(),
+                                            choamParameters.getSubmitTimeout());
 
-        new Gorgoneion(configuration.approaches == null || configuration.approaches.isEmpty(), this::attest,
-                       this::establish, gorgoneionParameters.build(), sanctum.getMember(), runtime.getContext(),
-                       new DirectPublisher(sanctum.getMember().getId(), new ProtoKERLAdapter(k)), admissionsComms, null,
-                       clusterComms);
+        new Gorgoneion(this::attest, this::establish, gorgoneionParameters.build(), sanctum.getMember(),
+                       runtime.getContext(), new DirectPublisher(sanctum.getMember().getId(), new ProtoKERLAdapter(k)),
+                       admissionsComms, null, clusterComms);
         getSky().register(getTokenValidator(sanctum, gorgoneionParameters.getDigestAlgorithm()));
         log.info("Service api: {} on: {}", serviceEndpoint, sanctum.getId());
     }
@@ -216,12 +210,13 @@ public class SkyApplication {
             var generator = sanctorum.tokenGenerator();
             var hash = algorithm.digest(encoded);
             var token = Token.fromString(encoded);
-            var hashed = new TokenGenerator.HashedToken(hash, token);
+            var hashed = new Sanctum.HashedToken(hash, token);
             var msg = generator.validate(hashed);
             try {
                 return new FernetProvisioner.ValidatedToken<>(hashed, ByteMessage.parseFrom(msg));
             } catch (InvalidProtocolBufferException e) {
-                throw new IllegalArgumentException(e);
+                log.info("Unable to deserialize token: {}", e.toString());
+                return null;
             }
         };
     }
@@ -349,7 +344,7 @@ public class SkyApplication {
                 }
                 return ((SelfAddressingIdentifier) decoded.get().identifier()).getDigest();
             }
-        }, validator(), new Delphi(getSky().getDelphi()));
+        }, validator(), new Delphi(getSky().getDelphi()), new ProvisioningServer(provisioner));
     }
 
     private Any attest(SignedNonce signedNonce) {
@@ -367,7 +362,7 @@ public class SkyApplication {
         try {
             return provisioner.provision(signedAttestation.getAttestation());
         } catch (Throwable e) {
-            log.error("Unable to validate attestation: {} on: {}", signedAttestation, node.getMember().getId(), e);
+            log.error("Unable to validate attestation on: {}", node.getMember().getId(), e);
             return false;
         }
     }
@@ -424,13 +419,13 @@ public class SkyApplication {
         }
     }
 
-    private Token generate(TokenGenerator generator) {
+    private Token generateCredentials() {
         tokenLock.lock();
         try {
             var current = token;
             if (current == null && started.get()) {
                 var msg = ByteMessage.newBuilder().setContents(ByteString.copyFromUtf8("My test message")).build();
-                token = generator.apply(msg.toByteArray());
+                token = sanctorum.tokenGenerator().apply(msg.toByteArray());
                 log.info("Generating recognition token: {} on context: {} on: {}", token, contextId, sanctorum.getId());
                 return token;
             }

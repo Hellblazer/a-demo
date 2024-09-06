@@ -21,13 +21,19 @@ service Sphynx {
   rpc identifier(google.protobuf.Empty) returns (crypto.Digeste) {}
 }
 
+service Provisioning {
+  rpc provision(InitialProvisioning) returns (sanctorum.FernetToken) {}
+}
+
 message InitialProvisioning {
+  // Shared Nonce for AED
+  bytes nonce = 1;
   // namespace to use
-  uint64 namespace = 1;
+  uint64 namespace = 2;
   // relationships to assert with the newly minted subject
-  repeated uint64 relationships = 2;
+  repeated uint64 relationships = 3;
   // relationship mappings to other subjects to assert with the newly minted subject
-  map<uint64, uint64> mappings = 3;
+  map<uint64, uint64> mappings = 4;
   // relationship assertions to map to objects
-  map<uint64, uint64> assertions = 4;
+  map<uint64, uint64> assertions = 5;
 }

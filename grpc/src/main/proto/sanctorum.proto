@@ -58,8 +58,7 @@ message Payload_ {
 message EncryptedShare {
   bytes encapsulation = 1;
   bytes iv = 2;
-  bytes associatedData = 3;
-  bytes share = 4;
+  bytes share = 3;
 }
 
 message Provisioning_ {

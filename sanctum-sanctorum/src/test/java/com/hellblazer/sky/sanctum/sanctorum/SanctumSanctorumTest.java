@@ -21,14 +21,15 @@ import com.codahale.shamir.Scheme;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
-import com.hellblazer.sanctorum.proto.Enclave_Grpc;
-import com.hellblazer.sanctorum.proto.EncryptedShare;
-import com.hellblazer.sanctorum.proto.Payload_;
-import com.hellblazer.sanctorum.proto.Share;
 import com.hellblazer.delos.cryptography.DigestAlgorithm;
 import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import com.hellblazer.delos.gorgoneion.proto.Credentials;
 import com.hellblazer.delos.gorgoneion.proto.SignedNonce;
+import com.hellblazer.sanctorum.proto.Enclave_Grpc;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Payload_;
+import com.hellblazer.sanctorum.proto.Share;
+import com.hellblazer.sky.constants.Constants;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,8 @@ public class SanctumSanctorumTest {
         var target = "target";
         var devSecret = "Give me food or give me slack or kill me";
         var parameters = new SanctumSanctorum.Parameters(new SanctumSanctorum.Shamir(4, 3), DigestAlgorithm.DEFAULT,
-                                                         EncryptionAlgorithm.DEFAULT, address, devSecret.getBytes());
+                                                         EncryptionAlgorithm.DEFAULT, Constants.SHAMIR_TAG, address,
+                                                         devSecret.getBytes());
         Function<SignedNonce, Any> attestation = n -> Any.getDefaultInstance();
         var sanctum = new SanctumSanctorum(parameters, attestation);
         sanctum.start();
@@ -89,11 +91,9 @@ public class SanctumSanctorumTest {
                                    .setKey(share.getKey())
                                    .setShare(ByteString.copyFrom(share.getValue()))
                                    .build();
-                var associatedData = "Hello world".getBytes();
-                var encrypted = SanctumSanctorum.encrypt(wrapped.toByteArray(), secretKey, associatedData);
+                var encrypted = SanctumSanctorum.encrypt(wrapped.toByteArray(), secretKey, Constants.SHAMIR_TAG);
                 var encryptedShare = EncryptedShare.newBuilder()
                                                    .setIv(ByteString.copyFrom(encrypted.iv()))
-                                                   .setAssociatedData(ByteString.copyFrom(associatedData))
                                                    .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                                    .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                                    .build();

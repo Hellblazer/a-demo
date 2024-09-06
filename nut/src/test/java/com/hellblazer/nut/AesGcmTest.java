@@ -1,10 +1,10 @@
 package com.hellblazer.nut;
 
 import com.google.protobuf.ByteString;
-import com.hellblazer.sanctorum.proto.EncryptedShare;
-import com.hellblazer.sanctorum.proto.Share;
 import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import com.hellblazer.delos.cryptography.QualifiedBase64;
+import com.hellblazer.sanctorum.proto.EncryptedShare;
+import com.hellblazer.sanctorum.proto.Share;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.SecretKey;
@@ -35,15 +35,13 @@ public class AesGcmTest {
 
         var eShare = EncryptedShare.newBuilder()
                                    .setIv(ByteString.copyFrom(encrypted.iv()))
-                                   .setAssociatedData(ByteString.copyFrom(associatedData))
                                    .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                    .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                    .build();
 
         var secretKey2 = algorithm.decapsulate(sessionKeyPair.getPrivate(), eShare.getEncapsulation().toByteArray(),
                                                Sphinx.AES);
-        var en = new Sphinx.Encrypted(eShare.getShare().toByteArray(), eShare.getIv().toByteArray(),
-                                      eShare.getAssociatedData().toByteArray());
+        var en = new Sphinx.Encrypted(eShare.getShare().toByteArray(), eShare.getIv().toByteArray(), associatedData);
         var decrypted = Sphinx.decrypt(en, secretKey2);
         var result = Share.parseFrom(decrypted);
 

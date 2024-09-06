@@ -73,10 +73,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -151,7 +148,10 @@ public class Sphinx {
         log.info("Starting in process sanctorum on: {}", config.enclaveEndpoint);
         var shamir = new SanctumSanctorum.Shamir(config.shamir.shares(), config.shamir.threshold());
         var parameters = new SanctumSanctorum.Parameters(shamir, config.identity.digestAlgorithm(),
-                                                         config.identity.encryptionAlgorithm(), config.enclaveEndpoint,
+                                                         config.identity.encryptionAlgorithm(),
+                                                         config.tag == null ? null
+                                                                            : HexFormat.of().parseHex(config.tag),
+                                                         config.enclaveEndpoint,
                                                          devSecret == null ? null : devSecret.getBytes());
         var enclave = new SanctumSanctorum(parameters, _ -> Any.getDefaultInstance());
         try {

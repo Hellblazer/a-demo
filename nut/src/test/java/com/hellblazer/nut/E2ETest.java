@@ -20,20 +20,19 @@ package com.hellblazer.nut;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.hellblazer.delos.archipelago.EndpointProvider;
+import com.hellblazer.delos.cryptography.Digest;
+import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
+import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
+import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
+import com.hellblazer.delos.delphinius.Oracle;
+import com.hellblazer.delos.utils.Utils;
 import com.hellblazer.nut.comms.MtlsClient;
 import com.hellblazer.nut.proto.SphynxGrpc;
 import com.hellblazer.nut.service.OracleAdapter;
 import com.hellblazer.nut.support.ShareService;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
 import com.hellblazer.sanctorum.proto.Share;
-import com.hellblazer.delos.archipelago.EndpointProvider;
-import com.hellblazer.delos.cryptography.Digest;
-import com.hellblazer.delos.cryptography.DigestAlgorithm;
-import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
-import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
-import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
-import com.hellblazer.delos.delphinius.Oracle;
-import com.hellblazer.delos.utils.Utils;
 import io.netty.handler.ssl.ClientAuth;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,6 +65,7 @@ import java.util.stream.IntStream;
 
 import static com.hellblazer.delos.choam.Session.retryNesting;
 import static com.hellblazer.delos.cryptography.QualifiedBase64.qb64;
+import static com.hellblazer.sky.constants.Constants.SHAMIR_TAG;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -257,7 +257,6 @@ public class E2ETest {
 
     @Test
     public void smokin() throws Exception {
-        byte[] associatedData = "Give me food or give me slack or kill me".getBytes(Charset.defaultCharset());
         var secretByteSize = 1024;
         var shares = initialize(secretByteSize);
         var seed = sphinxes.getFirst();
@@ -265,7 +264,7 @@ public class E2ETest {
         System.out.println("** Starting m 1 (seed)");
         System.out.println();
         var seedStart = seed.start();
-        var identifier = qb64(unwrap(0, seed, shares, EncryptionAlgorithm.DEFAULT, associatedData));
+        var identifier = qb64(unwrap(0, seed, shares, EncryptionAlgorithm.DEFAULT, SHAMIR_TAG));
         seedStart.get(60, TimeUnit.SECONDS);
 
         initializeKernel(identifier);
@@ -281,7 +280,7 @@ public class E2ETest {
             System.out.println();
             var start = s.start();
             start.whenComplete((v, t) -> System.out.format("** Member %s has joined the view\n", (mi + 1)));
-            unwrap(mi, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
+            unwrap(mi, s, shares, EncryptionAlgorithm.DEFAULT, SHAMIR_TAG);
             System.out.println();
             System.out.format("** Member: %s started\n", (mi + 1));
             System.out.println();
@@ -311,7 +310,7 @@ public class E2ETest {
             System.out.println();
             var start = s.start();
             start.whenComplete((v, t) -> System.out.format("** %s has joined the view\n", (mi + 1)));
-            unwrap(mi, s, shares, EncryptionAlgorithm.DEFAULT, associatedData);
+            unwrap(mi, s, shares, EncryptionAlgorithm.DEFAULT, SHAMIR_TAG);
             System.out.println();
             System.out.format("** Member: %s has been started\n", (mi + 1));
             System.out.println();
@@ -364,11 +363,10 @@ public class E2ETest {
 
     private List<Share> initialize(int secretByteSize) {
         STGroup g = new STGroupFile("src/test/resources/sky.stg");
-        var authTag = DigestAlgorithm.DEFAULT.digest("Slack");
 
         var algorithm = EncryptionAlgorithm.DEFAULT;
         var entropy = new SecureRandom();
-        var secrets = new ShareService(authTag, entropy, algorithm);
+        var secrets = new ShareService(entropy, algorithm);
         var keys = IntStream.range(0, SHARES).mapToObj(i -> algorithm.generateKeyPair()).toList();
         var encryptedShares = secrets.shares(secretByteSize, keys.stream().map(KeyPair::getPublic).toList(), THRESHOLD);
         var shares = IntStream.range(0, SHARES).mapToObj(i -> share(i, algorithm, keys, encryptedShares)).toList();
@@ -430,8 +428,7 @@ public class E2ETest {
         var key = algorithm.decapsulate(keys.get(i).getPrivate(),
                                         encryptedShares.get(i).getEncapsulation().toByteArray(), Sphinx.AES);
         var encrypted = new Sphinx.Encrypted(encryptedShares.get(i).getShare().toByteArray(),
-                                             encryptedShares.get(i).getIv().toByteArray(),
-                                             encryptedShares.get(i).getAssociatedData().toByteArray());
+                                             encryptedShares.get(i).getIv().toByteArray(), SHAMIR_TAG);
         var plainText = Sphinx.decrypt(encrypted, key);
         try {
             return Share.parseFrom(plainText);
@@ -471,7 +468,6 @@ public class E2ETest {
                 var encrypted = Sphinx.encrypt(wrapped.toByteArray(), secretKey, associatedData);
                 var encryptedShare = EncryptedShare.newBuilder()
                                                    .setIv(ByteString.copyFrom(encrypted.iv()))
-                                                   .setAssociatedData(ByteString.copyFrom(associatedData))
                                                    .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                                    .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                                    .build();

@@ -19,17 +19,18 @@ package com.hellblazer.nut.support;
 
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.ByteString;
+import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import com.hellblazer.nut.Sphinx;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
 import com.hellblazer.sanctorum.proto.Share;
-import com.hellblazer.delos.cryptography.Digest;
-import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.stream.IntStream;
+
+import static com.hellblazer.sky.constants.Constants.SHAMIR_TAG;
 
 /**
  * Simple class to generate a new shared secret and distribute shares securely
@@ -39,12 +40,10 @@ import java.util.stream.IntStream;
 public class ShareService {
     private final SecureRandom        entropy;
     private final EncryptionAlgorithm algorithm;
-    private final Digest              authenticationTag;
 
-    public ShareService(Digest authenticationTag, SecureRandom entropy, EncryptionAlgorithm algorithm) {
+    public ShareService(SecureRandom entropy, EncryptionAlgorithm algorithm) {
         this.entropy = entropy;
         this.algorithm = algorithm;
-        this.authenticationTag = authenticationTag;
     }
 
     public List<EncryptedShare> shares(int secretByteSize, List<PublicKey> keys, int threshold) {
@@ -65,10 +64,8 @@ public class ShareService {
     private EncryptedShare encrypt(Share s, PublicKey publicKey) {
         var encapsulated = algorithm.encapsulated(publicKey);
         var key = new SecretKeySpec(encapsulated.key().getEncoded(), Sphinx.AES);
-        var associatedData = authenticationTag.getBytes();
-        var encrypted = Sphinx.encrypt(s.toByteArray(), key, associatedData);
+        var encrypted = Sphinx.encrypt(s.toByteArray(), key, SHAMIR_TAG);
         return EncryptedShare.newBuilder()
-                             .setAssociatedData(ByteString.copyFrom(associatedData))
                              .setIv(ByteString.copyFrom(encrypted.iv()))
                              .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                              .setShare(ByteString.copyFrom(encrypted.cipherText()))

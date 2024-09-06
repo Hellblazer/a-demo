@@ -29,3 +29,5 @@ identity:
   digestAlgorithm: BLAKE2B_256
   signatureAlgorithm: ED_25519
   encryptionAlgorithm: X_25519
+
+tag: "EBABEFAC"

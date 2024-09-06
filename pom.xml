@@ -15,6 +15,7 @@
         <module>sanctum-sanctorum</module>
         <module>sanctum</module>
         <module>grpc</module>
+        <module>constants</module>
     </modules>
     <version>0.0.1-SNAPSHOT</version>
 
@@ -131,6 +132,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>grpc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>constants</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

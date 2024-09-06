@@ -21,9 +21,6 @@ import com.codahale.shamir.Scheme;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.hellblazer.sanctorum.proto.*;
-import com.jauntsdn.netty.channel.vsock.ServerVSockChannel;
-import com.macasaet.fernet.Token;
 import com.hellblazer.delos.cryptography.Digest;
 import com.hellblazer.delos.cryptography.DigestAlgorithm;
 import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
@@ -43,6 +40,9 @@ import com.hellblazer.delos.stereotomy.event.protobuf.ProtobufEventFactory;
 import com.hellblazer.delos.stereotomy.identifier.SelfAddressingIdentifier;
 import com.hellblazer.delos.stereotomy.mem.MemKeyStore;
 import com.hellblazer.delos.utils.Entropy;
+import com.hellblazer.sanctorum.proto.*;
+import com.jauntsdn.netty.channel.vsock.ServerVSockChannel;
+import com.macasaet.fernet.Token;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.StatusRuntimeException;
@@ -84,6 +84,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static com.hellblazer.delos.cryptography.QualifiedBase64.qb64;
+import static com.hellblazer.sky.constants.Constants.SHAMIR_TAG;
 
 /**
  * encapsulation of ye olde thyme secrets n' associated sensitives
@@ -112,10 +113,6 @@ public class SanctumSanctorum {
 
     private volatile TokenGenerator generator;
     private volatile Key            master;
-
-    public SanctumSanctorum(Parameters parameters, Function<SignedNonce, Any> attestation, SecureRandom entropy) {
-        this(parameters, attestation, processBuilderFor(parameters.enclaveAddress), entropy);
-    }
 
     public SanctumSanctorum(Parameters parameters, Function<SignedNonce, Any> attestation) {
         this(parameters, attestation, processBuilderFor(parameters.enclaveAddress), new SecureRandom());
@@ -357,7 +354,8 @@ public class SanctumSanctorum {
     }
 
     public record Parameters(SanctumSanctorum.Shamir shamir, DigestAlgorithm algorithm,
-                             EncryptionAlgorithm encryptionAlgorithm, SocketAddress enclaveAddress, byte[] devSecret) {
+                             EncryptionAlgorithm encryptionAlgorithm, byte[] nonce, SocketAddress enclaveAddress,
+                             byte[] devSecret) {
     }
 
     public record Shamir(int shares, int threshold) {
@@ -378,8 +376,7 @@ public class SanctumSanctorum {
                                                                            eShare.getEncapsulation().toByteArray(),
                                                                            AES);
                 var encrypted = new SanctumSanctorum.Encrypted(eShare.getShare().toByteArray(),
-                                                               eShare.getIv().toByteArray(),
-                                                               eShare.getAssociatedData().toByteArray());
+                                                               eShare.getIv().toByteArray(), SHAMIR_TAG);
                 decrypted = decrypt(encrypted, secretKey);
             } catch (Throwable t) {
                 log.warn("Cannot decrypt share", t);

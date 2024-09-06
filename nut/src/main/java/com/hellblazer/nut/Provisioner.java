@@ -16,11 +16,13 @@
  */
 package com.hellblazer.nut;
 
-import com.hellblazer.nut.service.Geb;
 import com.hellblazer.delos.cryptography.Digest;
 import com.hellblazer.delos.delphinius.Oracle;
 import com.hellblazer.delos.gorgoneion.proto.Attestation;
 import com.hellblazer.delos.state.Mutator;
+import com.hellblazer.nut.proto.InitialProvisioning;
+import com.hellblazer.nut.service.Geb;
+import com.hellblazer.sanctorum.proto.FernetToken;
 
 /**
  * Provision and validate an attested member.
@@ -39,6 +41,8 @@ abstract public class Provisioner {
         this.geb = geb;
         this.mutator = mutator;
     }
+
+    abstract public FernetToken initialProvisioning(InitialProvisioning initial);
 
     abstract public boolean provision(Attestation attestation);
 }
