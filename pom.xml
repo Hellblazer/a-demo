@@ -20,7 +20,7 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
-        <delos.version>0.0.3</delos.version>
+        <delos.version>0.0.4</delos.version>
         <grpc.version>1.64.0</grpc.version>
         <protobuf.version>4.27.0</protobuf.version>
         <h2.version>2.2.224</h2.version>
@@ -61,6 +61,13 @@
     </repositories>
 
     <pluginRepositories>
+        <pluginRepository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/Hellblazer/Delos</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
         <pluginRepository>
             <id>central</id>
             <url>https://repo.maven.org/maven2/</url>
