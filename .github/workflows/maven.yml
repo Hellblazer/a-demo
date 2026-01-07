@@ -40,6 +40,14 @@ jobs:
                 <password>${GITHUB_TOKEN}</password>
               </server>
             </servers>
+            <mirrors>
+              <mirror>
+                <id>github-delos</id>
+                <name>GitHub Packages for Delos</name>
+                <url>https://maven.pkg.github.com/Hellblazer/Delos</url>
+                <mirrorOf>central,central-1</mirrorOf>
+              </mirror>
+            </mirrors>
           </settings>
           EOF
         env:
