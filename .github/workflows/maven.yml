@@ -46,7 +46,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Clean Maven metadata to force fresh downloads
-        run: find ~/.m2/repository -name "*.lastUpdated" -delete 2>/dev/null || true
+        run: |
+          find ~/.m2/repository -name "*.lastUpdated" -delete 2>/dev/null || true
+          rm -rf ~/.m2/repository/com/hellblazer/delos/schemas 2>/dev/null || true
 
       - name: Compile with Maven (skip tests)
         run: ./mvnw -batch-mode -U clean compile --file pom.xml
