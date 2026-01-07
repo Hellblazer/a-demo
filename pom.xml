@@ -20,7 +20,7 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
-        <delos.version>0.0.1-SNAPSHOT</delos.version>
+        <delos.version>0.0.5</delos.version>
         <grpc.version>1.64.0</grpc.version>
         <protobuf.version>4.27.0</protobuf.version>
         <h2.version>2.2.224</h2.version>
@@ -28,12 +28,12 @@
         <jackson.version>2.15.2</jackson.version>
         <liquibase.version>4.8.0</liquibase.version>
 
-        <version.java>22</version.java>
-        <graal.vm.version>23.1.2</graal.vm.version>
+        <version.java>25</version.java>
+        <graal.vm.version>25</graal.vm.version>
         <native.maven.plugin.version>0.10.2</native.maven.plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>22</maven.compiler.source>
-        <maven.compiler.target>22</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
     </properties>
 
     <repositories>
@@ -52,8 +52,8 @@
             </snapshots>
         </repository>
         <repository>
-            <id>hell-repo</id>
-            <url>https://raw.githubusercontent.com/Hellblazer/repo-hell/main/mvn-artifact</url>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/Hellblazer/Delos</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
@@ -61,6 +61,13 @@
     </repositories>
 
     <pluginRepositories>
+        <pluginRepository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/Hellblazer/Delos</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
         <pluginRepository>
             <id>central</id>
             <url>https://repo.maven.org/maven2/</url>
@@ -73,13 +80,6 @@
             <url>https://repo1.maven.org/maven2/</url>
             <snapshots>
                 <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-        <pluginRepository>
-            <id>plugin-hell-repo</id>
-            <url>https://raw.githubusercontent.com/Hellblazer/repo-hell/main/mvn-artifact</url>
-            <snapshots>
-                <enabled>true</enabled>
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
@@ -178,6 +178,11 @@
                 <artifactId>fernet-java8</artifactId>
                 <version>1.4.2</version>
             </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>2.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -243,7 +248,7 @@
                                 </requireMavenVersion>
                                 <dependencyConvergence/>
                                 <requireJavaVersion>
-                                    <version>[22,)</version>
+                                    <version>[25,)</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>

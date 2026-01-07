@@ -137,7 +137,7 @@ public class FernetProvisioner extends Provisioner {
                 var obj = entry.getValue();
                 AbstractOracle.addSubj(context, namespace, subject, new Oracle.NamespacedId(namespace, rel, 0L));
                 var s = AbstractOracle.resolveSubj(context, namespace, subject, rel);
-                AbstractOracle.addAssert(context, s.value1(), obj);
+                AbstractOracle.addAssert(context, s.value1(), obj, System.currentTimeMillis());
             }
             return true;
         });

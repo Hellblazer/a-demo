@@ -224,12 +224,15 @@ public class E2ETest {
         assertTrue(oracle.check(object123View.assertion(egin), t3));
         assertFalse(oracle.check(object123View.assertion(helpDeskMembers), t3));
 
-        // Remove our assertion
-        retryNesting(() -> oracle.delete(tuple), 3).get(20, TimeUnit.SECONDS);
+        // Remove our assertion (userMembers -> object123View)
+        // Use the deletion timestamp for subsequent checks, not t3 (which was before the deletion)
+        var t4 = retryNesting(() -> oracle.delete(tuple), 3).get(20, TimeUnit.SECONDS);
 
-        assertFalse(oracle.check(object123View.assertion(jale), t3));
-        assertFalse(oracle.check(object123View.assertion(egin), t3));
-        assertFalse(oracle.check(object123View.assertion(helpDeskMembers), t3));
+        // After deleting tuple, check at the NEW timestamp t4 (not the old t3)
+        // jale and egin both lose access via userMembers since tuple was deleted
+        assertFalse(oracle.check(object123View.assertion(jale), t4));
+        assertFalse(oracle.check(object123View.assertion(egin), t4));
+        assertFalse(oracle.check(object123View.assertion(helpDeskMembers), t4));
 
         // Some deletes
         retryNesting(() -> oracle.delete(abcTechMembers), 3).get(20, TimeUnit.SECONDS);
