@@ -69,13 +69,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and test all modules
-        run: ./mvnw -batch-mode clean install
+        run: ./mvnw -batch-mode clean install -pl '!sky-image'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to GitHub Packages
         id: deploy
-        run: ./mvnw -batch-mode deploy -DskipTests
+        run: ./mvnw -batch-mode deploy -DskipTests -pl '!sky-image'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
