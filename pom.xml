@@ -84,6 +84,14 @@
         </pluginRepository>
     </pluginRepositories>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Hellblazer Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/Hellblazer/a-demo</url>
+        </repository>
+    </distributionManagement>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
