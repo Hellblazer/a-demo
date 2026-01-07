@@ -54,7 +54,7 @@ WORKDIR $APP_DIR
 COPY --from=builder /minimal-jre $JAVA_HOME
 
 # Copy packaged app from builder image.
-COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/target/sky-0.0.1-SNAPSHOT.jar ./app.jar
+COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/target/sky-*.jar ./app.jar
 # Copy configuration from builder image.
 COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/src/main/resources/config.yaml ./config.yaml
 # Copy log configuration from builder image.
