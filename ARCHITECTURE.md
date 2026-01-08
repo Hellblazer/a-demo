@@ -74,35 +74,28 @@ graph TB
 
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
-graph LR
-    subgraph "Bootstrap Node (172.17.0.2)"
-        B[Sky Node 0<br/>GENESIS=true]
+graph TB
+    subgraph K["Kernel Quorum (3f+1 = 4 nodes)<br/>Byzantine Fault Tolerant"]
+        B["Node 0<br/>(Bootstrap Seed)"]
+        K1["Node 1"]
+        K2["Node 2"]
+        K3["Node 3"]
     end
 
-    subgraph "Kernel Nodes"
-        K1[Sky Node 1<br/>GENESIS=true]
-        K2[Sky Node 2<br/>GENESIS=true]
-        K3[Sky Node 3<br/>GENESIS=true]
+    subgraph A["Additional Nodes<br/>(Participants)"]
+        N1["Node 4"]
+        N2["Node 5"]
+        N3["..."]
     end
 
-    subgraph "Additional Nodes"
-        N1[Sky Node 4]
-        N2[Sky Node 5]
-    end
+    N1 -->|Join via APPROACH| B
+    N2 -->|Join via APPROACH| B
+    N3 -->|Join via APPROACH| B
 
-    B <-->|Fireflies<br/>Membership| K1
-    B <-->|Fireflies| K2
-    B <-->|Fireflies| K3
-    K1 <-->|Fireflies| K2
-    K1 <-->|Fireflies| K3
-    K2 <-->|Fireflies| K3
-
-    K1 -.->|CHOAM<br/>Consensus| K2
-    K2 -.->|CHOAM| K3
-    K3 -.->|CHOAM| B
-
-    B ---|Seed| N1
-    K1 ---|Seed| N2
+    classDef kernel fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef additional fill:#f3e5f5,stroke:#4a148c,stroke-width:1px
+    class K kernel
+    class A additional
 ```
 
 
