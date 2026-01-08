@@ -70,35 +70,6 @@ graph TB
 ```
 
 
-### Multi-Node Cluster View
-
-```mermaid
-%%{init: {'theme':'neutral'}}%%
-graph TB
-    subgraph K["Kernel Quorum (3f+1 = 4 nodes)<br/>Byzantine Fault Tolerant"]
-        B["Node 0<br/>(Bootstrap Seed)"]
-        K1["Node 1"]
-        K2["Node 2"]
-        K3["Node 3"]
-    end
-
-    subgraph A["Additional Nodes<br/>(Participants)"]
-        N1["Node 4"]
-        N2["Node 5"]
-        N3["..."]
-    end
-
-    N1 -->|Join via APPROACH| B
-    N2 -->|Join via APPROACH| B
-    N3 -->|Join via APPROACH| B
-
-    classDef kernel fill:#e1f5ff,stroke:#01579b,stroke-width:2px
-    classDef additional fill:#f3e5f5,stroke:#4a148c,stroke-width:1px
-    class K kernel
-    class A additional
-```
-
-
 ---
 
 ## Module Architecture
