@@ -17,7 +17,37 @@
 
 ## Quick Start
 
-### Automated Test (Recommended)
+### Convenience Script (Easiest)
+
+**New users**: Use the convenience script for a guided experience with prerequisite checks and timing information.
+
+```bash
+cd local-demo
+
+# Run automated test with checks
+./demo.sh
+
+# Run test, then start manual cluster
+./demo.sh --manual
+
+# Skip test, start manual cluster only
+./demo.sh --manual-only
+
+# Show help
+./demo.sh --help
+```
+
+**What the script does**:
+- ✓ Checks prerequisites (Docker, Maven, Java versions)
+- ✓ Verifies Docker memory allocation (8GB+ recommended)
+- ✓ Builds Sky image
+- ✓ Runs automated tests with clear progress indicators
+- ✓ Optionally starts manual cluster for exploration
+- ✓ Provides troubleshooting hints on failure
+
+**First-time users**: Start with `./demo.sh` to verify your environment and see the demo in action (2-5 minutes).
+
+### Automated Test (Direct Maven)
 
 ```bash
 # Run full end-to-end test with TestContainers
@@ -38,36 +68,99 @@
 
 ### Manual Cluster (Step-by-Step)
 
+**Prerequisites**: Ensure Docker is running and Sky image is built (`./mvnw clean install -DskipTests`)
+
+**Total time**: 2-3 minutes for 4-node cluster startup
+
 #### Step 1: Start Bootstrap Node
+
+**Time**: ~10 seconds to initialize
 
 ```bash
 cd bootstrap
 docker-compose up
 ```
 
-**Wait for**: `"Waiting for kernel quorum..."` message
+**Wait for**: `"Waiting for kernel quorum..."` message in logs
 
-**Leave running**, open new terminal.
+**Verification**:
+```bash
+# In another terminal, check container is running
+docker ps | grep bootstrap
+
+# Expected output: 1 container with image "com.hellblazer.sky/sky-image"
+```
+
+**Leave running**, open new terminal for Step 2.
 
 #### Step 2: Start Kernel Nodes
+
+**Time**: ~30-60 seconds for quorum formation and Genesis block commitment
 
 ```bash
 cd kernel
 docker-compose up
 ```
 
-**Wait for**: `"Genesis block committed at view 0"` in bootstrap logs
+**Wait for**: `"Genesis block committed at view 0"` in **bootstrap logs** (first terminal)
 
 **This is critical!** Do not proceed until Genesis block is committed.
 
+**Verification**:
+```bash
+# In another terminal, check all 4 nodes running
+docker ps | grep sky-image | wc -l
+# Expected output: 4
+
+# Check cluster health (wait 10 seconds after Genesis block)
+curl http://localhost:50004/health
+# Expected output: {"status":"healthy","members":4}
+
+# Verify API is responsive
+grpcurl -plaintext localhost:50000 list
+# Expected output: list of gRPC services
+```
+
+**Success criteria**:
+- ✓ 4 containers running
+- ✓ Genesis block committed (view 0)
+- ✓ Health endpoint returns `{"members":4}`
+- ✓ API accepts connections
+
+**Troubleshooting**: If Genesis block not committed after 2 minutes, see [TROUBLESHOOTING.md](../TROUBLESHOOTING.md#1-genesis-block-not-committed).
+
 #### Step 3: (Optional) Add More Nodes
+
+**Time**: ~10 seconds per node to join cluster
 
 ```bash
 cd nodes
 docker-compose up --scale node=3
 ```
 
-Adds 3 additional nodes to the cluster.
+Adds 3 additional nodes to the cluster (7 total).
+
+**Verification**:
+```bash
+# Check total containers
+docker ps | grep sky-image | wc -l
+# Expected output: 7 (4 kernel + 3 additional)
+
+# Health endpoint should reflect new members
+curl http://localhost:50004/health
+# Expected output: {"status":"healthy","members":7}
+```
+
+#### Step 4: Shutdown Cluster
+
+Press `Ctrl+C` in both terminals (bootstrap and kernel), then:
+
+```bash
+# Clean up all containers
+cd bootstrap && docker-compose down
+cd ../kernel && docker-compose down
+cd ../nodes && docker-compose down  # If you started additional nodes
+```
 
 ## Architecture
 
