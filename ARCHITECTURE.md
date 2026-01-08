@@ -26,8 +26,10 @@ Sky is a fantasy proof-of-concept demonstrating a **self-bootstrapping, Byzantin
 
 ### High-Level View
 
+<!-- Mermaid diagram rendered to SVG to remove GitHub controls -->
+<!-- Original Mermaid source:
 ```mermaid
-%%{init: {'theme':'neutral'}}%%
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#fff'}}}%%
 graph TB
     subgraph "Sky Application"
         Client[Client Application]
@@ -68,9 +70,15 @@ graph TB
     CHOAM --> H2
     Fireflies --> H2
 ```
+-->
+
+![Architecture Diagram 1](docs/images/architecture-diagram-1.svg)
+
 
 ### Multi-Node Cluster View
 
+<!-- Mermaid diagram rendered to SVG to remove GitHub controls -->
+<!-- Original Mermaid source:
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
 graph LR
@@ -103,6 +111,10 @@ graph LR
     B ---|Seed| N1
     K1 ---|Seed| N2
 ```
+-->
+
+![Architecture Diagram 2](docs/images/architecture-diagram-2.svg)
+
 
 ---
 
@@ -233,6 +245,8 @@ local-demo/
 
 ### Phase 1: Node Initialization
 
+<!-- Mermaid diagram rendered to SVG to remove GitHub controls -->
+<!-- Original Mermaid source:
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
 sequenceDiagram
@@ -249,6 +263,10 @@ sequenceDiagram
     P-->>SA: Identity + Config
     SA->>SA: Initialize services
 ```
+-->
+
+![Architecture Diagram 3](docs/images/architecture-diagram-3.svg)
+
 
 **Steps**:
 1. `Launcher.main()` reads environment variables
@@ -259,6 +277,8 @@ sequenceDiagram
 
 ### Phase 2: Membership Initialization
 
+<!-- Mermaid diagram rendered to SVG to remove GitHub controls -->
+<!-- Original Mermaid source:
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
 sequenceDiagram
@@ -279,6 +299,10 @@ sequenceDiagram
     end
     FF-->>SA: Membership active
 ```
+-->
+
+![Architecture Diagram 4](docs/images/architecture-diagram-4.svg)
+
 
 **Steps**:
 1. Initialize Fireflies membership protocol
@@ -293,6 +317,8 @@ sequenceDiagram
 
 ### Phase 3: Consensus Initialization
 
+<!-- Mermaid diagram rendered to SVG to remove GitHub controls -->
+<!-- Original Mermaid source:
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
 sequenceDiagram
@@ -315,6 +341,10 @@ sequenceDiagram
     end
     CHOAM-->>SA: Consensus active (view 0)
 ```
+-->
+
+![Architecture Diagram 5](docs/images/architecture-diagram-5.svg)
+
 
 **Steps**:
 1. Fireflies reports kernel quorum achieved (4 members)
@@ -327,6 +357,8 @@ sequenceDiagram
 
 ### Phase 4: Service Startup
 
+<!-- Mermaid diagram rendered to SVG to remove GitHub controls -->
+<!-- Original Mermaid source:
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
 sequenceDiagram
@@ -343,6 +375,10 @@ sequenceDiagram
     Health->>Health: Bind to HEALTH port (50004)
     SA->>SA: Node ready
 ```
+-->
+
+![Architecture Diagram 6](docs/images/architecture-diagram-6.svg)
+
 
 **Steps**:
 1. Initialize Oracle (relationship-based access control engine)
@@ -458,6 +494,8 @@ sequenceDiagram
 
 ### Oracle API Request Flow
 
+<!-- Mermaid diagram rendered to SVG to remove GitHub controls -->
+<!-- Original Mermaid source:
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
 sequenceDiagram
@@ -478,6 +516,10 @@ sequenceDiagram
     Oracle-->>API: Success + timestamp
     API-->>C: 200 OK {ts: ...}
 ```
+-->
+
+![Architecture Diagram 7](docs/images/architecture-diagram-7.svg)
+
 
 **Flow**:
 1. Client sends gRPC request to Oracle API (e.g., add permission)
@@ -491,6 +533,8 @@ sequenceDiagram
 
 ### Membership Gossip Flow
 
+<!-- Mermaid diagram rendered to SVG to remove GitHub controls -->
+<!-- Original Mermaid source:
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
 sequenceDiagram
@@ -510,6 +554,10 @@ sequenceDiagram
     N1->>N1: Update membership view
     N2->>N2: Update membership view
 ```
+-->
+
+![Architecture Diagram 8](docs/images/architecture-diagram-8.svg)
+
 
 **Flow**:
 1. Node 1 detects Node 4 is not responding (heartbeat timeout)
