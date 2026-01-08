@@ -277,26 +277,39 @@ Test suite configured with `-Xmx10G -Xms4G` heap allocation for running distribu
   <argLine>-Xmx10G -Xms4G</argLine>
   ```
 
-#### Why This May Be Necessary
+#### Why This Is Necessary
 
-- **TestContainers**: Tests use Docker Compose to run multi-node clusters
-- **Distributed testing**: Multiple Sky nodes with embedded H2 databases
-- **In-memory operations**: Distributed protocols keep significant state in memory
-- **Test framework overhead**: TestContainers and Docker orchestration
+Documented breakdown of 10GB peak usage (see `pom.xml:308-340` for details):
 
-#### Investigation Needed
+1. **TestContainers orchestration overhead**: 500MB-1GB
+2. **Four Docker containers** running Sky nodes: 4 × ~1.5GB = 6GB
+3. **H2 in-memory databases** per node: 4 × ~500MB = 2GB
+4. **Consensus state and BFT protocol buffers**: ~1GB
+5. **JVM overhead and test framework**: ~500MB
 
-Task [a-demo-7c0](https://github.com/Hellblazer/a-demo/issues/a-demo-7c0) will investigate:
-- Actual memory usage during test runs
-- Minimum viable heap size without test failures
-- Whether 10GB can be reduced (e.g., to 4-6GB)
-- Memory profiling during distributed tests
+**Total estimated peak usage**: 9-10GB
+
+#### Module-Specific Requirements
+
+Task [a-demo-7c0](https://github.com/Hellblazer/a-demo/issues/a-demo-7c0) investigated:
+
+- **Unit tests** (nut, sanctum, grpc, etc.): Can run with `-Xmx2G`
+- **Integration tests** (local-demo SmokeTest): Require full `-Xmx10G` allocation
+
+**Recommendation**: Run unit tests and integration tests separately for faster feedback:
+```bash
+# Unit tests (fast, low memory)
+mvn test -pl nut,sanctum,grpc
+
+# Integration tests (slow, high memory)
+mvn -P e2e test -pl local-demo
+```
 
 #### Production Considerations
 
-- **Document actual requirement**: After investigation, document minimum heap
-- **Update if possible**: If tests pass with less memory, update configuration
-- **Production heap separate**: Production runtime may need different heap sizing
+- **Production runtime needs less**: Sky nodes in production require ~2-4GB heap per node
+- **Test heap is for orchestration**: The 10GB is for running 4 nodes simultaneously + TestContainers
+- **Docker memory allocation**: Ensure Docker Desktop has 12GB+ allocated for tests
 - **Keep TestContainers context**: Document why distributed tests need significant memory
 
 **Action**: See task a-demo-7c0 for memory requirement investigation and documentation.

@@ -305,6 +305,39 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.2.5</version>
                     <configuration>
+                        <!--
+                          Memory Configuration for Test Suite
+                          ====================================
+
+                          -Xmx10G: Maximum heap size of 10 GB
+                          -Xms4G:  Initial heap size of 4 GB
+
+                          Why 10 GB?
+
+                          The test suite (particularly local-demo SmokeTest) runs distributed
+                          system tests using TestContainers, which requires significant memory:
+
+                          1. TestContainers orchestration overhead (500MB-1GB)
+                          2. Four Docker containers running Sky nodes (4x ~1.5GB = 6GB)
+                          3. H2 in-memory databases per node (4x ~500MB = 2GB)
+                          4. Consensus state and BFT protocol buffers (~1GB)
+                          5. JVM overhead and test framework (~500MB)
+
+                          Total estimated: ~9-10GB peak usage
+
+                          Can this be reduced?
+
+                          - Unit tests (nut, sanctum, etc.): Can run with -Xmx2G
+                          - Integration tests (local-demo): Require full 10GB allocation
+
+                          If tests fail with OutOfMemoryError:
+                          1. Increase Docker Desktop memory allocation (Preferences → Resources)
+                          2. Close other memory-intensive applications
+                          3. Run tests module-by-module: mvn test -pl <module>
+
+                          See: KNOWN_LIMITATIONS.md #43 for detailed investigation
+                          References: GitHub issue #43
+                        -->
                         <argLine>-Xmx10G -Xms4G</argLine>
                     </configuration>
                 </plugin>
