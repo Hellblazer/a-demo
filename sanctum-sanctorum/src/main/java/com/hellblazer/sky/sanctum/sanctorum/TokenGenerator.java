@@ -52,7 +52,7 @@ public class TokenGenerator {
         }
 
         var token = Token.generate(entropy, master, message.getB().toByteArray());
-        log.info("Generated token: {}", token);
+        log.debug("Generated token: {}", token);
         return token;
     }
 
@@ -67,7 +67,7 @@ public class TokenGenerator {
     public Bytes validate(Validator<Bytes> validator, HashedToken k) {
         try {
             var decrypt = k.token().validateAndDecrypt(master, validator);
-            log.info("Decrypted Token: {} is valid: {}", k.hash(), k.token);
+            log.debug("Decrypted Token: {} is valid: {}", k.hash(), k.token);
             return decrypt;
         } catch (TokenValidationException e) {
             log.debug("Invalid Token: {}", k.hash());

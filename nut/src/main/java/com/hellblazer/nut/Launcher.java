@@ -76,8 +76,28 @@ public class Launcher {
             config = SkyConfiguration.from(fis);
         }
 
+        // Startup banner with version and configuration
+        log.info("╔═══════════════════════════════════════════════════════════════════════╗");
+        log.info("║                                                                       ║");
+        log.info("║   ███████╗██╗  ██╗██╗   ██╗                                          ║");
+        log.info("║   ██╔════╝██║ ██╔╝╚██╗ ██╔╝                                          ║");
+        log.info("║   ███████╗█████╔╝  ╚████╔╝                                           ║");
+        log.info("║   ╚════██║██╔═██╗   ╚██╔╝                                            ║");
+        log.info("║   ███████║██║  ██╗   ██║                                             ║");
+        log.info("║   ╚══════╝╚═╝  ╚═╝   ╚═╝                                             ║");
+        log.info("║                                                                       ║");
+        log.info("║   Byzantine Fault-Tolerant Identity & Secrets Management             ║");
+        log.info("║                                                                       ║");
+        log.info("╚═══════════════════════════════════════════════════════════════════════╝");
+        log.info("");
+        log.info("Version: {} (POC)", getVersion());
+        log.info("Java: {} ({})", System.getProperty("java.version"), System.getProperty("java.vendor"));
+        log.info("Configuration: {}", file.getAbsolutePath());
+        log.info("");
+
         var genesis = System.getenv(GENESIS) != null && Boolean.parseBoolean(System.getenv(GENESIS));
-        log.info("Generating Genesis: {}", genesis);
+        log.info("Node Configuration:");
+        log.info("  Genesis mode: {}", genesis);
 
         var bindInterface = System.getenv(BIND_INTERFACE);
         if (bindInterface != null) {
@@ -111,16 +131,29 @@ public class Launcher {
                 endpoints.healthPort = Integer.parseInt(health);
             }
             config.endpoints = endpoints;
+
+            log.info("  Network interface: {}", bindInterface);
+            log.info("  Ports:");
+            log.info("    - Oracle API (gRPC):       {}", endpoints.apiPort);
+            log.info("    - Fireflies APPROACH:      {}", endpoints.approachPort);
+            log.info("    - Fireflies CLUSTER:       {}", endpoints.clusterPort);
+            log.info("    - Internal SERVICE (gRPC): {}", endpoints.servicePort);
+            log.info("    - Health check (HTTP):     {}", endpoints.healthPort);
         }
+
         var seeds = System.getenv(SEEDS_VAR);
         var approaches = System.getenv(APPROACHES_VAR);
+        log.info("");
         if (seeds == null || approaches == null) {
-            log.info("{} Environment [{}] and [{}}] are empty, bootstrapping", config.endpoints, SEEDS_VAR,
-                     APPROACHES_VAR);
+            log.info("Cluster Discovery:");
+            log.info("  Bootstrapping new cluster (no seeds/approaches configured)");
             config.seeds = Collections.emptyList();
             config.approaches = Collections.emptyList();
         } else {
-            log.info("{} Seeds: [{}] Approaches: [{}}]", config.endpoints, seeds, approaches);
+            log.info("Cluster Discovery:");
+            log.info("  Joining existing cluster");
+            log.info("  Seeds: {}", seeds);
+            log.info("  Approaches: {}", approaches);
             config.seeds = Arrays.stream(seeds.split(","))
                                  .map(String::trim)
                                  .map(s -> s.split("@"))
@@ -131,9 +164,19 @@ public class Launcher {
         }
 
         config.choamParameters.setGenerateGenesis(genesis);
+
+        log.info("");
+        log.info("Starting Sky node...");
+        log.info("");
+
         Sphinx sphinx = argv.length == 1 ? new Sphinx(config) : new Sphinx(config, argv[1]);
 
         sphinx.start();
+
+        log.info("╔═══════════════════════════════════════════════════════════════════════╗");
+        log.info("║  Sky node started successfully                                        ║");
+        log.info("╚═══════════════════════════════════════════════════════════════════════╝");
+        log.info("");
         var t = new Thread(() -> {
             while (true) {
                 try {
@@ -187,5 +230,14 @@ public class Launcher {
         CertificateWithPrivateKey clientCert = Utils.getMember(0);
         return new MtlsClient(serverAddress, ClientAuth.REQUIRE, "foo", clientCert.getX509Certificate(),
                               clientCert.getPrivateKey(), CertificateValidator.NONE);
+    }
+
+    /**
+     * Gets the application version from the package implementation version.
+     * Falls back to "development" if version is not available.
+     */
+    private static String getVersion() {
+        String version = Launcher.class.getPackage().getImplementationVersion();
+        return version != null ? version : "development";
     }
 }
