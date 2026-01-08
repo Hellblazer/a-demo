@@ -1,0 +1,402 @@
+# Sky Application Sample Configuration
+# This file demonstrates YAML-based configuration for Sky nodes
+# Copy and customize for your deployment
+
+# ==============================================================================
+# CLUSTER CONFIGURATION
+# ==============================================================================
+
+cluster:
+  # Genesis mode - Set true for initial kernel members
+  genesis: true
+
+  # Node identity (auto-generated if omitted)
+  # node_id: "550e8400-e29b-41d4-a716-446655440000"
+
+  # Cluster name (optional, for multi-cluster deployments)
+  # cluster_name: "sky-production"
+
+  # Kernel members (Genesis nodes only)
+  # Exactly 4 nodes required for minimal BFT quorum
+  kernel:
+    # Threshold for Shamir secret sharing
+    # Must be <= number of kernel members
+    threshold: 3
+
+    # Total Shamir shares
+    # Must be >= threshold
+    shares: 5
+
+# ==============================================================================
+# NETWORK CONFIGURATION
+# ==============================================================================
+
+network:
+  # Interface to bind services
+  bind_interface: "eth0"
+
+  # Explicit host address (optional)
+  # If omitted, auto-detected from bind_interface
+  # host_address: "192.168.1.100"
+
+  # Fireflies membership configuration
+  membership:
+    # Approach endpoint (for node discovery)
+    approach:
+      # Host address (defaults to host_address if omitted)
+      # host: "172.17.0.2"
+      port: 50001
+
+    # Cluster endpoint (for membership gossip)
+    cluster:
+      # host: "172.17.0.2"
+      port: 50002
+
+    # Gossip interval (milliseconds)
+    gossip_interval: 100
+
+    # Failure detection timeout (milliseconds)
+    timeout: 5000
+
+  # Discovery configuration (for joining nodes)
+  discovery:
+    # Approach endpoints to connect to
+    approaches:
+      - host: "172.17.0.2"
+        port: 50001
+      # - host: "172.17.0.3"
+      #   port: 50001
+
+    # Seed endpoints for cluster membership
+    seeds:
+      - cluster_host: "172.17.0.2"
+        cluster_port: 50002
+        api_port: 50000
+      # - cluster_host: "172.17.0.3"
+      #   cluster_port: 50002
+      #   api_port: 50000
+
+# ==============================================================================
+# SERVICE PORTS
+# ==============================================================================
+
+ports:
+  # Oracle API (gRPC)
+  api: 50000
+
+  # Fireflies APPROACH
+  approach: 50001
+
+  # Fireflies CLUSTER
+  cluster: 50002
+
+  # Internal SERVICE
+  service: 50003
+
+  # Health check (HTTP)
+  health: 50004
+
+# ==============================================================================
+# DATABASE CONFIGURATION
+# ==============================================================================
+
+database:
+  # H2 database configuration
+  type: "h2"
+
+  # Data directory
+  data_dir: "/data"
+
+  # Database name
+  name: "sky"
+
+  # JDBC URL (auto-constructed if omitted)
+  # jdbc_url: "jdbc:h2:/data/sky"
+
+  # Connection pool size
+  pool_size: 10
+
+  # Connection timeout (milliseconds)
+  timeout: 30000
+
+# ==============================================================================
+# CONSENSUS CONFIGURATION (CHOAM)
+# ==============================================================================
+
+consensus:
+  # Batch size (transactions per block)
+  batch_size: 100
+
+  # Batch timeout (milliseconds)
+  # Commit block if timeout reached, even if batch not full
+  batch_timeout: 1000
+
+  # Leader timeout (milliseconds)
+  # Trigger view change if leader unresponsive
+  leader_timeout: 5000
+
+  # Maximum pending transactions
+  max_pending: 10000
+
+# ==============================================================================
+# ORACLE CONFIGURATION (ReBAC)
+# ==============================================================================
+
+oracle:
+  # Enable Oracle API
+  enabled: true
+
+  # Query timeout (milliseconds)
+  query_timeout: 30000
+
+  # Cache configuration
+  cache:
+    # Enable result caching
+    enabled: true
+
+    # Cache size (number of entries)
+    size: 10000
+
+    # Cache TTL (milliseconds)
+    ttl: 60000
+
+# ==============================================================================
+# SECURITY CONFIGURATION
+# ==============================================================================
+
+security:
+  # MTLS configuration
+  mtls:
+    # Enable mutual TLS
+    enabled: true
+
+    # Certificate paths (generated ephemerally in POC)
+    # cert: "/etc/sky/certs/node.crt"
+    # key: "/etc/sky/certs/node.key"
+    # ca: "/etc/sky/certs/ca.crt"
+
+    # Client authentication mode
+    # Options: REQUIRE, OPTIONAL, NONE
+    client_auth: "REQUIRE"
+
+  # API authentication (future)
+  # api_auth:
+  #   enabled: false
+  #   method: "mtls"  # or "jwt", "oauth"
+
+# ==============================================================================
+# LOGGING CONFIGURATION
+# ==============================================================================
+
+logging:
+  # Log level
+  # Options: TRACE, DEBUG, INFO, WARN, ERROR
+  level: "INFO"
+
+  # Log file path
+  file: "/var/log/sky/app.log"
+
+  # Log rotation
+  rotation:
+    max_size: "100MB"
+    max_files: 10
+    compress: true
+
+  # Structured logging
+  structured: false
+
+  # Log specific components
+  components:
+    oracle: "INFO"
+    consensus: "INFO"
+    membership: "INFO"
+    # Token generator (see KNOWN_LIMITATIONS.md #32)
+    token_generator: "INFO"  # Change to DEBUG for production
+
+# ==============================================================================
+# MONITORING CONFIGURATION
+# ==============================================================================
+
+monitoring:
+  # Health check configuration
+  health:
+    enabled: true
+    port: 50004
+    path: "/health"
+
+  # Metrics (future)
+  # metrics:
+  #   enabled: false
+  #   provider: "prometheus"
+  #   port: 9090
+  #   path: "/metrics"
+
+  # Tracing (future)
+  # tracing:
+  #   enabled: false
+  #   provider: "jaeger"
+  #   endpoint: "http://jaeger:14268/api/traces"
+
+# ==============================================================================
+# JVM CONFIGURATION
+# ==============================================================================
+
+jvm:
+  # Heap size
+  heap:
+    min: "2G"
+    max: "4G"
+
+  # Garbage collector
+  # Options: G1, ZGC, Shenandoah, Serial, Parallel
+  gc: "G1"
+
+  # JMX monitoring
+  jmx:
+    enabled: false
+    port: 9999
+    authenticate: false
+
+  # Additional JVM options
+  options:
+    - "-Djava.net.preferIPv4Stack=true"
+    - "-XX:+HeapDumpOnOutOfMemoryError"
+    - "-XX:HeapDumpPath=/data/heapdump.hprof"
+
+# ==============================================================================
+# ADVANCED CONFIGURATION
+# ==============================================================================
+
+advanced:
+  # Thread pool sizes
+  threads:
+    core_pool_size: 10
+    max_pool_size: 100
+    queue_size: 1000
+
+  # Timeouts
+  timeouts:
+    shutdown_timeout: 30000  # Graceful shutdown timeout (ms)
+    request_timeout: 60000   # Default request timeout (ms)
+
+  # Rate limiting (future)
+  # rate_limiting:
+  #   enabled: false
+  #   requests_per_second: 1000
+
+# ==============================================================================
+# EXAMPLE CONFIGURATIONS
+# ==============================================================================
+
+# --- Bootstrap Node ---
+# cluster:
+#   genesis: true
+# network:
+#   bind_interface: "eth0"
+# ports:
+#   api: 50000
+#   approach: 50001
+#   cluster: 50002
+#   service: 50003
+#   health: 50004
+
+# --- Kernel Node (joining bootstrap) ---
+# cluster:
+#   genesis: true
+# network:
+#   bind_interface: "eth0"
+#   discovery:
+#     approaches:
+#       - host: "172.17.0.2"
+#         port: 50001
+#     seeds:
+#       - cluster_host: "172.17.0.2"
+#         cluster_port: 50002
+#         api_port: 50000
+# ports:
+#   health: 50005  # Different from bootstrap
+
+# --- Regular Node (joining established cluster) ---
+# cluster:
+#   genesis: false
+# network:
+#   bind_interface: "eth0"
+#   discovery:
+#     approaches:
+#       - host: "172.17.0.2"
+#         port: 50001
+#       - host: "172.17.0.3"
+#         port: 50001
+#     seeds:
+#       - cluster_host: "172.17.0.2"
+#         cluster_port: 50002
+#         api_port: 50000
+#       - cluster_host: "172.17.0.3"
+#         cluster_port: 50002
+#         api_port: 50000
+# ports:
+#   health: 50010
+
+# ==============================================================================
+# NOTES
+# ==============================================================================
+
+# 1. POC Configuration
+#    This is a POC configuration. Production deployments need:
+#    - External certificate management
+#    - Secret rotation
+#    - Monitoring and alerting
+#    - High availability
+#    - Backup and disaster recovery
+
+# 2. Environment Variables
+#    YAML values can be overridden by environment variables:
+#    - GENESIS, BIND_INTERFACE, API, APPROACH, CLUSTER, etc.
+#    - See examples/.env.example for complete list
+
+# 3. Docker Compose
+#    Mount this file as a volume:
+#    volumes:
+#      - ./config.yaml:/etc/sky/config.yaml:ro
+#    Command:
+#      - --config=/etc/sky/config.yaml
+
+# 4. Kubernetes
+#    Create ConfigMap:
+#    kubectl create configmap sky-config --from-file=config.yaml
+#    Mount in pod:
+#    volumeMounts:
+#      - name: config
+#        mountPath: /etc/sky
+#    volumes:
+#      - name: config
+#        configMap:
+#          name: sky-config
+
+# 5. Validation
+#    Sky validates configuration on startup
+#    Check logs for validation errors
+#    Invalid config prevents node startup
+
+# ==============================================================================
+# REFERENCES
+# ==============================================================================
+
+# - README.md - Quick start
+# - DEMO_GUIDE.md - Demo walkthrough
+# - ARCHITECTURE.md - System architecture
+# - KNOWN_LIMITATIONS.md - POC constraints
+# - TROUBLESHOOTING.md - Issue resolution
+# - examples/.env.example - Environment variable template
+
+# ==============================================================================
+# VERSION
+# ==============================================================================
+
+# Configuration version (for compatibility tracking)
+config_version: "1.0"
+
+# Sky version compatibility
+# compatible_with: "0.0.1-SNAPSHOT"
+
+# EOF
