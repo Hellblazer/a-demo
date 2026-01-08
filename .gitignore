@@ -65,3 +65,6 @@ pom.xml.bak
 /nut/.id
 /e2e.txt
 **/.run/
+
+## Project Management
+.pm/
