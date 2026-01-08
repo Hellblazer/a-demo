@@ -27,6 +27,7 @@ Sky is a fantasy proof-of-concept demonstrating a **self-bootstrapping, Byzantin
 ### High-Level View
 
 ```mermaid
+%%{init: {'theme':'neutral'}}%%
 graph TB
     subgraph "Sky Application"
         Client[Client Application]
@@ -71,6 +72,7 @@ graph TB
 ### Multi-Node Cluster View
 
 ```mermaid
+%%{init: {'theme':'neutral'}}%%
 graph LR
     subgraph "Bootstrap Node (172.17.0.2)"
         B[Sky Node 0<br/>GENESIS=true]
@@ -232,6 +234,7 @@ local-demo/
 ### Phase 1: Node Initialization
 
 ```mermaid
+%%{init: {'theme':'neutral'}}%%
 sequenceDiagram
     participant ENV as Environment
     participant L as Launcher
@@ -257,6 +260,7 @@ sequenceDiagram
 ### Phase 2: Membership Initialization
 
 ```mermaid
+%%{init: {'theme':'neutral'}}%%
 sequenceDiagram
     participant SA as SkyApplication
     participant FF as Fireflies
@@ -290,6 +294,7 @@ sequenceDiagram
 ### Phase 3: Consensus Initialization
 
 ```mermaid
+%%{init: {'theme':'neutral'}}%%
 sequenceDiagram
     participant SA as SkyApplication
     participant FF as Fireflies
@@ -323,6 +328,7 @@ sequenceDiagram
 ### Phase 4: Service Startup
 
 ```mermaid
+%%{init: {'theme':'neutral'}}%%
 sequenceDiagram
     participant SA as SkyApplication
     participant Oracle as Oracle
@@ -453,6 +459,7 @@ sequenceDiagram
 ### Oracle API Request Flow
 
 ```mermaid
+%%{init: {'theme':'neutral'}}%%
 sequenceDiagram
     participant C as Client
     participant API as Oracle API
@@ -485,6 +492,7 @@ sequenceDiagram
 ### Membership Gossip Flow
 
 ```mermaid
+%%{init: {'theme':'neutral'}}%%
 sequenceDiagram
     participant N1 as Node 1
     participant N2 as Node 2
