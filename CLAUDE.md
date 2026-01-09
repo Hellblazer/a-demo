@@ -205,6 +205,17 @@ Default memory (-Xmx10G) is required for the test suite. Reduce with:
 
 Some reflection or dynamic loading may not be captured automatically. Use the native-agent profile and inspect generated configuration in `src/main/resources/META-INF/native-image/`.
 
+## Release Process
+
+**IMPORTANT**: Use the GitHub Actions release workflow, NOT Maven release plugin (`mvnw release:prepare release:perform`).
+
+To cut a new release:
+1. Go to GitHub Actions and trigger the release workflow
+2. The workflow will handle version bumping, tagging, and publishing
+3. Do NOT manually run Maven release commands or create tags
+
+**Why**: The automated release action ensures consistent versioning, proper artifact publishing to GitHub Packages, and CI/CD integration.
+
 ## CI/CD
 
 GitHub Actions workflow (`.github/workflows/maven.yml`) runs:
@@ -213,3 +224,5 @@ GitHub Actions workflow (`.github/workflows/maven.yml`) runs:
 3. Run `./mvnw -batch-mode clean install`
 
 The build runs on every push. E2E tests require Docker, so the GitHub runner must have Docker available.
+
+The project uses a GitHub Actions release workflow (not Maven release plugin) to cut releases. See Release Process section above.
