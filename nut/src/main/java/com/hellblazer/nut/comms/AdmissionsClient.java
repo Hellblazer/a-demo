@@ -25,6 +25,8 @@ import com.hellblazer.delos.gorgoneion.proto.SignedNonce;
 import com.hellblazer.delos.membership.Member;
 import com.hellblazer.delos.stereotomy.event.proto.KERL_;
 import io.grpc.ManagedChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AdmissionsClient implements Admissions {
 
+    private static final Logger                         log = LoggerFactory.getLogger(AdmissionsClient.class);
     private final ManagedChannel                        channel;
     private final Member                                member;
     private final AdmissionsGrpc.AdmissionsBlockingStub client;
@@ -84,7 +87,7 @@ public class AdmissionsClient implements Admissions {
                 metrics.inboundBandwidth().mark(serializedSize);
                 metrics.inboundInvitation().update(serializedSize);
             } catch (Throwable e) {
-                // nothing
+                log.trace("Error updating metrics for establishment: {}", member.getId(), e);
             }
         }
         return result;

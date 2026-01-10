@@ -38,6 +38,7 @@ import com.hellblazer.delos.model.ProcessDomain.ProcessDomainParameters;
 import com.hellblazer.delos.utils.Utils;
 import com.hellblazer.nut.support.DigestDeserializer;
 import io.grpc.inprocess.InProcessSocketAddress;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -433,7 +434,8 @@ public class SkyConfiguration {
             try {
                 health = ", health=" + healthEndpoint();
             } catch (Throwable e) {
-                // ignore
+                LoggerFactory.getLogger(SocketEndpoints.class)
+                             .trace("Unable to resolve health endpoint for toString()", e);
             }
             return "Socket {api=" + apiEndpoint() + ", approach=" + approachEndpoint() + ", cluster="
             + clusterEndpoint() + ", health=" + health + '}';
