@@ -82,8 +82,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -104,14 +103,13 @@ public class SkyApplication {
     private final Clock                                     clock;
     private final AtomicBoolean                             started   = new AtomicBoolean();
     private final DelegatedCertificateValidator             certificateValidator;
-    private final Lock                                      tokenLock = new ReentrantLock();
     private final SkyConfiguration                          configuration;
     private final Provisioner                               provisioner;
     private final Function<SignedNonce, Any>                attestation;
     private final int                                       retries   = 5;
     private final BiFunction<Credentials, Validations, Any> establishment;
 
-    private volatile Token          token;
+    private final AtomicReference<Token> token = new AtomicReference<>();
     private volatile ManagedChannel joinChannel;
     private volatile ServerSocket   health;
 
@@ -244,6 +242,7 @@ public class SkyApplication {
     }
 
     public void shutdown() {
+        token.set(null);
         if (!started.compareAndSet(true, false)) {
             return;
         }
@@ -255,7 +254,6 @@ public class SkyApplication {
                 log.info("Error closing health", e);
             }
         }
-        token = null;
         if (joinChannel != null) {
             try {
                 joinChannel.shutdown();
@@ -436,19 +434,16 @@ public class SkyApplication {
     }
 
     private Token generateCredentials() {
-        tokenLock.lock();
-        try {
-            var current = token;
-            if (current == null && started.get()) {
-                var msg = ByteMessage.newBuilder().setContents(ByteString.copyFromUtf8("My test message")).build();
-                token = sanctorum.tokenGenerator().apply(msg.toByteArray());
-                log.info("Generating recognition token: {} on context: {} on: {}", token, contextId, sanctorum.getId());
-                return token;
+        var current = token.get();
+        if (current == null && started.get()) {
+            var msg = ByteMessage.newBuilder().setContents(ByteString.copyFromUtf8("My test message")).build();
+            var generated = sanctorum.tokenGenerator().apply(msg.toByteArray());
+            if (token.compareAndSet(null, generated)) {
+                log.info("Generating recognition token: {} on context: {} on: {}", generated, contextId, sanctorum.getId());
             }
-            return current;
-        } finally {
-            tokenLock.unlock();
+            return token.get();
         }
+        return current;
     }
 
     private void join(List<SocketAddress> approaches) {
