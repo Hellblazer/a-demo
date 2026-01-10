@@ -91,6 +91,14 @@ public class SkyConfiguration {
     @JsonProperty
     public Duration                                           invalidTokenCacheTtl = Duration.ofHours(1);
     @JsonProperty
+    public Duration                                           grpcDefaultDeadline = Duration.ofSeconds(30);
+    @JsonProperty
+    public Duration                                           grpcKeepaliveTime = Duration.ofSeconds(30);
+    @JsonProperty
+    public Duration                                           grpcKeepaliveTimeout = Duration.ofSeconds(10);
+    @JsonProperty
+    public Duration                                           grpcIdleTimeout = Duration.ofMinutes(5);
+    @JsonProperty
     public String                                             provisionedToken;
     @JsonProperty
     public String                                             tag;
@@ -127,6 +135,10 @@ public class SkyConfiguration {
                                                .setBatchInterval(Duration.ofMillis(100))
                                                .setMaxBatchByteSize(10 * 1024 * 1024)
                                                .setMaxBatchCount(3000);
+        LoggerFactory.getLogger(SkyConfiguration.class)
+                     .info("gRPC configuration: defaultDeadline={}, keepaliveTime={}, keepaliveTimeout={}, " +
+                           "idleTimeout={}", grpcDefaultDeadline, grpcKeepaliveTime, grpcKeepaliveTimeout,
+                           grpcIdleTimeout);
     }
 
     static SkyConfiguration from(InputStream is) {

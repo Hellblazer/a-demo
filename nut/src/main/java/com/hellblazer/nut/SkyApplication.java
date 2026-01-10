@@ -414,7 +414,9 @@ public class SkyApplication {
                                           .build();
         } else {
             MtlsClient client = new MtlsClient(factory, ClientAuth.REQUIRE, "foo", certWithKey.getX509Certificate(),
-                                               certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId);
+                                               certWithKey.getPrivateKey(), CertificateValidator.NONE, contextId,
+                                               configuration.grpcKeepaliveTime, configuration.grpcKeepaliveTimeout,
+                                               configuration.grpcIdleTimeout);
             return client.getChannel();
         }
     }

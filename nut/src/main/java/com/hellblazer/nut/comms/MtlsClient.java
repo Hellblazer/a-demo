@@ -32,8 +32,10 @@ import io.netty.handler.ssl.ClientAuth;
 import java.net.SocketAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.hellblazer.nut.comms.ApiServer.forClient;
 
@@ -41,49 +43,95 @@ public class MtlsClient {
     private static final Executor       exec = Executors.newVirtualThreadPerTaskExecutor();
     private final        ManagedChannel channel;
 
+    /**
+     * Apply gRPC timeout and keepalive configuration to a NettyChannelBuilder
+     */
+    private static NettyChannelBuilder applyGrpcConfig(NettyChannelBuilder builder, Duration keepaliveTime,
+                                                        Duration keepaliveTimeout, Duration idleTimeout) {
+        return builder.keepAliveTime(keepaliveTime.toNanos(), TimeUnit.NANOSECONDS)
+                      .keepAliveTimeout(keepaliveTimeout.toNanos(), TimeUnit.NANOSECONDS)
+                      .idleTimeout(idleTimeout.toNanos(), TimeUnit.NANOSECONDS);
+    }
+
     public MtlsClient(SocketAddress address, ClientAuth clientAuth, String alias, ClientContextSupplier supplier,
                       CertificateValidator validator, Executor exec) {
+        this(address, clientAuth, alias, supplier, validator, exec, Duration.ofSeconds(30), Duration.ofSeconds(10),
+             Duration.ofMinutes(5));
+    }
 
-        channel = NettyChannelBuilder.forAddress(address)
-                                     .executor(exec)
-                                     .sslContext(supplier.forClient(clientAuth, alias, validator, ApiServer.TL_SV1_3))
+    public MtlsClient(SocketAddress address, ClientAuth clientAuth, String alias, ClientContextSupplier supplier,
+                      CertificateValidator validator, Executor exec, Duration keepaliveTime,
+                      Duration keepaliveTimeout, Duration idleTimeout) {
+
+        channel = applyGrpcConfig(NettyChannelBuilder.forAddress(address)
+                                                     .executor(exec)
+                                                     .sslContext(supplier.forClient(clientAuth, alias, validator,
+                                                                                     ApiServer.TL_SV1_3)),
+                                  keepaliveTime, keepaliveTimeout, idleTimeout)
                                      .build();
 
     }
 
     public MtlsClient(NameResolver.Factory resolver, ClientAuth clientAuth, String alias,
                       ClientContextSupplier supplier, CertificateValidator validator, Executor exec) {
+        this(resolver, clientAuth, alias, supplier, validator, exec, Duration.ofSeconds(30), Duration.ofSeconds(10),
+             Duration.ofMinutes(5));
+    }
+
+    public MtlsClient(NameResolver.Factory resolver, ClientAuth clientAuth, String alias,
+                      ClientContextSupplier supplier, CertificateValidator validator, Executor exec,
+                      Duration keepaliveTime, Duration keepaliveTimeout, Duration idleTimeout) {
 
         Limiter<GrpcClientRequestContext> limiter = new GrpcClientLimiterBuilder().blockOnLimit(false).build();
-        channel = NettyChannelBuilder.forTarget("approach")
-                                     .nameResolverFactory(resolver)
-                                     .executor(exec)
-                                     .sslContext(supplier.forClient(clientAuth, alias, validator, ApiServer.TL_SV1_3))
+        channel = applyGrpcConfig(NettyChannelBuilder.forTarget("approach")
+                                                     .nameResolverFactory(resolver)
+                                                     .executor(exec)
+                                                     .sslContext(supplier.forClient(clientAuth, alias, validator,
+                                                                                     ApiServer.TL_SV1_3)),
+                                  keepaliveTime, keepaliveTimeout, idleTimeout)
                                      .build();
 
     }
 
     public MtlsClient(SocketAddress address, ClientAuth clientAuth, String alias, X509Certificate certificate,
                       PrivateKey privateKey, CertificateValidator validator) {
+        this(address, clientAuth, alias, certificate, privateKey, validator, Duration.ofSeconds(30),
+             Duration.ofSeconds(10), Duration.ofMinutes(5));
+    }
+
+    public MtlsClient(SocketAddress address, ClientAuth clientAuth, String alias, X509Certificate certificate,
+                      PrivateKey privateKey, CertificateValidator validator, Duration keepaliveTime,
+                      Duration keepaliveTimeout, Duration idleTimeout) {
 
         Limiter<GrpcClientRequestContext> limiter = new GrpcClientLimiterBuilder().blockOnLimit(false).build();
-        channel = NettyChannelBuilder.forAddress(address)
-                                     .executor(exec)
-                                     .sslContext(forClient(clientAuth, alias, certificate, privateKey, validator))
+        channel = applyGrpcConfig(NettyChannelBuilder.forAddress(address)
+                                                     .executor(exec)
+                                                     .sslContext(forClient(clientAuth, alias, certificate,
+                                                                           privateKey, validator)),
+                                  keepaliveTime, keepaliveTimeout, idleTimeout)
                                      .build();
 
     }
 
     public MtlsClient(NameResolver.Factory factory, ClientAuth clientAuth, String alias, X509Certificate certificate,
                       PrivateKey privateKey, CertificateValidator validator, Digest context) {
+        this(factory, clientAuth, alias, certificate, privateKey, validator, context, Duration.ofSeconds(30),
+             Duration.ofSeconds(10), Duration.ofMinutes(5));
+    }
+
+    public MtlsClient(NameResolver.Factory factory, ClientAuth clientAuth, String alias, X509Certificate certificate,
+                      PrivateKey privateKey, CertificateValidator validator, Digest context, Duration keepaliveTime,
+                      Duration keepaliveTimeout, Duration idleTimeout) {
 
         Limiter<GrpcClientRequestContext> limiter = new GrpcClientLimiterBuilder().blockOnLimit(false).build();
-        channel = NettyChannelBuilder.forTarget("approach")
-                                     .nameResolverFactory(factory)
-                                     .defaultLoadBalancingPolicy("round_robin")
-                                     .executor(exec)
-                                     .sslContext(forClient(clientAuth, alias, certificate, privateKey, validator))
-                                     .intercept(RouterImpl.clientInterceptor(context))
+        channel = applyGrpcConfig(NettyChannelBuilder.forTarget("approach")
+                                                     .nameResolverFactory(factory)
+                                                     .defaultLoadBalancingPolicy("round_robin")
+                                                     .executor(exec)
+                                                     .sslContext(forClient(clientAuth, alias, certificate,
+                                                                           privateKey, validator))
+                                                     .intercept(RouterImpl.clientInterceptor(context)),
+                                  keepaliveTime, keepaliveTimeout, idleTimeout)
                                      .build();
 
     }
