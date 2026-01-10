@@ -40,11 +40,6 @@
             <groupId>com.hellblazer.delos</groupId>
             <artifactId>stereotomy-services</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.hellblazer.sky</groupId>
-            <artifactId>sanctum-sanctorum</artifactId>
-            <optional>true</optional>
-        </dependency>
 
         <!-- Test only dependencies below this line -->
         <dependency>
