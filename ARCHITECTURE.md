@@ -660,21 +660,67 @@ sequenceDiagram
 
 ## Configuration
 
+### Configuration Precedence
+
+Sky configuration uses a systematic hierarchical loading mechanism with clear precedence:
+
+**Precedence Order (highest to lowest)**:
+1. **CLI Arguments** - Format: `--key=value` (e.g., `--endpoints.apiPort=9000`)
+2. **Environment Variables** - Detected and applied during startup
+3. **YAML Configuration File** - Loaded from specified configuration file
+4. **Default Values** - Hardcoded defaults in `SkyConfiguration` class
+
+Each level overrides previous levels. For example, if you set a port in YAML and then override it with an environment variable, the environment variable value is used.
+
+### Configuration Loader
+
+**Class**: `ConfigurationLoader` (nut/src/main/java/com/hellblazer/nut/ConfigurationLoader.java)
+
+**Responsibility**:
+- Load base configuration (YAML or defaults)
+- Apply environment variable overrides
+- Apply CLI argument overrides
+- Maintain backward compatibility with existing configurations
+
+**Key Method**: `load(String yamlPath, String[] cliArgs)`
+
 ### Environment Variables
 
-See [examples/.env.example](examples/.env.example) for complete reference. Key variables:
+Key configuration variables (environment-based overrides):
 
-| Variable | Purpose | Example | Required |
-|----------|---------|---------|----------|
-| `GENESIS` | Genesis kernel member | `'true'` | Yes (for kernel) |
-| `BIND_INTERFACE` | Network interface | `eth0` | Yes |
-| `API` | Oracle API port | `50000` | No (default: 50000) |
-| `APPROACH` | Fireflies approach port | `50001` | No (default: 50001) |
-| `CLUSTER` | Fireflies cluster port | `50002` | No (default: 50002) |
-| `SERVICE` | Internal service port | `50003` | No (default: 50003) |
-| `HEALTH` | Health check port | `50004` | No (default: 50004) |
-| `APPROACHES` | Discovery endpoints | `172.17.0.2:50001` | No (for joining nodes) |
-| `SEEDS` | Cluster endpoints | `172.17.0.2:50002#50000` | No (for joining nodes) |
+| Variable | Purpose | Example | Type |
+|----------|---------|---------|------|
+| `GENESIS` | Genesis kernel member | `'true'` | bool |
+| `BIND_INTERFACE` | Network interface | `eth0` | string |
+| `API_PORT` | Oracle API port | `50000` | int |
+| `APPROACH_PORT` | Fireflies approach port | `50001` | int |
+| `CLUSTER_PORT` | Fireflies cluster port | `50002` | int |
+| `SERVICE_PORT` | Internal service port | `50003` | int |
+| `HEALTH_PORT` | Health check port | `50004` | int |
+| `APPROACHES` | Discovery endpoints | `172.17.0.2:50001` | string (comma-separated) |
+| `SEEDS` | Cluster endpoints | `172.17.0.2:50002#50000` | string (comma-separated) |
+| `PROVISIONED_TOKEN` | Access token | (token value) | string |
+| `USE_SERVICE_LAYER` | Enable service abstraction (ARCH #1) | `'true'` | bool |
+
+For comprehensive configuration documentation, see [nut/src/main/resources/CONFIGURATION.md](nut/src/main/resources/CONFIGURATION.md).
+
+### Feature Flags
+
+#### useServiceLayer
+
+Enables the new service abstraction layer for decoupling from Delos platform (ARCH #1).
+
+- **Default**: `false` (uses Delos directly, backward compatible)
+- **Environment**: `USE_SERVICE_LAYER=true`
+- **YAML**: `useServiceLayer: true`
+- **CLI**: `--useServiceLayer=true`
+- **Purpose**: Supports gradual rollout of platform abstraction layer
+- **Phase**: Phase 2, STREAM B - Architectural Abstraction
+
+When enabled, the application uses the new service layer interfaces (ConsensusService, MembershipService, etc.) instead of calling Delos directly. This enables:
+- Testing with mock implementations
+- Future platform switching without code changes
+- Cleaner architecture with explicit boundaries
 
 ### Port Mapping
 
@@ -688,6 +734,34 @@ See [examples/.env.example](examples/.env.example) for complete reference. Key v
 │ Port 50003: Internal SERVICE       │  ← Internal RPC
 │ Port 50004: Health Check (HTTP)    │  ← Monitoring
 └─────────────────────────────────────┘
+```
+
+### Configuration Examples
+
+**Docker environment override**:
+```bash
+export BIND_INTERFACE=eth0
+export API_PORT=8123
+export GENESIS=true
+java -jar sky.jar /config/sky-node.yaml
+```
+
+**CLI override**:
+```bash
+java -jar sky.jar /config/sky-node.yaml \
+  --endpoints.apiPort=9000 \
+  --useServiceLayer=true
+```
+
+**Kubernetes ConfigMap**:
+```yaml
+env:
+- name: BIND_INTERFACE
+  value: "eth0"
+- name: GENESIS
+  value: "true"
+- name: SEEDS
+  value: "seed-0.sky.svc:8123"
 ```
 
 ---

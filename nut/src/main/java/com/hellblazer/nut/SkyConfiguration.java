@@ -102,6 +102,8 @@ public class SkyConfiguration {
     @JsonProperty
     public String                                             provisionedToken;
     @JsonProperty
+    public boolean                                            useServiceLayer    = false;
+    @JsonProperty
     public String                                             tag;
     @JsonProperty
     public SocketAddress                                      enclaveEndpoint    = new InProcessSocketAddress(

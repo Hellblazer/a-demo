@@ -71,10 +71,8 @@ public class Launcher {
             System.err.printf("Configuration file: %s is a directory", argv[0]).println();
             System.exit(1);
         }
-        SkyConfiguration config;
-        try (var fis = new FileInputStream(file)) {
-            config = SkyConfiguration.from(fis);
-        }
+        // Load configuration with precedence: CLI args > environment > YAML > defaults
+        SkyConfiguration config = ConfigurationLoader.load(file.getAbsolutePath(), new String[0]);
 
         // Startup banner with version and configuration
         log.info("╔═══════════════════════════════════════════════════════════════════════╗");
@@ -95,44 +93,11 @@ public class Launcher {
         log.info("Configuration: {}", file.getAbsolutePath());
         log.info("");
 
-        var genesis = System.getenv(GENESIS) != null && Boolean.parseBoolean(System.getenv(GENESIS));
         log.info("Node Configuration:");
-        log.info("  Genesis mode: {}", genesis);
+        log.info("  Service layer: {}", config.useServiceLayer);
 
-        var bindInterface = System.getenv(BIND_INTERFACE);
-        if (bindInterface != null) {
-            var api = System.getenv(API_PORT);
-            var cluster = System.getenv(CLUSTER_PORT);
-            var approach = System.getenv(APPROACH_PORT);
-            var service = System.getenv(SERVICE_PORT);
-            var health = System.getenv(HEALTH_PORT);
-            var provisioned = System.getenv(PROVISIONED_TOKEN);
-
-            if (provisioned != null) {
-                config.provisionedToken = provisioned;
-            }
-
-            var endpoints = new SkyConfiguration.InterfaceEndpoints();
-            endpoints.interfaceName = bindInterface;
-
-            if (api != null) {
-                endpoints.apiPort = Integer.parseInt(api);
-            }
-            if (approach != null) {
-                endpoints.approachPort = Integer.parseInt(approach);
-            }
-            if (cluster != null) {
-                endpoints.clusterPort = Integer.parseInt(cluster);
-            }
-            if (service != null) {
-                endpoints.servicePort = Integer.parseInt(service);
-            }
-            if (health != null) {
-                endpoints.healthPort = Integer.parseInt(health);
-            }
-            config.endpoints = endpoints;
-
-            log.info("  Network interface: {}", bindInterface);
+        if (config.endpoints instanceof SkyConfiguration.InterfaceEndpoints endpoints) {
+            log.info("  Network interface: {}", endpoints.interfaceName);
             log.info("  Ports:");
             log.info("    - Oracle API (gRPC):       {}", endpoints.apiPort);
             log.info("    - Fireflies APPROACH:      {}", endpoints.approachPort);
@@ -141,29 +106,16 @@ public class Launcher {
             log.info("    - Health check (HTTP):     {}", endpoints.healthPort);
         }
 
-        var seeds = System.getenv(SEEDS_VAR);
-        var approaches = System.getenv(APPROACHES_VAR);
         log.info("");
-        if (seeds == null || approaches == null) {
+        if (config.seeds.isEmpty() && config.approaches.isEmpty()) {
             log.info("Cluster Discovery:");
             log.info("  Bootstrapping new cluster (no seeds/approaches configured)");
-            config.seeds = Collections.emptyList();
-            config.approaches = Collections.emptyList();
         } else {
             log.info("Cluster Discovery:");
             log.info("  Joining existing cluster");
-            log.info("  Seeds: {}", seeds);
-            log.info("  Approaches: {}", approaches);
-            config.seeds = Arrays.stream(seeds.split(","))
-                                 .map(String::trim)
-                                 .map(s -> s.split("@"))
-                                 .map(s -> (s.length == 1) ? resolve(s[0])
-                                                           : new SkyConfiguration.Seedling(digest(s[0]), s[1]))
-                                 .toList();
-            config.approaches = Arrays.stream(approaches.split(",")).map(String::trim).toList();
+            log.info("  Seeds: {} entries", config.seeds.size());
+            log.info("  Approaches: {} entries", config.approaches.size());
         }
-
-        config.choamParameters.setGenerateGenesis(genesis);
 
         log.info("");
         log.info("Starting Sky node...");
