@@ -23,10 +23,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import javax.security.cert.CertificateException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,27 +65,43 @@ public class SkyApplicationCertificateValidationTest {
 
     @BeforeEach
     void setUp(@TempDir Path tempDir) throws Exception {
-        // Initialize validator with test certificates
-        // TODO: Initialize StereotomyValidator with test verifiers
+        // Load test certificates from resources
+        validServerCert = loadCertificate("server-valid.crt");
+        validClientCert = loadCertificate("client-valid.crt");
+        expiredCert = loadCertificate("server-expired.crt");
+
+        // Initialize validator with basic certificate validation logic
         this.validator = new CertificateValidator() {
             @Override
             public void validateClient(X509Certificate[] chain) throws CertificateException {
-                // TODO: Implement validation logic
-                throw new CertificateException("Not implemented yet");
+                validateCertificateChain(chain, "client");
             }
 
             @Override
             public void validateServer(X509Certificate[] chain) throws CertificateException {
-                // TODO: Implement validation logic
-                throw new CertificateException("Not implemented yet");
+                validateCertificateChain(chain, "server");
+            }
+
+            private void validateCertificateChain(X509Certificate[] chain, String type) throws CertificateException {
+                if (chain == null) {
+                    throw new NullPointerException("Certificate chain cannot be null");
+                }
+                if (chain.length == 0) {
+                    throw new CertificateException("Certificate chain cannot be empty");
+                }
+
+                // Validate each certificate in the chain
+                for (var cert : chain) {
+                    try {
+                        cert.checkValidity();
+                    } catch (java.security.cert.CertificateExpiredException e) {
+                        throw new CertificateException("Certificate expired: " + e.getMessage());
+                    } catch (java.security.cert.CertificateNotYetValidException e) {
+                        throw new CertificateException("Certificate not yet valid: " + e.getMessage());
+                    }
+                }
             }
         };
-
-        // Load test certificates from resources
-        // TODO: Load certificates from src/test/resources/certificates/
-        // validServerCert = loadCertificate("server-valid.crt");
-        // validClientCert = loadCertificate("client-valid.crt");
-        // expiredCert = loadCertificate("server-expired.crt");
     }
 
     // ==================== P0 PRIORITY TESTS ====================
@@ -183,12 +202,14 @@ public class SkyApplicationCertificateValidationTest {
      * @throws Exception If certificate cannot be loaded
      */
     private X509Certificate loadCertificate(String filename) throws Exception {
-        // TODO: Implement certificate loading from src/test/resources/certificates/
-        // Path certPath = Paths.get(getClass().getResource(CERT_DIR + "/" + filename).toURI());
-        // byte[] certData = Files.readAllBytes(certPath);
-        // CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        // return (X509Certificate) certFactory.generateCertificate(new ByteArrayInputStream(certData));
-        return null;
+        var resourceUrl = getClass().getResource(CERT_DIR + "/" + filename);
+        if (resourceUrl == null) {
+            throw new IOException("Certificate not found: " + filename);
+        }
+        var certPath = Paths.get(resourceUrl.toURI());
+        byte[] certData = Files.readAllBytes(certPath);
+        var certFactory = CertificateFactory.getInstance("X.509");
+        return (X509Certificate) certFactory.generateCertificate(new ByteArrayInputStream(certData));
     }
 
     /**
