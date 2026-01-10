@@ -153,10 +153,10 @@ public class ConfigurationLoader {
         }
 
         // PROVISIONED -> provisionedToken
-        var provisioned = System.getenv("PROVISIONED_TOKEN");
+        var provisioned = System.getenv(Launcher.PROVISIONED_TOKEN);
         if (provisioned != null) {
             config.provisionedToken = provisioned;
-            log.debug("Set PROVISIONED_TOKEN from environment");
+            log.debug("Set provisioned token from environment variable: {}", Launcher.PROVISIONED_TOKEN);
         }
 
         // SEEDS -> config.seeds
