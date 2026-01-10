@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "com.hellblazer.sanctorum.proto";
+option java_package = "com.hellblazer.sanctorum.internal.v1.proto";
 option java_outer_classname = "SanctorumProto";
 option objc_class_prefix = "Sanctorum";
 import "google/protobuf/empty.proto";
@@ -12,7 +12,7 @@ import "crypto.proto";
 import "gorgoneion.proto";
 import "stereotomy.proto";
 
-package com.hellblazer.sanctorum;
+package com.hellblazer.sanctorum.internal.v1;
 
 service Enclave_ {
   rpc apply(EncryptedShare) returns(Status) {}

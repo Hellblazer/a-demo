@@ -20,7 +20,7 @@ package com.hellblazer.nut;
 import com.codahale.shamir.Scheme;
 import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import com.hellblazer.nut.support.ShareService;
-import com.hellblazer.sanctorum.proto.Share;
+import com.hellblazer.sanctorum.internal.v1.proto.Share;
 import org.junit.jupiter.api.Test;
 
 import java.security.SecureRandom;

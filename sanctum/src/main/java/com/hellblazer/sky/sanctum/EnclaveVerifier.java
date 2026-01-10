@@ -18,8 +18,8 @@
 package com.hellblazer.sky.sanctum;
 
 import com.google.protobuf.ByteString;
-import com.hellblazer.sanctorum.proto.Enclave_Grpc;
-import com.hellblazer.sanctorum.proto.Payload_;
+import com.hellblazer.sanctorum.internal.v1.proto.Enclave_Grpc;
+import com.hellblazer.sanctorum.internal.v1.proto.Payload_;
 import com.hellblazer.delos.cryptography.JohnHancock;
 import com.hellblazer.delos.cryptography.SigningThreshold;
 import com.hellblazer.delos.cryptography.Verifier;

@@ -18,10 +18,10 @@
 package com.hellblazer.sky.sanctum;
 
 import com.google.protobuf.Empty;
-import com.hellblazer.sanctorum.proto.EncryptedShare;
-import com.hellblazer.sanctorum.proto.Sanctum_Grpc;
-import com.hellblazer.sanctorum.proto.Status;
-import com.hellblazer.sanctorum.proto.UnwrapStatus;
+import com.hellblazer.sanctorum.internal.v1.proto.EncryptedShare;
+import com.hellblazer.sanctorum.internal.v1.proto.Sanctum_Grpc;
+import com.hellblazer.sanctorum.internal.v1.proto.Status;
+import com.hellblazer.sanctorum.internal.v1.proto.UnwrapStatus;
 import com.hellblazer.delos.cryptography.proto.Digeste;
 import com.hellblazer.delos.gorgoneion.proto.PublicKey_;
 import io.grpc.stub.StreamObserver;

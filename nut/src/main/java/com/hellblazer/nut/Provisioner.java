@@ -20,9 +20,9 @@ import com.hellblazer.delos.cryptography.Digest;
 import com.hellblazer.delos.delphinius.Oracle;
 import com.hellblazer.delos.gorgoneion.proto.Attestation;
 import com.hellblazer.delos.state.Mutator;
-import com.hellblazer.nut.proto.InitialProvisioning;
+import com.hellblazer.nut.internal.v1.proto.InitialProvisioning;
 import com.hellblazer.nut.service.Geb;
-import com.hellblazer.sanctorum.proto.FernetToken;
+import com.hellblazer.sanctorum.internal.v1.proto.FernetToken;
 
 /**
  * Provision and validate an attested member.

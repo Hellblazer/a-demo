@@ -39,7 +39,7 @@ import com.hellblazer.delos.stereotomy.identifier.spec.RotationSpecification;
 import com.hellblazer.delos.stereotomy.services.grpc.kerl.CommonKERLClient;
 import com.hellblazer.delos.stereotomy.services.grpc.kerl.KERLAdapter;
 import com.hellblazer.delos.stereotomy.services.grpc.proto.KERLServiceGrpc;
-import com.hellblazer.sanctorum.proto.Enclave_Grpc;
+import com.hellblazer.sanctorum.internal.v1.proto.Enclave_Grpc;
 import io.grpc.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

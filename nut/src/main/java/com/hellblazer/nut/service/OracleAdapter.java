@@ -19,7 +19,7 @@ package com.hellblazer.nut.service;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hellblazer.delphi.proto.*;
+import com.hellblazer.delphi.v1.proto.*;
 import com.hellblazer.delos.delphinius.Oracle;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;

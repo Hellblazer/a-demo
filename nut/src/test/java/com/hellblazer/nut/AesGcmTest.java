@@ -3,8 +3,8 @@ package com.hellblazer.nut;
 import com.google.protobuf.ByteString;
 import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import com.hellblazer.delos.cryptography.QualifiedBase64;
-import com.hellblazer.sanctorum.proto.EncryptedShare;
-import com.hellblazer.sanctorum.proto.Share;
+import com.hellblazer.sanctorum.internal.v1.proto.EncryptedShare;
+import com.hellblazer.sanctorum.internal.v1.proto.Share;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.SecretKey;

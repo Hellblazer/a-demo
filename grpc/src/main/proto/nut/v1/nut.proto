@@ -1,28 +1,28 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "com.hellblazer.nut.proto";
+option java_package = "com.hellblazer.nut.internal.v1.proto";
 option java_outer_classname = "NutProto";
 option objc_class_prefix = "Nut";
 import "google/protobuf/empty.proto";
 
 import "crypto.proto";
 import "gorgoneion.proto";
-import "sanctorum.proto";
+import "sanctorum/v1/sanctorum.proto";
 
-package com.hellblazer.nut;
+package com.hellblazer.nut.internal.v1;
 
 service Sphinx {
-  rpc apply(sanctorum.EncryptedShare) returns(sanctorum.Status) {}
-  rpc unwrap(google.protobuf.Empty) returns(sanctorum.UnwrapStatus){}
-  rpc seal(google.protobuf.Empty) returns(sanctorum.Status) {}
-  rpc unseal(google.protobuf.Empty) returns(sanctorum.Status) {}
+  rpc apply(com.hellblazer.sanctorum.internal.v1.EncryptedShare) returns(com.hellblazer.sanctorum.internal.v1.Status) {}
+  rpc unwrap(google.protobuf.Empty) returns(com.hellblazer.sanctorum.internal.v1.UnwrapStatus){}
+  rpc seal(google.protobuf.Empty) returns(com.hellblazer.sanctorum.internal.v1.Status) {}
+  rpc unseal(google.protobuf.Empty) returns(com.hellblazer.sanctorum.internal.v1.Status) {}
   rpc sessionKey(google.protobuf.Empty) returns(gorgoneion.PublicKey_) {}
   rpc identifier(google.protobuf.Empty) returns (crypto.Digeste) {}
 }
 
 service Provisioning {
-  rpc provision(InitialProvisioning) returns (sanctorum.FernetToken) {}
+  rpc provision(InitialProvisioning) returns (com.hellblazer.sanctorum.internal.v1.FernetToken) {}
 }
 
 message InitialProvisioning {

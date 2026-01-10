@@ -16,7 +16,7 @@
  */
 package com.hellblazer.nut.service;
 
-import com.hellblazer.delphi.proto.*;
+import com.hellblazer.delphi.v1.proto.*;
 import com.hellblazer.delos.delphinius.Oracle;
 import io.grpc.stub.StreamObserver;
 import org.joou.ULong;

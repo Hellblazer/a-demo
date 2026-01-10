@@ -19,7 +19,7 @@ package com.hellblazer.nut;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.proto.SphinxGrpc;
+import com.hellblazer.nut.internal.v1.proto.SphinxGrpc;
 import com.hellblazer.delos.cryptography.Digest;
 import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
 import com.hellblazer.delos.cryptography.ssl.CertificateValidator;

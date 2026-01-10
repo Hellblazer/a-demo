@@ -1,9 +1,9 @@
 package com.hellblazer.nut.comms;
 
 import com.hellblazer.nut.Provisioner;
-import com.hellblazer.nut.proto.InitialProvisioning;
-import com.hellblazer.nut.proto.ProvisioningGrpc;
-import com.hellblazer.sanctorum.proto.FernetToken;
+import com.hellblazer.nut.internal.v1.proto.InitialProvisioning;
+import com.hellblazer.nut.internal.v1.proto.ProvisioningGrpc;
+import com.hellblazer.sanctorum.internal.v1.proto.FernetToken;
 import io.grpc.stub.StreamObserver;
 
 /**

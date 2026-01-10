@@ -25,9 +25,9 @@ import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
 import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
 import com.hellblazer.delos.utils.Utils;
 import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.proto.SphinxGrpc;
-import com.hellblazer.sanctorum.proto.EncryptedShare;
-import com.hellblazer.sanctorum.proto.Share;
+import com.hellblazer.nut.internal.v1.proto.SphinxGrpc;
+import com.hellblazer.sanctorum.internal.v1.proto.EncryptedShare;
+import com.hellblazer.sanctorum.internal.v1.proto.Share;
 import io.netty.handler.ssl.ClientAuth;
 import org.junit.jupiter.api.Test;
 

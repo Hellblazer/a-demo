@@ -1,9 +1,9 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "com.hellblazer.geb.proto";
+option java_package = "com.hellblazer.geb.internal.v1.proto";
 option java_outer_classname = "GebProto";
 option objc_class_prefix = "Geb";
 import "google/protobuf/empty.proto";
 
-package com.hellblazer.geb;
+package com.hellblazer.geb.internal.v1;

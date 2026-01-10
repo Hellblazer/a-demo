@@ -17,7 +17,7 @@
 
 package com.hellblazer.sky.sanctum.sanctorum;
 
-import com.hellblazer.sanctorum.proto.Bytes;
+import com.hellblazer.sanctorum.internal.v1.proto.Bytes;
 import com.macasaet.fernet.Key;
 import com.macasaet.fernet.Token;
 import com.macasaet.fernet.TokenValidationException;

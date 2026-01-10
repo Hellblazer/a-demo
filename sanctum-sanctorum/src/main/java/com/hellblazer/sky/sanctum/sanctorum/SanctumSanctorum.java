@@ -40,7 +40,7 @@ import com.hellblazer.delos.stereotomy.event.protobuf.ProtobufEventFactory;
 import com.hellblazer.delos.stereotomy.identifier.SelfAddressingIdentifier;
 import com.hellblazer.delos.stereotomy.mem.MemKeyStore;
 import com.hellblazer.delos.utils.Entropy;
-import com.hellblazer.sanctorum.proto.*;
+import com.hellblazer.sanctorum.internal.v1.proto.*;
 import com.jauntsdn.netty.channel.vsock.ServerVSockChannel;
 import com.macasaet.fernet.Token;
 import io.grpc.Server;

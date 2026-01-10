@@ -19,10 +19,10 @@ package com.hellblazer.nut.comms;
 
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.Sphinx;
-import com.hellblazer.nut.proto.SphinxGrpc;
-import com.hellblazer.sanctorum.proto.EncryptedShare;
-import com.hellblazer.sanctorum.proto.Status;
-import com.hellblazer.sanctorum.proto.UnwrapStatus;
+import com.hellblazer.nut.internal.v1.proto.SphinxGrpc;
+import com.hellblazer.sanctorum.internal.v1.proto.EncryptedShare;
+import com.hellblazer.sanctorum.internal.v1.proto.Status;
+import com.hellblazer.sanctorum.internal.v1.proto.UnwrapStatus;
 import com.hellblazer.delos.cryptography.proto.Digeste;
 import com.hellblazer.delos.gorgoneion.proto.PublicKey_;
 import io.grpc.stub.StreamObserver;

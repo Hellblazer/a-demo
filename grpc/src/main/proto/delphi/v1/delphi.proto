@@ -1,12 +1,12 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "com.hellblazer.delphi.proto";
+option java_package = "com.hellblazer.delphi.v1.proto";
 option java_outer_classname = "DelphiProto";
 option objc_class_prefix = "Delphi";
 import "google/protobuf/empty.proto";
 
-package com.hellblazer.delphi;
+package com.hellblazer.delphi.v1;
 
 service Oracle_ {
   rpc addAssertion(Assertion_) returns (Asserted_){}

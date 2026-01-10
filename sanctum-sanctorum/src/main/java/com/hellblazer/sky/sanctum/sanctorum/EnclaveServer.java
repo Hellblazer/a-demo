@@ -19,7 +19,7 @@ package com.hellblazer.sky.sanctum.sanctorum;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
-import com.hellblazer.sanctorum.proto.*;
+import com.hellblazer.sanctorum.internal.v1.proto.*;
 import com.hellblazer.delos.cryptography.proto.Digeste;
 import com.hellblazer.delos.cryptography.proto.Sig;
 import com.hellblazer.delos.gorgoneion.proto.Credentials;
