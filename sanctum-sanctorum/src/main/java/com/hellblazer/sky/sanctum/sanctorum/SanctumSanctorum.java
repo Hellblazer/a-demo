@@ -283,13 +283,19 @@ public class SanctumSanctorum {
 
     private void provision(byte[] master) {
         this.master = new SecretKeySpec(master, "AES");
-        assert this.master.getEncoded().length == 32 : "Must result in a 32 byte AES key: "
-        + this.master.getEncoded().length;
+        var keyLength = this.master.getEncoded().length;
+        if (keyLength != 32) {
+            throw new IllegalStateException("Master key must be 32 bytes, got " + keyLength);
+        }
         generator = new TokenGenerator(this.master, new SecureRandom());
         log.info("Sanctum Sanctorum provisioned: {}", qb64(id));
     }
 
     private Provisioning_ provisioning(Credentials request) {
+        if (master == null) {
+            log.warn("Master key not provisioned");
+            throw new StatusRuntimeException(io.grpc.Status.FAILED_PRECONDITION.withDescription("Master key not provisioned"));
+        }
         if (!currentAttestation.compareAndSet(null, request.getNonce())) {
             return Provisioning_.getDefaultInstance();
         }
@@ -325,7 +331,10 @@ public class SanctumSanctorum {
 
     private void unwrap(byte[] root) {
         this.master = new SecretKeySpec(parameters.algorithm.digest(root).getBytes(), "AES");
-        assert master.getEncoded().length == 32 : "Must result in a 32 byte AES key: " + master.getEncoded().length;
+        var keyLength = master.getEncoded().length;
+        if (keyLength != 32) {
+            throw new IllegalStateException("Master key must be 32 bytes, got " + keyLength);
+        }
         generator = new TokenGenerator(master, new SecureRandom());
         log.info("Sanctum Sanctorum unwrapped: {}", qb64(id));
     }
