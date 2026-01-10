@@ -67,11 +67,13 @@
                         </goals>
                         <configuration>
                             <executable>docker</executable>
-                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <workingDirectory>${project.parent.basedir}</workingDirectory>
                             <arguments>
                                 <argument>build</argument>
                                 <argument>-t</argument>
                                 <argument>${project.groupId}/${project.artifactId}:${project.version}</argument>
+                                <argument>-f</argument>
+                                <argument>sky-image/Dockerfile</argument>
                                 <argument>.</argument>
                             </arguments>
                         </configuration>
