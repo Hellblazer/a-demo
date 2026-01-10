@@ -8,6 +8,10 @@
 ###############################################################################
 FROM eclipse-temurin:22-jdk-alpine AS builder
 
+# Build argument for database password (build-time only, not in final image)
+# Can be overridden at build time: docker build --build-arg DB_PASSWORD=your-password
+ARG DB_PASSWORD=test-default
+
 # Smoke test to verify if java is available.
 RUN java -version
 
@@ -26,7 +30,7 @@ RUN jlink \
 # Build and package the app.
 COPY . /usr/src/myapp/
 WORKDIR /usr/src/myapp
-#RUN ./mvnw -e package
+RUN DB_PASSWORD=${DB_PASSWORD} ./mvnw -e clean package -DskipTests
 
 ###############################################################################
 # Stage 2 (to create a downsized "container executable", ~131MB)              #

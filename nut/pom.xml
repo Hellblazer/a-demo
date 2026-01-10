@@ -11,7 +11,7 @@
     <artifactId>nut</artifactId>
 
     <properties>
-        <db.password>foo</db.password>
+        <db.password>${env.DB_PASSWORD:-test-default}</db.password>
         <tron.log>info</tron.log>
         <choam.log>info</choam.log>
     </properties>
