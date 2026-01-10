@@ -80,6 +80,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -256,7 +257,20 @@ public class SkyApplication {
         }
         token = null;
         if (joinChannel != null) {
-            joinChannel.shutdown();
+            try {
+                joinChannel.shutdown();
+                if (!joinChannel.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.warn("Join channel shutdown timeout on: {}, forcing termination", node.getMember().getId());
+                    joinChannel.shutdownNow();
+                    if (!joinChannel.awaitTermination(5, TimeUnit.SECONDS)) {
+                        log.error("Join channel failed to terminate on: {}", node.getMember().getId());
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Join channel shutdown interrupted on: {}", node.getMember().getId(), e);
+                joinChannel.shutdownNow();
+            }
         }
         node.stop();
         if (clusterComms != null) {

@@ -30,17 +30,22 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author hal.hildebrand
  */
 public class AdmissionsClient implements Admissions {
 
-    private static final Logger                         log = LoggerFactory.getLogger(AdmissionsClient.class);
-    private final ManagedChannel                        channel;
-    private final Member                                member;
-    private final AdmissionsGrpc.AdmissionsBlockingStub client;
-    private final GorgoneionClientMetrics               metrics;
+    private static final Logger                         log     = LoggerFactory.getLogger(AdmissionsClient.class);
+    private static final Duration                       CLOSE_TIMEOUT = Duration.ofSeconds(10);
+    private final        Lock                           closeLock     = new ReentrantLock();
+    private final        ManagedChannel                 channel;
+    private final        Member                         member;
+    private final        AdmissionsGrpc.AdmissionsBlockingStub client;
+    private final        GorgoneionClientMetrics        metrics;
+    private volatile     boolean                        closed = false;
 
     public AdmissionsClient(Member member, ManagedChannel channel, GorgoneionClientMetrics metrics) {
         this.member = member;
@@ -66,7 +71,30 @@ public class AdmissionsClient implements Admissions {
     }
 
     public void close() {
-        channel.shutdown();
+        closeLock.lock();
+        try {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            try {
+                channel.shutdown();
+                if (!channel.awaitTermination(CLOSE_TIMEOUT.toNanos(), TimeUnit.NANOSECONDS)) {
+                    log.warn("AdmissionsClient channel shutdown timeout for {} after {}, forcing termination",
+                             member.getId(), CLOSE_TIMEOUT);
+                    channel.shutdownNow();
+                    if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
+                        log.error("AdmissionsClient channel failed to terminate for {}", member.getId());
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("AdmissionsClient channel shutdown interrupted for {}", member.getId(), e);
+                channel.shutdownNow();
+            }
+        } finally {
+            closeLock.unlock();
+        }
     }
 
     public Member getMember() {

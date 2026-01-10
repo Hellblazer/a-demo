@@ -24,17 +24,22 @@ import com.hellblazer.delos.delphinius.Oracle;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import org.joou.ULong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
  * @author hal.hildebrand
  **/
 public class OracleAdapter implements Oracle {
+    private static final Logger                   log = LoggerFactory.getLogger(OracleAdapter.class);
     private final Oracle_Grpc.Oracle_FutureStub   asyncDelphi;
     private final Oracle_Grpc.Oracle_BlockingStub syncDelphi;
     private final ManagedChannel                  channel;
@@ -158,7 +163,27 @@ public class OracleAdapter implements Oracle {
     }
 
     public void close() {
-        channel.shutdown();
+        close(Duration.ofSeconds(10));
+    }
+
+    public void close(Duration timeout) {
+        if (channel == null) {
+            return;
+        }
+        try {
+            channel.shutdown();
+            if (!channel.awaitTermination(timeout.toNanos(), TimeUnit.NANOSECONDS)) {
+                log.warn("OracleAdapter channel shutdown timeout after {}, forcing termination", timeout);
+                channel.shutdownNow();
+                if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
+                    log.error("OracleAdapter channel failed to terminate after forced shutdown");
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("OracleAdapter channel shutdown interrupted", e);
+            channel.shutdownNow();
+        }
     }
 
     @Override

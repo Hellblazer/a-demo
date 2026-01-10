@@ -28,6 +28,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.NameResolver;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.ClientAuth;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
 import java.security.PrivateKey;
@@ -41,6 +43,7 @@ import static com.hellblazer.nut.comms.ApiServer.forClient;
 
 public class MtlsClient {
     private static final Executor       exec = Executors.newVirtualThreadPerTaskExecutor();
+    private static final Logger         log  = LoggerFactory.getLogger(MtlsClient.class);
     private final        ManagedChannel channel;
 
     /**
@@ -141,6 +144,26 @@ public class MtlsClient {
     }
 
     public void stop() {
-        channel.shutdown();
+        stop(Duration.ofSeconds(10));
+    }
+
+    public void stop(Duration timeout) {
+        if (channel == null) {
+            return;
+        }
+        try {
+            channel.shutdown();
+            if (!channel.awaitTermination(timeout.toNanos(), TimeUnit.NANOSECONDS)) {
+                log.warn("MtlsClient channel shutdown timeout after {}, forcing termination", timeout);
+                channel.shutdownNow();
+                if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
+                    log.error("MtlsClient channel failed to terminate after forced shutdown");
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("MtlsClient channel shutdown interrupted", e);
+            channel.shutdownNow();
+        }
     }
 }
