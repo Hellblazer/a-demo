@@ -193,6 +193,48 @@ local-demo/
 - Implements automated smoke test using TestContainers
 - Demonstrates Oracle API usage
 
+### Module Separation: Sanctum and Sanctum-Sanctorum
+
+The Sanctum ecosystem maintains strict architectural boundaries between client and server modules:
+
+#### Sanctum (Client)
+- **Location**: `sanctum/`
+- **Responsibility**: Client-side API for enclave operations
+- **Services**: EnclaveIdentifier, EnclaveSigner, EnclaveVerifier, TokenGenerator interface
+- **Dependencies**: Delos Stereotomy, Delos Gorgoneion (NO dependency on sanctum-sanctorum)
+
+#### Sanctum-Sanctorum (Server)
+- **Location**: `sanctum-sanctorum/`
+- **Responsibility**: Server-side enclave implementation
+- **Services**: SanctumSanctorum (main server), TokenGenerator (implementation), EnclaveServer (gRPC service), EnclaveKERLServer (KERL access)
+- **Dependencies**: Delos Stereotomy, Fernet encryption (NO production dependency on sanctum)
+
+#### Communication Boundary
+
+```
+Sky Application
+     ↓
+  Sanctum (client wrapper)
+     ↓
+  gRPC Protocol (protobuf messages)
+     ↓
+  Sanctum-Sanctorum (server)
+     ↓
+  Stereotomy (DID/KERL)
+```
+
+**Key Design Principles**:
+1. **Zero Direct Java Dependencies**: Sanctum has no production-time Java dependency on Sanctum-Sanctorum
+2. **gRPC Protocol Boundary**: All communication flows through gRPC with protobuf messages
+3. **Test-Scope Dependency**: Integration tests in sanctum-sanctorum can use Sanctum client classes via test-scope dependency
+4. **Alternative Implementations**: The gRPC boundary enables alternative server implementations
+
+**Benefits**:
+- Clean architectural separation
+- Independent evolution of client and server
+- Substitutable server implementations
+- Clear testing boundaries
+
 ---
 
 ## Communication Patterns
@@ -356,6 +398,55 @@ To add a new interceptor:
 3. **Client-side**: Modify `MtlsClient.java` line 136 or `forApproaches()` method
    - Ensure context propagation doesn't break network transparency
    - Consider impact on cluster bootstrap (join channel)
+
+---
+
+## Proto API Versioning
+
+Sky uses systematic API versioning for protocol buffer definitions to support production-ready API evolution with backward compatibility.
+
+### Versioning Strategy
+
+**External APIs** (client-facing):
+- Package naming: `com.hellblazer.<service>.v<N>`
+- Example: `com.hellblazer.delphi.v1` (Oracle service on port 50000)
+- Backward compatible for minimum 2 major versions
+- Version bump only on breaking changes (field removal, type change, RPC signature change)
+
+**Internal APIs** (cluster-internal):
+- Package naming: `com.hellblazer.<service>.internal.v<N>`
+- Examples: `com.hellblazer.sanctorum.internal.v1`, `com.hellblazer.nut.internal.v1`
+- Coordinated cluster upgrade (all nodes upgrade simultaneously)
+- Breaking changes allowed with proper versioning
+
+### Proto Packages
+
+| Service | Package | Type |
+|---------|---------|------|
+| Oracle (delphi) | `com.hellblazer.delphi.v1` | External |
+| Enclave (sanctorum) | `com.hellblazer.sanctorum.internal.v1` | Internal |
+| Sphinx (nut) | `com.hellblazer.nut.internal.v1` | Internal |
+| Geb | `com.hellblazer.geb.internal.v1` | Internal |
+
+### When to Introduce V2
+
+V2 should be introduced only for:
+- Breaking changes (field removal, type change)
+- Significant API redesign
+- Major feature additions requiring incompatible changes
+
+Backward-compatible changes (new optional fields, new RPCs) do NOT trigger v2.
+
+### Future V2 Support
+
+When v2 is introduced:
+1. Create new proto files in `grpc/src/main/proto/<service>/v2/`
+2. Run v1 and v2 services on different ports
+3. Implement dual-version server support
+4. Provide client migration guide
+5. Deprecate v1 after 2 releases (minimum 95% client adoption)
+
+For detailed versioning strategy, see [VERSIONING.md](grpc/VERSIONING.md) and [API_CHANGELOG.md](grpc/API_CHANGELOG.md).
 
 ---
 
