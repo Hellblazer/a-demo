@@ -229,10 +229,10 @@ public class SanctumSanctorum {
     private Digeste identifier() {
         var id = getId();
         if (id == null) {
-            log.warn("No identifier");
+            log.error("No identifier provided");
             throw new StatusRuntimeException(io.grpc.Status.FAILED_PRECONDITION);
         }
-        log.warn("Identifier requested on: {}", getId());
+        log.debug("Identifier requested on: {}", getId());
         return id.toDigeste();
     }
 

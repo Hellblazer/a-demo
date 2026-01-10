@@ -439,7 +439,7 @@ public class SkyApplication {
             var msg = ByteMessage.newBuilder().setContents(ByteString.copyFromUtf8("My test message")).build();
             var generated = sanctorum.tokenGenerator().apply(msg.toByteArray());
             if (token.compareAndSet(null, generated)) {
-                log.info("Generating recognition token: {} on context: {} on: {}", generated, contextId, sanctorum.getId());
+                log.debug("Generating recognition token: {} on context: {} on: {}", generated, contextId, sanctorum.getId());
             }
             return token.get();
         }
