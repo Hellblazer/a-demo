@@ -67,4 +67,5 @@ pom.xml.bak
 **/.run/
 
 ## Project Management
-.pm/
+.pm
+.pm-archives
