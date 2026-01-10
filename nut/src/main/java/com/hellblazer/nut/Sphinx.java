@@ -390,8 +390,13 @@ public class Sphinx {
     private void unwrap(Duration viewGossipDuration) {
         log.info("Unwrapping");
         sanctum.unwrap();
-        application = new SkyApplication(configuration, sanctum, onFailure, signedNonce -> Any.pack(
-        FernetToken.newBuilder().setToken(configuration.provisionedToken).build()));
+        application = new SkyApplication(configuration, sanctum, onFailure, signedNonce -> {
+            if (configuration.provisionedToken != null) {
+                return Any.pack(FernetToken.newBuilder().setToken(configuration.provisionedToken).build());
+            } else {
+                return Any.getDefaultInstance();
+            }
+        });
 
         List<SocketAddress> approaches = configuration.approaches == null ? Collections.emptyList()
                                                                           : configuration.approaches.stream()
