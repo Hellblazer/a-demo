@@ -195,6 +195,170 @@ local-demo/
 
 ---
 
+## Communication Patterns
+
+### gRPC Interceptor Chain
+
+The Sky application uses gRPC interceptors to handle cross-cutting concerns like authentication, compression, and context propagation. Interceptors form a chain that processes all requests.
+
+#### Architecture Overview
+
+```
+Client Request
+      ↓
+[Client-Side Interceptors] ──→ Network ──→ [Server-Side Interceptors]
+      ↓                                             ↓
+Modify Request                              Extract Context
+Propagate Context                           Authenticate Request
+                                            Modify Response
+      ↓
+   Response
+```
+
+#### Server-Side Interceptors
+
+Server interceptors are applied in the order they are registered. Sky uses different interceptors for different communication channels:
+
+**1. Cluster Communications (Inter-node)**
+
+File: `nut/src/main/java/com/hellblazer/nut/SkyApplication.java:150`
+
+```java
+Collections.singletonList(new FernetServerInterceptor())
+```
+
+- **Purpose**: Token-based authentication for cluster node-to-node communication
+- **Order**: Single interceptor (primary responsibility)
+- **Responsibility**:
+  - Validates Fernet-encrypted tokens from cluster peers
+  - Extracts token metadata (hash, payload)
+  - Enforces token expiration via configurable TTL (default: 1 hour)
+  - Rejects unauthenticated requests with `UNAUTHENTICATED` gRPC status
+- **Token Flow**:
+  1. Client generates token via `SkyApplication.generateCredentials()`
+  2. Token is cached in `AtomicReference<Token>` with TTL expiration
+  3. Client includes token in request via `FernetCallCredentials`
+  4. Server intercepts request, extracts token, validates against `Sanctum.tokenGenerator()`
+  5. Request proceeds if valid, rejects if expired or invalid
+
+**2. Oracle API Server (Client-facing)**
+
+File: `nut/src/main/java/com/hellblazer/nut/comms/ApiServer.java:49-50`
+
+```java
+.intercept(interceptor)                          // TlsInterceptor
+.intercept(EnableCompressionInterceptor.SINGLETON)  // Compression
+```
+
+- **Chain Order** (executed in registration order):
+  1. **TlsInterceptor** (line 42, 49)
+     - Responsibility: TLS session context tracking
+     - Logs TLS handshake events and session information
+     - Tracks peer certificates and cipher suites
+
+  2. **EnableCompressionInterceptor** (line 50)
+     - Responsibility: gzip compression for large responses
+     - Reduces bandwidth for request/response bodies > 1KB
+     - Transparent to service implementation
+     - Uses `identity`, `gzip` compression algorithms
+
+#### Client-Side Interceptors
+
+Client interceptors are applied when building the channel. Sky uses client interceptors for cluster communication:
+
+**1. Cluster Join Channel & Peer Communication**
+
+File: `nut/src/main/java/com/hellblazer/nut/comms/MtlsClient.java:136`
+
+```java
+.intercept(RouterImpl.clientInterceptor(context))
+```
+
+- **Purpose**: Context propagation to peer nodes
+- **Responsibility**:
+  - Propagates `Digest context` (node identity context) to remote nodes
+  - Enables cross-node correlation and Byzantine failure detection
+  - Attaches context metadata to outgoing requests
+  - Allows servers to identify request origin and validate context membership
+- **When used**:
+  - Join channel for cluster membership attestation
+  - Peer-to-peer communication with other cluster nodes
+  - Remote calls to Approach nodes (bootstrap/discovery)
+
+#### Interceptor Execution Order (Complete Flow)
+
+For a **cluster node-to-node RPC call**:
+
+```
+CLIENT SIDE:
+1. generateCredentials()  ← Get/cache token
+2. FernetCallCredentials  ← Attach token to request
+3. RouterImpl.clientInterceptor(context)  ← Attach context Digest
+
+   ↓ ─── Network (gRPC/MTLS) ───
+
+SERVER SIDE:
+1. FernetServerInterceptor  ← Extract & validate token
+2. Route to handler method
+3. Execute RPC logic
+4. Return response
+```
+
+For an **Oracle API request** (e.g., from external client):
+
+```
+CLIENT SIDE:
+(No custom interceptors - external client)
+
+   ↓ ─── Network (gRPC/MTLS) ───
+
+SERVER SIDE:
+1. TlsInterceptor  ← Track TLS session
+2. EnableCompressionInterceptor  ← Enable compression
+3. Route to Oracle API handler
+4. Execute request logic
+5. Return response (compressed if > threshold)
+```
+
+#### Interceptor Responsibilities Summary
+
+| Interceptor | Side | Channel | Purpose | Impact |
+|---|---|---|---|---|
+| FernetServerInterceptor | Server | Cluster | Token authentication | Rejects unauthenticated peers |
+| RouterImpl.clientInterceptor | Client | Cluster | Context propagation | Enables peer identification |
+| TlsInterceptor | Server | API | Session tracking | Logs TLS metadata |
+| EnableCompressionInterceptor | Server | API | Compression | Reduces bandwidth |
+
+#### Configuration
+
+**Token Cache TTL** (controls token lifetime):
+- Default: 1 hour (`Duration.ofHours(1)`)
+- Configured in: `SkyConfiguration.tokenCacheTtl`
+- Invalid token cache TTL: `SkyConfiguration.invalidTokenCacheTtl`
+
+**gRPC Timeouts** (controls channel behavior):
+- Keepalive time: `SkyConfiguration.grpcKeepaliveTime` (default: 30s)
+- Keepalive timeout: `SkyConfiguration.grpcKeepaliveTimeout` (default: 10s)
+- Idle timeout: `SkyConfiguration.grpcIdleTimeout` (default: 5 minutes)
+
+#### Adding New Interceptors
+
+To add a new interceptor:
+
+1. **Cluster Communications**: Modify `SkyApplication.java` line 150
+   - Must validate tokens and fail fast for unauthenticated requests
+   - Should maintain Byzantine fault tolerance properties
+
+2. **Oracle API**: Modify `ApiServer.java` lines 49-50
+   - Keep compression interceptor as last (executes closest to network)
+   - New interceptor should not block legitimate client requests
+
+3. **Client-side**: Modify `MtlsClient.java` line 136 or `forApproaches()` method
+   - Ensure context propagation doesn't break network transparency
+   - Consider impact on cluster bootstrap (join channel)
+
+---
+
 ## Bootstrap Sequence
 
 ### Phase 1: Node Initialization
