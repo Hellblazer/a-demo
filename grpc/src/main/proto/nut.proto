@@ -12,7 +12,7 @@ import "sanctorum.proto";
 
 package com.hellblazer.nut;
 
-service Sphynx {
+service Sphinx {
   rpc apply(sanctorum.EncryptedShare) returns(sanctorum.Status) {}
   rpc unwrap(google.protobuf.Empty) returns(sanctorum.UnwrapStatus){}
   rpc seal(google.protobuf.Empty) returns(sanctorum.Status) {}

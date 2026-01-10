@@ -35,7 +35,7 @@ import com.hellblazer.delos.thoth.LoggingOutputStream;
 import com.hellblazer.delos.utils.Entropy;
 import com.hellblazer.delos.utils.Utils;
 import com.hellblazer.nut.comms.ApiServer;
-import com.hellblazer.nut.comms.SphynxServer;
+import com.hellblazer.nut.comms.SphinxServer;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
 import com.hellblazer.sanctorum.proto.FernetToken;
 import com.hellblazer.sanctorum.proto.Status;
@@ -299,7 +299,7 @@ public class Sphinx {
         if (local) {
             log.info("Starting in process API server: {}", socketAddress);
             var server = InProcessServerBuilder.forAddress(socketAddress)
-                                               .addService(new SphynxServer(service))
+                                               .addService(new SphinxServer(service))
                                                .executor(Executors.newVirtualThreadPerTaskExecutor())
                                                .build();
             apiAddress = server.getListenSockets().getFirst();
@@ -351,7 +351,7 @@ public class Sphinx {
                 }
                 return ((SelfAddressingIdentifier) decoded.get().identifier()).getDigest();
             }
-        }, validator(), new SphynxServer(service));
+        }, validator(), new SphinxServer(service));
     }
 
     private CertificateWithPrivateKey createIdentity(InetSocketAddress address) {

@@ -19,7 +19,7 @@ package com.hellblazer.nut.comms;
 
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.Sphinx;
-import com.hellblazer.nut.proto.SphynxGrpc;
+import com.hellblazer.nut.proto.SphinxGrpc;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
 import com.hellblazer.sanctorum.proto.Status;
 import com.hellblazer.sanctorum.proto.UnwrapStatus;
@@ -27,10 +27,10 @@ import com.hellblazer.delos.cryptography.proto.Digeste;
 import com.hellblazer.delos.gorgoneion.proto.PublicKey_;
 import io.grpc.stub.StreamObserver;
 
-public class SphynxServer extends SphynxGrpc.SphynxImplBase {
+public class SphinxServer extends SphinxGrpc.SphinxImplBase {
     private final Sphinx.Service service;
 
-    public SphynxServer(Sphinx.Service service) {
+    public SphinxServer(Sphinx.Service service) {
         this.service = service;
     }
 

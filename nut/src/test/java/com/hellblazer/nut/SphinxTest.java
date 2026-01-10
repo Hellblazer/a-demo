@@ -25,7 +25,7 @@ import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
 import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
 import com.hellblazer.delos.utils.Utils;
 import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.proto.SphynxGrpc;
+import com.hellblazer.nut.proto.SphinxGrpc;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
 import com.hellblazer.sanctorum.proto.Share;
 import io.netty.handler.ssl.ClientAuth;
@@ -77,10 +77,10 @@ public class SphinxTest {
 
         var client = client((InetSocketAddress) sphinx.getApiEndpoint());
         try {
-            var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
-            sphynxClient.unseal(Empty.getDefaultInstance());
+            var sphinxClient = SphinxGrpc.newBlockingStub(client.getChannel());
+            sphinxClient.unseal(Empty.getDefaultInstance());
 
-            var publicKey_ = sphynxClient.sessionKey(Empty.getDefaultInstance());
+            var publicKey_ = sphinxClient.sessionKey(Empty.getDefaultInstance());
             assertNotNull(publicKey_);
 
             var publicKey = EncryptionAlgorithm.lookup(publicKey_.getAlgorithmValue())
@@ -110,16 +110,16 @@ public class SphinxTest {
                                                    .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                                    .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                                    .build();
-                var result = sphynxClient.apply(encryptedShare);
+                var result = sphinxClient.apply(encryptedShare);
                 count++;
                 assertEquals(count, result.getShares());
             }
 
-            var unwrapStatus = sphynxClient.unwrap(Empty.getDefaultInstance());
+            var unwrapStatus = sphinxClient.unwrap(Empty.getDefaultInstance());
             assertTrue(unwrapStatus.getSuccess());
             assertEquals(shares.size(), unwrapStatus.getShares());
 
-            sphynxClient.seal(Empty.getDefaultInstance());
+            sphinxClient.seal(Empty.getDefaultInstance());
         } finally {
             client.stop();
             sphinx.shutdown();

@@ -19,7 +19,7 @@ package com.hellblazer.nut;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.Empty;
 import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.proto.SphynxGrpc;
+import com.hellblazer.nut.proto.SphinxGrpc;
 import com.hellblazer.delos.cryptography.Digest;
 import com.hellblazer.delos.cryptography.cert.CertificateWithPrivateKey;
 import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
@@ -205,8 +205,8 @@ public class Launcher {
             while (true) {
                 try {
                     log.info("resolving server: {}", apiEndpoint);
-                    var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
-                    var identifier = Digest.from(sphynxClient.identifier(Empty.getDefaultInstance()));
+                    var sphinxClient = SphinxGrpc.newBlockingStub(client.getChannel());
+                    var identifier = Digest.from(sphinxClient.identifier(Empty.getDefaultInstance()));
                     return new SkyConfiguration.Seedling(identifier, split[0]);
                 } catch (StatusRuntimeException e) {
                     if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {

@@ -28,7 +28,7 @@ import com.hellblazer.delos.cryptography.ssl.CertificateValidator;
 import com.hellblazer.delos.delphinius.Oracle;
 import com.hellblazer.delos.utils.Utils;
 import com.hellblazer.nut.comms.MtlsClient;
-import com.hellblazer.nut.proto.SphynxGrpc;
+import com.hellblazer.nut.proto.SphinxGrpc;
 import com.hellblazer.nut.service.OracleAdapter;
 import com.hellblazer.nut.support.ShareService;
 import com.hellblazer.sanctorum.proto.EncryptedShare;
@@ -445,14 +445,14 @@ public class E2ETest {
         var client = apiClient(i, (InetSocketAddress) sphinx.getApiEndpoint());
 
         try {
-            var sphynxClient = SphynxGrpc.newBlockingStub(client.getChannel());
-            var status = sphynxClient.unseal(Empty.getDefaultInstance());
+            var sphinxClient = SphinxGrpc.newBlockingStub(client.getChannel());
+            var status = sphinxClient.unseal(Empty.getDefaultInstance());
 
             assertNotNull(status);
             assertTrue(status.getSuccess());
             assertEquals(0, status.getShares());
 
-            var publicKey_ = sphynxClient.sessionKey(Empty.getDefaultInstance());
+            var publicKey_ = sphinxClient.sessionKey(Empty.getDefaultInstance());
             assertNotNull(publicKey_);
 
             var publicKey = EncryptionAlgorithm.lookup(publicKey_.getAlgorithmValue())
@@ -474,12 +474,12 @@ public class E2ETest {
                                                    .setShare(ByteString.copyFrom(encrypted.cipherText()))
                                                    .setEncapsulation(ByteString.copyFrom(encapsulated.encapsulation()))
                                                    .build();
-                var result = sphynxClient.apply(encryptedShare);
+                var result = sphinxClient.apply(encryptedShare);
                 count++;
                 assertEquals(count, result.getShares());
             }
 
-            var unwrapStatus = sphynxClient.unwrap(Empty.getDefaultInstance());
+            var unwrapStatus = sphinxClient.unwrap(Empty.getDefaultInstance());
             assertTrue(unwrapStatus.getSuccess());
             assertEquals(present, unwrapStatus.getShares());
             return Digest.from(unwrapStatus.getIdentifier());
