@@ -30,7 +30,7 @@ RUN jlink \
 # Build and package the app.
 COPY . /usr/src/myapp/
 WORKDIR /usr/src/myapp
-RUN DB_PASSWORD=${DB_PASSWORD} ./mvnw -e clean package -DskipTests
+RUN chmod +x ./mvnw && DB_PASSWORD=${DB_PASSWORD} ./mvnw -e clean package -DskipTests
 
 ###############################################################################
 # Stage 2 (to create a downsized "container executable", ~131MB)              #
