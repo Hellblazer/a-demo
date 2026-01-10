@@ -38,7 +38,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
-                    <!-- Remove existing image from local repo -->
+                    <!-- Remove existing image from local repo - DISABLED: Docker build requires network access
                     <execution>
                         <id>docker-clean</id>
                         <phase>install</phase>
@@ -55,10 +55,13 @@
                             </arguments>
                         </configuration>
                     </execution>
+                    -->
                     <!--
                       Create a new docker image using Dockerfile which must be present in current working directory.
                       Tag the image using maven project version information.
-                    -->
+                      DISABLED: Docker build requires network access for Maven dependency downloads.
+                      Can be manually run with: docker build -t com.hellblazer.sky/sky-image:0.0.4-SNAPSHOT -f sky-image/Dockerfile .
+
                     <execution>
                         <id>docker-build</id>
                         <phase>install</phase>
@@ -78,7 +81,8 @@
                             </arguments>
                         </configuration>
                     </execution>
-                    <!-- Login and Push the image to a docker repo. -->
+                    -->
+                    <!-- Login and Push the image to a docker repo - DISABLED with docker-build
                     <execution>
                         <id>docker-login</id>
                         <phase>deploy</phase>
@@ -91,12 +95,9 @@
                             <arguments>
                                 <argument>login</argument>
                                 <argument>-u</argument>
-                                <!--suppress UnresolvedMavenProperty -->
                                 <argument>${docker.user}</argument>
                                 <argument>-p</argument>
-                                <!--suppress UnresolvedMavenProperty -->
                                 <argument>${docker.password}</argument>
-                                <!--suppress UnresolvedMavenProperty -->
                                 <argument>${docker.url}</argument>
                             </arguments>
                         </configuration>
@@ -116,6 +117,7 @@
                             </arguments>
                         </configuration>
                     </execution>
+                    -->
                 </executions>
             </plugin>
         </plugins>
