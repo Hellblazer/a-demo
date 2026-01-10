@@ -63,6 +63,9 @@ COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/target/sky-*.j
 COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/src/main/resources/config.yaml ./config.yaml
 # Copy log configuration from builder image.
 COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/src/main/resources/logback.xml ./logback.xml
+# Copy entrypoint script for secure secret handling (CRITICAL #3 resolution).
+COPY --chown=$USER_NAME:$GROUP_NAME entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
 # Run the application.
 USER $USER_NAME:$GROUP_NAME
@@ -78,4 +81,4 @@ EXPOSE 8126
 #healthEndpoint
 EXPOSE 8127
 
-ENTRYPOINT ["java", "-Djava.net.preferIPv4Stack=true", "-XX:+UseZGC", "-XX:+ZGenerational", "-Dlogback.configurationFile=logback.xml", "-jar", "./app.jar", "config.yaml", "Give me food or give me slack or kill me"]
+ENTRYPOINT ["/app/entrypoint.sh"]
