@@ -26,7 +26,14 @@
 
 - **Delos Stereotomy**: Decentralized identifier (DID) and KERL protocol
 - **Delos Gorgoneion**: Cryptographic infrastructure (Ed25519 signatures)
-- **sanctum-sanctorum**: Server implementation for enclave operations
+
+## Server Communication
+
+This module communicates with **Sanctum-Sanctorum** (enclave server) exclusively via gRPC.
+There is **NO direct Java dependency** on the Sanctum-Sanctorum module.
+All communication flows through gRPC interfaces defined in the `grpc` module.
+
+This separation enables alternative server implementations.
 
 ## Usage
 
@@ -42,17 +49,21 @@ var verified = sanctum.verify(signature, publicKey);
 
 ## Architecture
 
-Sanctum acts as a thin wrapper providing a clean interface to complex cryptographic operations implemented by Delos components.
+Sanctum acts as a client-side wrapper providing a clean interface to enclave operations. It communicates with the Sanctum-Sanctorum server exclusively through gRPC.
 
 ```
 Sky Application
      ↓
-  Sanctum (wrapper)
+  Sanctum (client wrapper)
+     ↓
+  gRPC (no direct Java dependency)
+     ↓
+  Sanctum-Sanctorum (server)
      ↓
   Stereotomy (DID/KERL)
-     ↓
-  Gorgoneion (crypto primitives)
 ```
+
+**Key Design**: The client module (Sanctum) has zero direct Java dependencies on the server module (Sanctum-Sanctorum). This enables alternative server implementations and maintains clean architectural boundaries.
 
 ## Testing
 
@@ -60,6 +71,9 @@ Sky Application
 ```bash
 ./mvnw test -pl sanctum
 ```
+
+**Integration Tests**:
+Integration tests that instantiate both Sanctum and Sanctum-Sanctorum server are located in the `sanctum-sanctorum` module under test scope (see `com.hellblazer.sky.sanctum.sanctorum.EnclaveIntegrationTest`).
 
 ## POC Constraints
 

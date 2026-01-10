@@ -38,20 +38,34 @@
 ## Architecture
 
 ```
-Sky Node
-   ↓
-sanctum-sanctorum (server)
+Sky Node (via Sanctum client)
+        ↓
+     gRPC
+        ↓
+Sanctum-Sanctorum (server)
    ├── TokenGenerator (Fernet tokens)
    └── KERL Protocol (identity events)
          ↓
    Stereotomy (DID management)
 ```
 
+**Key Design**: Server has no production-time dependency on client. All communication flows through gRPC protocol interfaces.
+
 ## Dependencies
 
 - **Delos Stereotomy**: DID and KERL protocol implementation
 - **Fernet**: Symmetric encryption library (v1.4.2)
 - **Delos Gorgoneion**: Cryptographic primitives
+
+## Client Separation
+
+This module is accessed **exclusively via gRPC** by the Sanctum client module.
+
+**Zero Production Dependency**: Sanctum-Sanctorum has no production-time Java dependency on Sanctum.
+
+**Test-Scope Dependency**: Integration tests in this module use Sanctum client classes (e.g., `EnclaveIdentifier`) via test-scope dependency. This allows testing the full enclave stack in isolation.
+
+See [../sanctum/README.md](../sanctum/README.md) for client implementation details.
 
 ## Usage
 
@@ -71,7 +85,19 @@ var token = generator.generateToken(nodeData);
 ./mvnw test -pl sanctum-sanctorum
 ```
 
-**Integration**: Tested via `local-demo` smoke tests
+**Integration Tests**:
+```bash
+# EnclaveIntegrationTest: Tests enclave server with Sanctum client
+./mvnw test -pl sanctum-sanctorum -Dtest=EnclaveIntegrationTest
+```
+
+The `EnclaveIntegrationTest` class tests the full enclave stack including:
+- Shamir secret sharing unwrap operations
+- Client identity operations (EnclaveIdentifier)
+- Token generation and validation
+- Cryptographic signing and verification
+
+**End-to-End Tests**: Tested via `local-demo` smoke tests
 
 ## POC Constraints
 
