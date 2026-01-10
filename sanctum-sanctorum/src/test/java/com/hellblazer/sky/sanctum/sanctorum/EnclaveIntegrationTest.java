@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.hellblazer.sky.sanctum;
+package com.hellblazer.sky.sanctum.sanctorum;
 
 import com.codahale.shamir.Scheme;
 import com.google.protobuf.Any;
@@ -25,10 +25,9 @@ import com.hellblazer.delos.cryptography.DigestAlgorithm;
 import com.hellblazer.delos.cryptography.EncryptionAlgorithm;
 import com.hellblazer.delos.cryptography.SignatureAlgorithm;
 import com.hellblazer.delos.gorgoneion.proto.SignedNonce;
-import com.hellblazer.sanctorum.proto.*;
+import com.hellblazer.sanctorum.internal.v1.proto.*;
 import com.hellblazer.sky.constants.Constants;
-import com.hellblazer.sky.sanctum.sanctorum.SanctumSanctorum;
-import com.hellblazer.sky.sanctum.sanctorum.TokenGenerator;
+import com.hellblazer.sky.sanctum.EnclaveIdentifier;
 import com.macasaet.fernet.Validator;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessSocketAddress;
@@ -43,9 +42,12 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Integration test for enclave operations via gRPC.
+ * Tests the Sanctum-Sanctorum server implementation with in-process gRPC.
+ *
  * @author hal.hildebrand
  **/
-public class EnclaveTest {
+public class EnclaveIntegrationTest {
 
     private static void unwrap(Enclave_Grpc.Enclave_BlockingStub sanctumClient, String devSecret)
     throws NoSuchAlgorithmException {
