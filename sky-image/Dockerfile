@@ -64,7 +64,7 @@ COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/src/main/resou
 # Copy log configuration from builder image.
 COPY --from=builder --chown=$USER_NAME:$GROUP_NAME /usr/src/myapp/src/main/resources/logback.xml ./logback.xml
 # Copy entrypoint script for secure secret handling (CRITICAL #3 resolution).
-COPY --chown=$USER_NAME:$GROUP_NAME entrypoint.sh ./entrypoint.sh
+COPY --chown=$USER_NAME:$GROUP_NAME sky-image/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 
 # Run the application.
