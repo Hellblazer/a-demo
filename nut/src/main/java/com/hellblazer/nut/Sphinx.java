@@ -138,7 +138,8 @@ public class Sphinx {
         default:
             throw new IllegalStateException("Illegal enclave endpoint: " + configuration.enclaveEndpoint);
         }
-        sanctum = new Sanctum(configuration.identity.signatureAlgorithm(), configuration.enclaveEndpoint);
+        sanctum = new Sanctum(configuration.identity.signatureAlgorithm(), configuration.enclaveEndpoint,
+                              configuration.tokenCacheTtl, configuration.invalidTokenCacheTtl);
         if (devSecret != null) {
             unwrap(configuration.viewGossipDuration);
         }

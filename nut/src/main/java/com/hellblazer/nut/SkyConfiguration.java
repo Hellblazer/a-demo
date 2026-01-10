@@ -87,6 +87,10 @@ public class SkyConfiguration {
     @JsonProperty
     public Duration                                           viewGossipDuration = Duration.ofMillis(10);
     @JsonProperty
+    public Duration                                           tokenCacheTtl      = Duration.ofHours(1);
+    @JsonProperty
+    public Duration                                           invalidTokenCacheTtl = Duration.ofHours(1);
+    @JsonProperty
     public String                                             provisionedToken;
     @JsonProperty
     public String                                             tag;

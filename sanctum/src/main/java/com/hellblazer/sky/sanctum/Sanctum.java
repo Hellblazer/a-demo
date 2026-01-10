@@ -55,26 +55,43 @@ public class Sanctum {
     private final        Cache<HashedToken, ByteString>    cached;
     private final        Cache<Digest, Boolean>            invalid;
     private final        Enclave_Grpc.Enclave_BlockingStub client;
+    private final        Duration                          tokenCacheTtl;
+    private final        Duration                          invalidTokenCacheTtl;
 
     public Sanctum(SignatureAlgorithm algorithm, SocketAddress enclaveAddress) {
-        this(algorithm, channelFor(enclaveAddress));
+        this(algorithm, channelFor(enclaveAddress), Duration.ofHours(1), Duration.ofHours(1));
     }
 
     public Sanctum(SignatureAlgorithm algorithm, Channel channel) {
+        this(algorithm, channel, Duration.ofHours(1), Duration.ofHours(1));
+    }
+
+    public Sanctum(SignatureAlgorithm algorithm, SocketAddress enclaveAddress, Duration tokenCacheTtl,
+                   Duration invalidTokenCacheTtl) {
+        this(algorithm, channelFor(enclaveAddress), tokenCacheTtl, invalidTokenCacheTtl);
+    }
+
+    public Sanctum(SignatureAlgorithm algorithm, Channel channel, Duration tokenCacheTtl,
+                   Duration invalidTokenCacheTtl) {
+        this.tokenCacheTtl = tokenCacheTtl;
+        this.invalidTokenCacheTtl = invalidTokenCacheTtl;
         identifier = new EnclaveIdentifier(algorithm, channel);
         member = new ControlledIdentifierMember(identifier);
         this.channel = channel;
         this.client = Enclave_Grpc.newBlockingStub(channel);
+        log.info("Token cache TTL: {}, Invalid token cache TTL: {}", tokenCacheTtl, invalidTokenCacheTtl);
         cached = Caffeine.newBuilder()
                          .maximumSize(1_000)
-                         .expireAfterWrite(Duration.ofDays(1))
+                         .expireAfterWrite(tokenCacheTtl)
+                         .recordStats()
                          .removalListener((HashedToken ht, Object credentials, RemovalCause cause) -> log.trace(
                          "Validated Token: {} was removed due to: {}", ht.hash, cause))
                          .build(hashed -> client.validate(
                          FernetValidate.newBuilder().setToken(hashed.token().serialise()).build()).getB());
         invalid = Caffeine.newBuilder()
                           .maximumSize(1_000)
-                          .expireAfterWrite(Duration.ofDays(1))
+                          .expireAfterWrite(invalidTokenCacheTtl)
+                          .recordStats()
                           .removalListener((Digest token, Boolean credentials, RemovalCause cause) -> log.trace(
                           "Invalid Token: {} was removed due to: {}", token, cause))
                           .build();
@@ -97,6 +114,14 @@ public class Sanctum {
         return cached.stats();
     }
 
+    public Duration getCachedTokenTtl() {
+        return tokenCacheTtl;
+    }
+
+    public Duration getInvalidTokenTtl() {
+        return invalidTokenCacheTtl;
+    }
+
     public Enclave_Grpc.Enclave_BlockingStub getClient() {
         return Enclave_Grpc.newBlockingStub(channel);
     }
@@ -111,6 +136,19 @@ public class Sanctum {
 
     public CacheStats invalidStats() {
         return invalid.stats();
+    }
+
+    /**
+     * Log current cache statistics for monitoring purposes
+     */
+    public void logCacheStatistics() {
+        var validStats = cachedStats();
+        var invalidStats = invalidStats();
+        log.info("Token cache statistics: hits={}, misses={}, requests={}, evictions={}, requests_weight={}, " +
+                 "expired={}", validStats.hitCount(), validStats.missCount(), validStats.requestCount(),
+                 validStats.evictionCount(), validStats.totalLoadTime(), validStats.loadSuccessCount());
+        log.info("Invalid token cache statistics: hits={}, misses={}, requests={}, evictions={}", invalidStats.hitCount(),
+                 invalidStats.missCount(), invalidStats.requestCount(), invalidStats.evictionCount());
     }
 
     public TokenGenerator tokenGenerator() {
