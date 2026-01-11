@@ -14,7 +14,9 @@
     <dependencies>
         <dependency>
             <groupId>com.hellblazer.sky</groupId>
-            <artifactId>sky</artifactId>
+            <artifactId>nut</artifactId>
+            <classifier>shaded</classifier>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

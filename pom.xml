@@ -9,7 +9,6 @@
     <packaging>pom</packaging>
     <modules>
         <module>nut</module>
-        <module>sky</module>
         <module>sky-image</module>
         <module>local-demo</module>
         <module>sanctum-sanctorum</module>
