@@ -103,7 +103,6 @@ public class Sphinx {
     private volatile SocketAddress           apiAddress;
     private volatile CompletableFuture<Void> onFailure = new CompletableFuture<>();
     private volatile String                  provisionedToken;
-    private volatile SanctumSanctorum        inProcessEnclave;
 
     public Sphinx(InputStream configuration) {
         this(SkyConfiguration.from(configuration));
@@ -129,7 +128,7 @@ public class Sphinx {
         }
         switch (configuration.enclaveEndpoint) {
         case InProcessSocketAddress ipa: {
-            this.inProcessSanctorum(devSecret);
+            inProcessSanctorum(configuration, devSecret);
             break;
         }
         case VSockAddress vsa: {
@@ -146,18 +145,18 @@ public class Sphinx {
         }
     }
 
-    private void inProcessSanctorum(String devSecret) {
-        log.info("Starting in process sanctorum on: {}", configuration.enclaveEndpoint);
-        var shamir = new SanctumSanctorum.Shamir(configuration.shamir.shares(), configuration.shamir.threshold());
-        var parameters = new SanctumSanctorum.Parameters(shamir, configuration.identity.digestAlgorithm(),
-                                                         configuration.identity.encryptionAlgorithm(),
-                                                         configuration.tag == null ? null
-                                                                            : HexFormat.of().parseHex(configuration.tag),
-                                                         configuration.enclaveEndpoint,
+    public static void inProcessSanctorum(SkyConfiguration config, String devSecret) {
+        log.info("Starting in process sanctorum on: {}", config.enclaveEndpoint);
+        var shamir = new SanctumSanctorum.Shamir(config.shamir.shares(), config.shamir.threshold());
+        var parameters = new SanctumSanctorum.Parameters(shamir, config.identity.digestAlgorithm(),
+                                                         config.identity.encryptionAlgorithm(),
+                                                         config.tag == null ? null
+                                                                            : HexFormat.of().parseHex(config.tag),
+                                                         config.enclaveEndpoint,
                                                          devSecret == null ? null : devSecret.getBytes());
-        inProcessEnclave = new SanctumSanctorum(parameters, _ -> Any.getDefaultInstance());
+        var enclave = new SanctumSanctorum(parameters, _ -> Any.getDefaultInstance());
         try {
-            inProcessEnclave.start();
+            enclave.start();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -469,15 +468,6 @@ public class Sphinx {
             application = null;
             if (currentApplication != null) {
                 currentApplication.shutdown();
-            }
-            final var enclave = inProcessEnclave;
-            inProcessEnclave = null;
-            if (enclave != null) {
-                try {
-                    enclave.shutdown();
-                } catch (Throwable t) {
-                    log.warn("Failed to shutdown in-process enclave", t);
-                }
             }
             log.info("Service has been sealed on: {}", id);
             return Status.newBuilder().setSuccess(true).build();
