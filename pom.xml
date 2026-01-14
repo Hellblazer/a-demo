@@ -16,7 +16,7 @@
         <module>grpc</module>
         <module>constants</module>
     </modules>
-    <version>0.0.6-SNAPSHOT</version>
+    <version>0.0.6</version>
 
     <properties>
         <delos.version>0.1.1</delos.version>
