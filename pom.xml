@@ -19,7 +19,7 @@
     <version>0.0.8-SNAPSHOT</version>
 
     <properties>
-        <delos.version>0.1.3</delos.version>
+        <delos.version>0.2.2</delos.version>
         <grpc.version>1.64.0</grpc.version>
         <protobuf.version>4.27.0</protobuf.version>
         <h2.version>2.2.224</h2.version>
