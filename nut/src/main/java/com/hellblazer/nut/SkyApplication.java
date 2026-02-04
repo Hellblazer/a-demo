@@ -454,7 +454,7 @@ public class SkyApplication {
             attempt--;
             joinChannel = forApproaches(approaches);
             try {
-                Admissions admissions = new AdmissionsClient(sanctorum.getMember(), joinChannel, null);
+                Admissions admissions = new AdmissionsClient(sanctorum.getMember(), joinChannel);
                 var client = new GorgoneionClient(sanctorum.getMember(), this::attest, clock, admissions);
 
                 final var establishment = client.apply(Duration.ofSeconds(120));

@@ -130,7 +130,7 @@ public class SanctumSanctorum {
         service = new SanctumSanctorum.Service();
         this.attestation = attestation;
         server = builder.addService(new EnclaveServer(service))
-                        .addService(new EnclaveKERLServer(new ProtoKERLReadAdapter(() -> kerl), null))
+                        .addService(new EnclaveKERLServer(new ProtoKERLReadAdapter(() -> kerl)))
                         .build();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
         sessionKeyPair = parameters.encryptionAlgorithm.generateKeyPair();
