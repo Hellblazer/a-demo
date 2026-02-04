@@ -17,7 +17,6 @@
 package com.hellblazer.nut.comms;
 
 import com.hellblazer.delos.gorgoneion.client.client.comm.Admissions;
-import com.hellblazer.delos.gorgoneion.client.client.comm.GorgoneionClientMetrics;
 import com.hellblazer.delos.gorgoneion.proto.AdmissionsGrpc;
 import com.hellblazer.delos.gorgoneion.proto.Credentials;
 import com.hellblazer.delos.gorgoneion.proto.Establishment;
@@ -38,36 +37,23 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class AdmissionsClient implements Admissions {
 
-    private static final Logger                         log     = LoggerFactory.getLogger(AdmissionsClient.class);
-    private static final Duration                       CLOSE_TIMEOUT = Duration.ofSeconds(10);
-    private final        Lock                           closeLock     = new ReentrantLock();
-    private final        ManagedChannel                 channel;
-    private final        Member                         member;
-    private final        AdmissionsGrpc.AdmissionsBlockingStub client;
-    private final        GorgoneionClientMetrics        metrics;
-    private volatile     boolean                        closed = false;
+    private static final Logger                                   log           = LoggerFactory.getLogger(
+    AdmissionsClient.class);
+    private static final Duration                                 CLOSE_TIMEOUT = Duration.ofSeconds(10);
+    private final        Lock                                     closeLock     = new ReentrantLock();
+    private final        ManagedChannel                           channel;
+    private final        Member                                   member;
+    private final        AdmissionsGrpc.AdmissionsBlockingStub    client;
+    private volatile     boolean                                  closed        = false;
 
-    public AdmissionsClient(Member member, ManagedChannel channel, GorgoneionClientMetrics metrics) {
+    public AdmissionsClient(Member member, ManagedChannel channel) {
         this.member = member;
         this.channel = channel;
         this.client = AdmissionsGrpc.newBlockingStub(channel).withCompression("gzip");
-        this.metrics = metrics;
     }
 
     public SignedNonce apply(KERL_ application, Duration timeout) {
-        if (metrics != null) {
-            var serializedSize = application.getSerializedSize();
-            metrics.outboundBandwidth().mark(serializedSize);
-            metrics.outboundApplication().update(serializedSize);
-        }
-
-        SignedNonce result = client.withDeadlineAfter(timeout.toNanos(), TimeUnit.NANOSECONDS).apply(application);
-        if (metrics != null) {
-            var serializedSize = result.getSerializedSize();
-            metrics.inboundBandwidth().mark(serializedSize);
-            metrics.inboundApplication().update(serializedSize);
-        }
-        return result;
+        return client.withDeadlineAfter(timeout.toNanos(), TimeUnit.NANOSECONDS).apply(application);
     }
 
     public void close() {
@@ -102,22 +88,6 @@ public class AdmissionsClient implements Admissions {
     }
 
     public Establishment register(Credentials credentials, Duration timeout) {
-        if (metrics != null) {
-            var serializedSize = credentials.getSerializedSize();
-            metrics.outboundBandwidth().mark(serializedSize);
-            metrics.outboundCredentials().update(serializedSize);
-        }
-
-        var result = client.withDeadlineAfter(timeout.toNanos(), TimeUnit.NANOSECONDS).register(credentials);
-        if (metrics != null) {
-            try {
-                var serializedSize = result.getSerializedSize();
-                metrics.inboundBandwidth().mark(serializedSize);
-                metrics.inboundInvitation().update(serializedSize);
-            } catch (Throwable e) {
-                log.trace("Error updating metrics for establishment: {}", member.getId(), e);
-            }
-        }
-        return result;
+        return client.withDeadlineAfter(timeout.toNanos(), TimeUnit.NANOSECONDS).register(credentials);
     }
 }

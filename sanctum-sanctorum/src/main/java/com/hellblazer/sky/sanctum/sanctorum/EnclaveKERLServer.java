@@ -17,10 +17,8 @@
 
 package com.hellblazer.sky.sanctum.sanctorum;
 
-import com.codahale.metrics.Timer.Context;
 import com.google.protobuf.Empty;
 import com.hellblazer.delos.stereotomy.event.proto.*;
-import com.hellblazer.delos.stereotomy.services.grpc.StereotomyMetrics;
 import com.hellblazer.delos.stereotomy.services.grpc.proto.*;
 import com.hellblazer.delos.stereotomy.services.grpc.proto.KERLServiceGrpc.KERLServiceImplBase;
 import com.hellblazer.delos.stereotomy.services.proto.ProtoKERLProvider;
@@ -33,11 +31,9 @@ import org.joou.ULong;
  * @author hal.hildebrand
  */
 public class EnclaveKERLServer extends KERLServiceImplBase {
-    private final StereotomyMetrics metrics;
     private final ProtoKERLProvider service;
 
-    public EnclaveKERLServer(ProtoKERLProvider service, StereotomyMetrics metrics) {
-        this.metrics = metrics;
+    public EnclaveKERLServer(ProtoKERLProvider service) {
         this.service = service;
     }
 
@@ -69,237 +65,66 @@ public class EnclaveKERLServer extends KERLServiceImplBase {
 
     @Override
     public void getAttachment(EventCoords request, StreamObserver<Attachment> responseObserver) {
-        Context timer = metrics != null ? metrics.getAttachmentService().time() : null;
-        if (metrics != null) {
-            final var serializedSize = request.getSerializedSize();
-            metrics.inboundBandwidth().mark(serializedSize);
-            metrics.inboundGetAttachmentRequest().mark(serializedSize);
-        }
         var response = service.getAttachment(request);
-        if (response == null) {
-            if (timer != null) {
-                timer.stop();
-            }
-            responseObserver.onNext(Attachment.getDefaultInstance());
-            responseObserver.onCompleted();
-        } else {
-            if (timer != null) {
-                timer.stop();
-            }
-            var attachment = response == null ? Attachment.getDefaultInstance() : response;
-            responseObserver.onNext(attachment);
-            responseObserver.onCompleted();
-            if (metrics != null) {
-                final var serializedSize = attachment.getSerializedSize();
-                metrics.outboundBandwidth().mark(serializedSize);
-                metrics.outboundGetAttachmentResponse().mark(serializedSize);
-            }
-        }
+        var attachment = response == null ? Attachment.getDefaultInstance() : response;
+        responseObserver.onNext(attachment);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void getKERL(Ident request, StreamObserver<KERL_> responseObserver) {
-        Context timer = metrics != null ? metrics.getKERLService().time() : null;
-        if (metrics != null) {
-            final var serializedSize = request.getSerializedSize();
-            metrics.inboundBandwidth().mark(serializedSize);
-            metrics.inboundGetKERLRequest().mark(serializedSize);
-        }
         var response = service.getKERL(request);
-        if (response == null) {
-            if (timer != null) {
-                timer.stop();
-            }
-            responseObserver.onNext(KERL_.getDefaultInstance());
-            responseObserver.onCompleted();
-        } else {
-            if (timer != null) {
-                timer.stop();
-            }
-            var kerl = response == null ? KERL_.getDefaultInstance() : response;
-            responseObserver.onNext(kerl);
-            responseObserver.onCompleted();
-            if (metrics != null) {
-                final var serializedSize = kerl.getSerializedSize();
-                metrics.outboundBandwidth().mark(serializedSize);
-                metrics.outboundGetKERLResponse().mark(serializedSize);
-            }
-        }
+        var kerl = response == null ? KERL_.getDefaultInstance() : response;
+        responseObserver.onNext(kerl);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void getKeyEventCoords(EventCoords request, StreamObserver<KeyEvent_> responseObserver) {
-        Context timer = metrics != null ? metrics.getKeyEventCoordsService().time() : null;
-        if (metrics != null) {
-            metrics.inboundBandwidth().mark(request.getSerializedSize());
-            metrics.inboundGetKeyEventCoordsRequest().mark(request.getSerializedSize());
-        }
         var response = service.getKeyEvent(request);
-        if (response == null) {
-            if (timer != null) {
-                timer.stop();
-            }
-            responseObserver.onNext(KeyEvent_.getDefaultInstance());
-            responseObserver.onCompleted();
-        } else {
-            if (timer != null) {
-                timer.stop();
-            }
-            var event = response == null ? KeyEvent_.getDefaultInstance() : response;
-            responseObserver.onNext(event);
-            responseObserver.onCompleted();
-            if (metrics != null) {
-                final var serializedSize = event.getSerializedSize();
-                metrics.outboundBandwidth().mark(serializedSize);
-                metrics.outboundGetKeyEventCoordsResponse().mark(serializedSize);
-            }
-        }
+        var event = response == null ? KeyEvent_.getDefaultInstance() : response;
+        responseObserver.onNext(event);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void getKeyState(Ident request, StreamObserver<KeyState_> responseObserver) {
-        Context timer = metrics != null ? metrics.getKeyStateService().time() : null;
-        if (metrics != null) {
-            final var serializedSize = request.getSerializedSize();
-            metrics.inboundBandwidth().mark(serializedSize);
-            metrics.inboundGetKeyStateRequest().mark(serializedSize);
-        }
         var response = service.getKeyState(request);
-        if (response == null) {
-            if (timer != null) {
-                timer.stop();
-            }
-            responseObserver.onNext(KeyState_.getDefaultInstance());
-            responseObserver.onCompleted();
-        } else {
-            if (timer != null) {
-                timer.stop();
-            }
-            var state = response == null ? KeyState_.getDefaultInstance() : response;
-            responseObserver.onNext(state);
-            responseObserver.onCompleted();
-            if (metrics != null) {
-                metrics.outboundBandwidth().mark(state.getSerializedSize());
-                metrics.outboundGetKeyStateResponse().mark(state.getSerializedSize());
-            }
-        }
+        var state = response == null ? KeyState_.getDefaultInstance() : response;
+        responseObserver.onNext(state);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void getKeyStateCoords(EventCoords request, StreamObserver<KeyState_> responseObserver) {
-        Context timer = metrics != null ? metrics.getKeyStateCoordsService().time() : null;
-        if (metrics != null) {
-            final var serializedSize = request.getSerializedSize();
-            metrics.inboundBandwidth().mark(serializedSize);
-            metrics.inboundGetKeyStateCoordsRequest().mark(serializedSize);
-        }
         var response = service.getKeyState(request);
-        if (response == null) {
-            if (timer != null) {
-                timer.stop();
-            }
-            responseObserver.onNext(KeyState_.getDefaultInstance());
-            responseObserver.onCompleted();
-        }
-        if (timer != null) {
-            timer.stop();
-        }
         var state = response == null ? KeyState_.getDefaultInstance() : response;
         responseObserver.onNext(state);
         responseObserver.onCompleted();
-        if (metrics != null) {
-            final var serializedSize = state.getSerializedSize();
-            metrics.outboundBandwidth().mark(serializedSize);
-            metrics.outboundGetKeyStateCoordsResponse().mark(serializedSize);
-        }
     }
 
     @Override
     public void getKeyStateSeqNum(IdentAndSeq request, StreamObserver<KeyState_> responseObserver) {
-        Context timer = metrics != null ? metrics.getKeyStateService().time() : null;
-        if (metrics != null) {
-            final var serializedSize = request.getSerializedSize();
-            metrics.inboundBandwidth().mark(serializedSize);
-            metrics.inboundGetKeyStateRequest().mark(serializedSize);
-        }
         var response = service.getKeyState(request.getIdentifier(), ULong.valueOf(request.getSequenceNumber()));
-        if (response == null) {
-            if (timer != null) {
-                timer.stop();
-            }
-            responseObserver.onNext(KeyState_.getDefaultInstance());
-            responseObserver.onCompleted();
-        } else {
-            if (timer != null) {
-                timer.stop();
-            }
-            var state = response == null ? KeyState_.getDefaultInstance() : response;
-            responseObserver.onNext(state);
-            responseObserver.onCompleted();
-            if (metrics != null) {
-                metrics.outboundBandwidth().mark(state.getSerializedSize());
-                metrics.outboundGetKeyStateResponse().mark(state.getSerializedSize());
-            }
-        }
+        var state = response == null ? KeyState_.getDefaultInstance() : response;
+        responseObserver.onNext(state);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void getKeyStateWithAttachments(EventCoords request,
                                            StreamObserver<KeyStateWithAttachments_> responseObserver) {
-        Context timer = metrics != null ? metrics.getKeyStateService().time() : null;
-        if (metrics != null) {
-            final var serializedSize = request.getSerializedSize();
-            metrics.inboundBandwidth().mark(serializedSize);
-            metrics.inboundGetKeyStateRequest().mark(serializedSize);
-        }
         var response = service.getKeyStateWithAttachments(request);
-        if (response == null) {
-            if (timer != null) {
-                timer.stop();
-            }
-            responseObserver.onNext(KeyStateWithAttachments_.getDefaultInstance());
-            responseObserver.onCompleted();
-        } else {
-            if (timer != null) {
-                timer.stop();
-            }
-            var state = response == null ? KeyStateWithAttachments_.getDefaultInstance() : response;
-            responseObserver.onNext(state);
-            responseObserver.onCompleted();
-            if (metrics != null) {
-                metrics.outboundBandwidth().mark(state.getSerializedSize());
-                metrics.outboundGetKeyStateResponse().mark(state.getSerializedSize());
-            }
-        }
+        var state = response == null ? KeyStateWithAttachments_.getDefaultInstance() : response;
+        responseObserver.onNext(state);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void getValidations(EventCoords request, StreamObserver<Validations> responseObserver) {
-        Context timer = metrics != null ? metrics.getAttachmentService().time() : null;
-        if (metrics != null) {
-            final var serializedSize = request.getSerializedSize();
-            metrics.inboundBandwidth().mark(serializedSize);
-            metrics.inboundGetAttachmentRequest().mark(serializedSize);
-        }
         var response = service.getValidations(request);
-        if (response == null) {
-            if (timer != null) {
-                timer.stop();
-            }
-            responseObserver.onNext(Validations.getDefaultInstance());
-            responseObserver.onCompleted();
-        } else {
-            if (timer != null) {
-                timer.stop();
-            }
-            var validations = response == null ? Validations.getDefaultInstance() : response;
-            responseObserver.onNext(validations);
-            responseObserver.onCompleted();
-            if (metrics != null) {
-                final var serializedSize = validations.getSerializedSize();
-                metrics.outboundBandwidth().mark(serializedSize);
-                metrics.outboundGetAttachmentResponse().mark(serializedSize);
-            }
-        }
+        var validations = response == null ? Validations.getDefaultInstance() : response;
+        responseObserver.onNext(validations);
+        responseObserver.onCompleted();
     }
 }
